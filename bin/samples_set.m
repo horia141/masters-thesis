@@ -54,9 +54,9 @@ classdef samples_set
         end
         
         function [new_samples_set] = subsamples(obj,index)
-            assert(tc.vector(index) && ...
+            assert(tc.vector_col(index) && ...
                    ((tc.logical(index) && tc.match_rows(obj.samples,index)) || ...
-                    (tc.natural(index) && (length(index) <= obj.samples_count) && tc.check(index > 0 & index <= obj.samples_count))));
+                    (tc.natural(index) && tc.check(index > 0 & index <= obj.samples_count))));
             
             new_samples_set = samples_set(obj.classes,obj.samples(index,:),obj.labels_idx(index));
         end
@@ -250,7 +250,7 @@ classdef samples_set
             clear tr_h
             clear ts_h
             
-            s1_fi = s1.subsamples(1:2:12);
+            s1_fi = s1.subsamples([1:2:12]');
             
             assert(length(s1_fi.classes) == 3);
             assert(strcmp(s1_fi.classes(1),'1'));
@@ -265,6 +265,23 @@ classdef samples_set
             assert(s1_fi.features_count == 4);
             
             clear s1_fi
+            
+            s1_fo = s1.subsamples([1:12,1:12]');
+            
+            assert(length(s1_fo.classes) == 3);
+            assert(strcmp(s1_fo.classes(1),'1'));
+            assert(strcmp(s1_fo.classes(2),'2'));
+            assert(strcmp(s1_fo.classes(3),'3'));
+            assert(s1_fo.classes_count == 3);
+            assert(all(size(s1_fo.samples) == [24 4]));
+            assert(all(all(s1_fo.samples == [A;A])));
+            assert(all(size(s1_fo.labels_idx) == [24 1]));
+            assert(all(all(s1_fo.labels_idx == [c;c])));
+            assert(s1_fo.samples_count == 24);
+            assert(s1_fo.features_count == 4);
+            
+            clear s1_fo
+            
             clear s1
             
             % Try building from pre-existing data using the "from_data"
