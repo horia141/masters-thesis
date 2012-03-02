@@ -29,7 +29,15 @@ classdef tc
         end
         
         function [o] = string(i)
-            o = (isempty(i) || tc.vector(i)) && ischar(i);
+            o = (isempty(i) || tc.scalar(i) || tc.vector(i)) && ischar(i);
+        end
+        
+        function [o] = labels_idx(i,classes)
+            o = tc.natural(i) && tc.check(i > 0 & i <= length(classes));
+        end
+        
+        function [o] = labels(i)
+            o = tc.logical(i) || tc.natural(i) || (tc.cell(i) && all(cellfun(@tc.string,i)));
         end
         
         function [o] = cell(i)
@@ -45,46 +53,32 @@ classdef tc
         end
         
         function [o] = vector(i)
-            o = tc.vector_row(i) || tc.vector_col(i);
-        end
-        
-        function [o] = vector_row(i)
-            o = (length(size(i)) == 2) && (size(i,1) == 1) && (size(i,2) >= 1);
-        end
-        
-        function [o] = vector_col(i)
-            o = (length(size(i)) == 2) && (size(i,1) >= 1) && (size(i,2) == 1);
+            o = (length(size(i)) == 2) && (((size(i,1) == 1) && (size(i,2) >  1)) || ...
+                                           ((size(i,1) >  1) && (size(i,2) == 1)));
         end
         
         function [o] = matrix(i)
-            o = (length(size(i)) == 2) && (size(i,1) >= 1) && (size(i,2) >= 1);
+            o = (length(size(i)) == 2) && (size(i,1) > 1) && (size(i,2) > 1);
+        end
+        
+        function [o] = tensor(i,d)
+            o = (tc.scalar(i) && d == 0) || ...
+                (tc.vector(i) && d == 1) || ...
+                ((length(size(i)) == d) && (all(size(i) > 1)));
+        end
+        
+        function [o] = match_dims(a,b,d1,d2)
+            if tc.vector(b)
+                o = size(a,d1) == length(b);
+            elseif ~exist('d2','var')
+                o = size(a,d1) == size(b,d1);
+            else
+                o = size(a,d1) == size(b,d2);
+            end
         end
                 
-        function [o] = match_cols(a,b)
-            o = (length(size(a)) == 2) && (length(size(b)) == 2) && (size(a,2) == size(b,2));
-        end
-        
-        function [o] = match_rows(a,b)
-            o = (length(size(a)) == 2) && (length(size(b)) == 2) && (size(a,1) == size(b,1));
-        end
-        
-        function [o] = match_size(a,b)
-            o = (length(size(a)) == 2) && (length(size(b)) == 2) && ...
-                (size(a,1) == size(b,1)) && (size(a,2) == size(b,2));
-        end
-        
         function [o] = check(i)
             o = ~tc.empty(i) && all(all(i));
-        end
-        
-        function [o] = labels_idx(i,classes,samples)
-            o = tc.vector_col(i) && tc.match_rows(samples,i) && ...
-                tc.natural(i) && tc.check(i > 0 & i <= length(classes));
-        end
-        
-        function [o] = labels(i,samples)
-            o = tc.vector_col(i) && tc.match_rows(samples,i) && ...
-                (tc.logical(i) || tc.natural(i) || (tc.cell(i) && all(cellfun(@tc.string,i))));
         end
     end
     
@@ -238,6 +232,7 @@ classdef tc
             assert(tc.string('hello') == true);
             assert(tc.string(transpose('hello')) == true);
             assert(tc.string('') == true);
+            assert(tc.string('a') == true);
             assert(tc.string(['hello';'world']) == false);
             assert(tc.string(true) == false);
             assert(tc.string(false) == false);
@@ -249,6 +244,36 @@ classdef tc
             assert(tc.string({'hello'}) == false);
             assert(tc.string({'hello' 'world'}) == false);
             
+            fprintf('Testing function "labels_idx".\n');
+            
+            assert(tc.labels_idx(1,{'1','2'}) == true);
+            assert(tc.labels_idx([1 2 1],{'1','2'}) == true);
+            assert(tc.labels_idx(ones(4,4),{'1','2'}) == true);
+            assert(tc.labels_idx(3*ones(4,1),{'1','2','3'}) == true);
+            assert(tc.labels_idx(true,{'1','2'}) == false);
+            assert(tc.labels_idx(false,{'1','2'}) == false);
+            assert(tc.labels_idx(0.14,{'1','2'}) == false);
+            assert(tc.labels_idx(0,{'1','2'}) == false);
+            assert(tc.labels_idx(-4,{'1','2'}) == false);
+            assert(tc.labels_idx('hello',{'1','2'}) == false);
+            assert(tc.labels_idx({1},{'1','2'}) == false);
+            assert(tc.labels_idx(struct('hello',10,'world',20)) == false);
+            
+            fprintf('Testing function "labels".\n');
+            
+            assert(tc.labels(true) == true);
+            assert(tc.labels(false) == true);
+            assert(tc.labels(true(4,3)) == true);
+            assert(tc.labels(0) == true);
+            assert(tc.labels(12) == true);
+            assert(tc.labels(ones(4,3)) == true);
+            assert(tc.labels({'hello'}) == true);
+            assert(tc.labels({'hello';'world'}) == true);
+            assert(tc.labels(3.4) == false);
+            assert(tc.labels(-3) == false);
+            assert(tc.labels('hello') == false);
+            assert(tc.labels(struct('hello',10,'world',20)) == false);
+                        
             fprintf('Testing function "cell".\n');
             
             assert(tc.cell({true}) == true);
@@ -317,11 +342,6 @@ classdef tc
             
             fprintf('Testing function "vector".\n');
             
-            assert(tc.vector(true) == true);
-            assert(tc.vector(10.32) == true);
-            assert(tc.vector(-3) == true);
-            assert(tc.vector(20) == true);
-            assert(tc.vector(0.3) == true);
             assert(tc.vector([true false false]) == true);
             assert(tc.vector([true false false]') == true);
             assert(tc.vector([1.3 2.6 3]) == true);
@@ -334,74 +354,16 @@ classdef tc
             assert(tc.vector('hello') == true);
             assert(tc.vector(3.2*ones(100,1)) == true);
             assert(tc.vector(3.4*ones(1,100)) == true);
+            assert(tc.vector(true) == false);
+            assert(tc.vector(10.32) == false);
+            assert(tc.vector(-3) == false);
+            assert(tc.vector(20) == false);
+            assert(tc.vector(0.3) == false);
             assert(tc.vector(ones(100,10)) == false);
             assert(tc.vector(ones(0,0)) == false);
             
-            fprintf('Testing function "vector_row".\n');
-            
-            assert(tc.vector_row(true) == true);
-            assert(tc.vector_row(10.32) == true);
-            assert(tc.vector_row(-3) == true);
-            assert(tc.vector_row(20) == true);
-            assert(tc.vector_row(0.3) == true);
-            assert(tc.vector_row([true false false]) == true);
-            assert(tc.vector_row([1.3 2.6 3]) == true);
-            assert(tc.vector_row([-54 -3 21]) == true);
-            assert(tc.vector_row([1 3 2 7]) == true);
-            assert(tc.vector_row('hello') == true);
-            assert(tc.vector_row(3.4*ones(1,100)) == true);
-            assert(tc.vector_row([struct('hello',10,'world',20) struct('hello',100,'world',200)]) == true);
-            assert(tc.vector_row([true false false]') == false);
-            assert(tc.vector_row([1.3 2.6 3]') == false);
-            assert(tc.vector_row([-54 -3 21]') == false);
-            assert(tc.vector_row([1 3 2 7]') == false);
-            assert(tc.vector_row([struct('hello',10,'world',20) struct('hello',100,'world',200)]') == false);
-            assert(tc.vector_row(3.2*ones(100,1)) == false);
-            assert(tc.vector_row(ones(100,10)) == false);
-            assert(tc.vector_row(ones(0,0)) == false);
-            
-            fprintf('Testing function "vector_col".\n');
-            
-            assert(tc.vector_col(true) == true);
-            assert(tc.vector_col(10.32) == true);
-            assert(tc.vector_col(-3) == true);
-            assert(tc.vector_col(20) == true);
-            assert(tc.vector_col(0.3) == true);
-            assert(tc.vector_col([true;false;false]) == true);
-            assert(tc.vector_col([1.3;2;6;3]) == true);
-            assert(tc.vector_col([-54;-3;21]) == true);
-            assert(tc.vector_col([1;3;2;7]) == true);
-            assert(tc.vector_col(3.4*ones(1,100)) == false);
-            assert(tc.vector_col([struct('hello',10,'world',20);struct('hello',100,'world',200)]) == true);
-            assert(tc.vector_col([true false false]) == false);
-            assert(tc.vector_col([1.3 2.6 3]) == false);
-            assert(tc.vector_col([-54 -3 21]) == false);
-            assert(tc.vector_col([1 3 2 7]) == false);
-            assert(tc.vector_col('hello') == false);
-            assert(tc.vector_col([struct('hello',10,'world',20) struct('hello',100,'world',200)]) == false);
-            assert(tc.vector_col(3.2*ones(100,1)) == true);
-            assert(tc.vector_col(ones(100,10)) == false);
-            assert(tc.vector_col(ones(0,0)) == false);
-            
             fprintf('Testing function "matrix".\n');
             
-            assert(tc.matrix(true) == true);
-            assert(tc.matrix(10.32) == true);
-            assert(tc.matrix(-3) == true);
-            assert(tc.matrix(20) == true);
-            assert(tc.matrix(0.3) == true);
-            assert(tc.matrix([true false false]) == true);
-            assert(tc.matrix([true false false]') == true);
-            assert(tc.matrix([1.3 2.6 3]) == true);
-            assert(tc.matrix([1.3 2.6 3]') == true);
-            assert(tc.matrix([-54 -3 21]) == true);
-            assert(tc.matrix([-54 -3 21]') == true);
-            assert(tc.matrix([1 3 2 7]) == true);
-            assert(tc.matrix([1 3 2 7]') == true);
-            assert(tc.matrix([struct('hello',10,'world',20) struct('hello',100,'world',200)]) == true);
-            assert(tc.matrix('hello') == true);
-            assert(tc.matrix(3.2*ones(100,1)) == true);
-            assert(tc.matrix(3.4*ones(1,100)) == true);
             assert(tc.matrix([true true; false true]) == true);
             assert(tc.matrix([1.3 2.2; 1.4 7.3]) == true);
             assert(tc.matrix([-3 -2 -1; 7 3 -4; -6 1 9.3]) == true);
@@ -409,33 +371,73 @@ classdef tc
             assert(tc.matrix([0.1 0.1; 0.1 0.3; 0.03 0.99]) == true);
             assert(tc.matrix(['hello';'world']) == true);
             assert(tc.matrix([struct('hello',10,'world',20) struct('hello',100,'world',200);
-                struct('hello',1,'world',2) struct('hello',0.1,'world',0.2)]) == true);
+                              struct('hello',1,'world',2) struct('hello',0.1,'world',0.2)]) == true);
+            assert(tc.matrix(true) == false);
+            assert(tc.matrix(10.32) == false);
+            assert(tc.matrix(-3) == false);
+            assert(tc.matrix(20) == false);
+            assert(tc.matrix(0.3) == false);
+            assert(tc.matrix([true false false]) == false);
+            assert(tc.matrix([true false false]') == false);
+            assert(tc.matrix([1.3 2.6 3]) == false);
+            assert(tc.matrix([1.3 2.6 3]') == false);
+            assert(tc.matrix([-54 -3 21]) == false);
+            assert(tc.matrix([-54 -3 21]') == false);
+            assert(tc.matrix([1 3 2 7]) == false);
+            assert(tc.matrix([1 3 2 7]') == false);
+            assert(tc.matrix([struct('hello',10,'world',20) struct('hello',100,'world',200)]) == false);
+            assert(tc.matrix('hello') == false);
+            assert(tc.matrix(3.2*ones(100,1)) == false);
+            assert(tc.matrix(3.4*ones(1,100)) == false);
+                          
+            fprintf('Testing function "tensor".\n');
+            
+            assert(tc.tensor(true,0) == true);
+            assert(tc.tensor(10.32,0) == true);
+            assert(tc.tensor(-3,0) == true);
+            assert(tc.tensor(20,0) == true);
+            assert(tc.tensor(0.3,0) == true);
+            assert(tc.tensor([true false false],1) == true);
+            assert(tc.tensor([true false false]',1) == true);
+            assert(tc.tensor([1.3 2.6 3],1) == true);
+            assert(tc.tensor([1.3 2.6 3]',1) == true);
+            assert(tc.tensor([-54 -3 21],1) == true);
+            assert(tc.tensor([-54 -3 21]',1) == true);
+            assert(tc.tensor([1 3 2 7],1) == true);
+            assert(tc.tensor([1 3 2 7]',1) == true);
+            assert(tc.tensor([struct('hello',10,'world',20) struct('hello',100,'world',200)],1) == true);
+            assert(tc.tensor('hello',1) == true);
+            assert(tc.tensor(3.2*ones(100,1),1) == true);
+            assert(tc.tensor(3.4*ones(1,100),1) == true);
+            assert(tc.tensor([true true; false true],2) == true);
+            assert(tc.tensor([1.3 2.2; 1.4 7.3],2) == true);
+            assert(tc.tensor([-3 -2 -1; 7 3 -4; -6 1 9.3],2) == true);
+            assert(tc.tensor([1 2 3; 3 2 1; 1 3 2],2) == true);
+            assert(tc.tensor([0.1 0.1; 0.1 0.3; 0.03 0.99],2) == true);
+            assert(tc.tensor(['hello';'world'],2) == true);
+            assert(tc.tensor([struct('hello',10,'world',20) struct('hello',100,'world',200);
+                              struct('hello',1,'world',2) struct('hello',0.1,'world',0.2)],2) == true);
+            assert(tc.tensor(zeros(4,3,2),3) == true);
+            assert(tc.tensor(ones(4,7,2,3,4),5) == true);
+            assert(tc.tensor(true,1) == false);
+            assert(tc.tensor([true false],0) == false);
+            assert(tc.tensor(zeros(4,4),3) == false);
+            assert(tc.tensor(ones(7,3,2,5),2) == false);
+            assert(tc.tensor(ones(4,3,0,1),4) == false);
             
             % Test functions that check particular object properties.
             
-            fprintf('Testing function "match_rows".\n');
+            fprintf('Testing function "match_dims".\n');
             
-            assert(tc.match_rows([1 2; 2 3; 1 4],[1;3;2]) == true);
-            assert(tc.match_rows(rand(5,3),rand(5,1)) == true);
-            assert(tc.match_rows(rand(3,2),rand(3,3)) == true);
-            assert(tc.match_rows(rand(4,2),rand(1,1)) == false);
-            assert(tc.match_rows(rand(4,2),rand(3,1)) == false);
-            
-            fprintf('Testing function "match_cols".\n');
-            
-            assert(tc.match_cols([1 2; 2 3; 1 4],[1 2; 3 1]) == true);
-            assert(tc.match_cols(rand(5,3),rand(4,3)) == true);
-            assert(tc.match_cols(rand(3,2),rand(1,2)) == true);
-            assert(tc.match_cols(rand(4,2),rand(1,3)) == false);
-            assert(tc.match_cols(rand(4,2),rand(4,3)) == false);
-            
-            fprintf('Testing function "match_size".\n');
-            
-            assert(tc.match_size([1 2; 3 2],[1 4; 2 8]) == true);
-            assert(tc.match_size(rand(5,5),rand(5,5)) == true);
-            assert(tc.match_size(rand(3,2),rand(3,2)) == true);
-            assert(tc.match_size(rand(2,3),rand(3,2)) == false);
-            assert(tc.match_size(rand(5,8),rand(2,8)) == false);
+            assert(tc.match_dims(3,3,1) == true);
+            assert(tc.match_dims(zeros(4,3),ones(4,1),1) == true);
+            assert(tc.match_dims(zeros(4,3),ones(1,4),1) == true);
+            assert(tc.match_dims(zeros(4,4),ones(4,3),1) == true);
+            assert(tc.match_dims(zeros(4,4),ones(3,4),1,2) == true);
+            assert(tc.match_dims(zeros(4,5,3),ones(4,5,5),1,1) == true);
+            assert(tc.match_dims(zeros(4,4,3),ones(4,5,5),2,1) == true);
+            assert(tc.match_dims(zeros(4,4),ones(4,3),2) == false);
+            assert(tc.match_dims(zeros(4,3),ones(3,4),1) == false);
             
             fprintf('Testing function "check".\n');
             
@@ -453,48 +455,8 @@ classdef tc
             assert(tc.check(-5*ones(3,2)) == true);
             assert(tc.check(4*ones(4,4)) == true);
             assert(tc.check(['hello';'world']) == true);
-            assert(tc.check(find([1 2 3])) == true);
-            assert(tc.check(tc.match_size(rand(8,3),rand(8,3))) == true);
-            assert(tc.check(find([0 0 0])) == false);
-            
-            % Testing specialized functions.
-            
-            fprintf('Testing function "labels_idx".\n');
-            
-            assert(tc.labels_idx(1,{'1','2'},rand(1,4)) == true);
-            assert(tc.labels_idx(2,{'1','2'},rand(1,4)) == true);
-            assert(tc.labels_idx([1;1;2],{'1','2'},rand(3,4)) == true);
-            assert(tc.labels_idx([1;2;1;2;2;3],{'1','2','3'},rand(6,4)) == true);
-            assert(tc.labels_idx(3,{'1','2'},rand(1,4)) == false);
-            assert(tc.labels_idx([1 2],{'1','2'},rand(2,4)) == false);
-            assert(tc.labels_idx([9.3 0.2],{'1','2'},rand(2,4)) == false);
-            assert(tc.labels_idx('hello',{'1','2'},rand(1,5)) == false);
-            assert(tc.labels_idx({1;2;3},{'1','2'},rand(3,4)) == false);
-            assert(tc.labels_idx([1;1;2],{'1','2'},rand(2,4)) == false);
-            assert(tc.labels_idx({'hello';'world'},{'hello','world'},rand(2,4)) == false);
-            assert(tc.labels_idx(struct('hello',10,'world',20),{'1','2'},rand(1,4)) == false);
-            assert(tc.labels_idx(ones(5,5),{'1','2'},rand(5,5)) == false);
-            
-            fprintf('Testing function "labels".\n');
-            
-            assert(tc.labels(true,rand(1,4)) == true);
-            assert(tc.labels(false,rand(1,4)) == true);
-            assert(tc.labels([true;true;false],rand(3,5)) == true);
-            assert(tc.labels(0,rand(1,4)) == true);
-            assert(tc.labels(7,rand(1,5)) == true);
-            assert(tc.labels([0;2;7;5],rand(4,5)) == true);
-            assert(tc.labels({'hello';'world'},rand(2,5)) == true);
-            assert(tc.labels([1 2],rand(2,3)) == false);
-            assert(tc.labels({'hello' 'world'},rand(2,4)) == false);
-            assert(tc.labels(true(4,3),rand(4,4)) == false);
-            assert(tc.labels([1;3;2],rand(2,4)) == false);
-            assert(tc.labels(0.3,rand(1,4)) == false);
-            assert(tc.labels(-5,rand(1,4)) == false);
-            assert(tc.labels([2;3;-3],rand(3,4)) == false);
-            assert(tc.labels([2;3;0.3;4],rand(4,4)) == false);
-            assert(tc.labels('hello',rand(1,4)) == false);
-            assert(tc.labels(struct('hello',10,'world',20),rand(1,4)) == false);
-            assert(tc.labels({1;2;3},rand(3,2)) == false);
+            assert(tc.check([1 2 3]) == true);
+            assert(tc.check([0 0 0]) == false);
         end
     end
 end

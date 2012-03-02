@@ -29,8 +29,9 @@ classdef samples_set
         function [obj] = samples_set(classes,samples,labels_idx)
             assert(tc.vector(classes) && tc.cell(classes));
             assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.labels_idx(labels_idx,classes,samples));
-            
+            assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
+                   tc.labels_idx(labels_idx,classes));
+
             obj.classes = classes;
             obj.samples = samples;
             obj.labels_idx = labels_idx;
@@ -54,8 +55,8 @@ classdef samples_set
         end
         
         function [new_samples_set] = subsamples(obj,index)
-            assert(tc.vector_col(index) && ...
-                   ((tc.logical(index) && tc.match_rows(obj.samples,index)) || ...
+            assert(tc.vector(index) && ...
+                   ((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
                     (tc.natural(index) && tc.check(index > 0 & index <= obj.samples_count))));
             
             new_samples_set = samples_set(obj.classes,obj.samples(index,:),obj.labels_idx(index));
@@ -65,7 +66,7 @@ classdef samples_set
     methods (Static,Access=public)
         function [new_samples_set] = from_data(samples,labels)
             assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.labels(labels,samples));
+            assert(tc.vector(labels) && tc.match_dims(samples,labels,1) && tc.labels(labels));
             
             [labels_idx_t,classes_t] = grp2idx(labels);
             new_samples_set = samples_set(classes_t,samples,labels_idx_t);
@@ -86,7 +87,7 @@ classdef samples_set
                 
                 if csvfile_fid == -1
                     throw(MException('master:Samples:load_csvfile:NoLoad',...
-                            sprintf('Could not load csv file "%s": %s!',csvfile_path,csvfile_msg)))
+                             sprintf('Could not load csv file "%s": %s!',csvfile_path,csvfile_msg)))
                 end
                 
                 samples_raw = textscan(csvfile_fid,strcat(labels_format,data_format),'delimiter',delimiter);
