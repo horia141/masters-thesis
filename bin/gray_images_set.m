@@ -427,6 +427,9 @@ classdef gray_images_set < samples_set
             clear s1_fo
             
             clear s1
+            clear A
+            clear c
+            clear A_s
             
             % Try building from pre-existing data using the "from_data"
             % static method.
@@ -462,6 +465,9 @@ classdef gray_images_set < samples_set
             assert(all(all(s2.samples == gray_images_set.to_samples(s2.images))));
             
             clear s2
+            clear A
+            clear c
+            clear A_s
             
             % Try loading files from a directory. The files are stored in
             % "$PROJECT_ROOT/data/test/". This directory should

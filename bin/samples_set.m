@@ -286,6 +286,8 @@ classdef samples_set
             clear s1_fo
             
             clear s1
+            clear A
+            clear c
             
             % Try building from pre-existing data using the "from_data"
             % static method.
@@ -322,6 +324,8 @@ classdef samples_set
             assert(s2.features_count == 4);
             
             clear s2
+            clear A
+            clear c
             
             % Try loading from an CSV file. The file we're going to use is
             % "$PROJECT_ROOT/data/iris/iris.csv". This should exist in all
