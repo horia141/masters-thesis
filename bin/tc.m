@@ -78,15 +78,17 @@ classdef tc
         end
                 
         function [o] = check(i)
-            o = ~tc.empty(i) && all(all(i));
+            o = ~tc.empty(i) && all(i(:));
         end
     end
     
     methods (Static,Access=public)        
-        function unittest            
+        function test
+            fprintf('Testing class "tc".\n');
+            
             % Tests for functions that check for specific types.
             
-            fprintf('Testing function "any".\n');
+            fprintf('  Testing function "any".\n');
             
             assert(tc.any(true) == true);
             assert(tc.any(false) == true);
@@ -112,7 +114,7 @@ classdef tc
             assert(tc.any({struct('hello',10,'world',20); struct('hello',100,'world',200)}) == true);
             assert(tc.any({[10 20] [10 20; 30 40]}) == true);
             
-            fprintf('Testing function "atom".\n');
+            fprintf('  Testing function "atom".\n');
             
             assert(tc.atom(true) == true);
             assert(tc.atom(false) == true);
@@ -138,7 +140,7 @@ classdef tc
             assert(tc.atom({struct('hello',10,'world',20); struct('hello',100,'world',200)}) == false);
             assert(tc.atom({[10 20] [10 20; 30 40]}) == false);
             
-            fprintf('Testing function "logical".\n');
+            fprintf('  Testing function "logical".\n');
             
             assert(tc.logical(true) == true);
             assert(tc.logical(false) == true);
@@ -159,7 +161,7 @@ classdef tc
             assert(tc.logical([1,2,3]) == false);
             assert(tc.logical(ones(10,10)) == false);
             
-            fprintf('Testing function "number".\n');
+            fprintf('  Testing function "number".\n');
             
             assert(tc.number(10) == true);
             assert(tc.number(10.34) == true);
@@ -175,7 +177,7 @@ classdef tc
             assert(tc.number({3.2}) == false);
             assert(tc.number({7 2 -3 1.2}) == false);
             
-            fprintf('Testing function "integer".\n');
+            fprintf('  Testing function "integer".\n');
             
             assert(tc.integer(10) == true);
             assert(tc.integer(-3) == true);
@@ -192,7 +194,7 @@ classdef tc
             assert(tc.integer({1}) == false);
             assert(tc.integer({1 -2 -3}) == false);
             
-            fprintf('Testing function "natural".\n');
+            fprintf('  Testing function "natural".\n');
             
             assert(tc.natural(10) == true);
             assert(tc.natural(0) == true);
@@ -209,7 +211,7 @@ classdef tc
             assert(tc.natural({1}) == false);
             assert(tc.natural({1 3 2}) == false);
             
-            fprintf('Testing function "unitreal".\n');
+            fprintf('  Testing function "unitreal".\n');
             
             assert(tc.unitreal(0.1) == true);
             assert(tc.unitreal(0) == true);
@@ -227,7 +229,7 @@ classdef tc
             assert(tc.unitreal({0.3}) == false);
             assert(tc.unitreal({0.2 0.1}) == false);
             
-            fprintf('Testing function "string".\n');
+            fprintf('  Testing function "string".\n');
             
             assert(tc.string('hello') == true);
             assert(tc.string(transpose('hello')) == true);
@@ -244,7 +246,7 @@ classdef tc
             assert(tc.string({'hello'}) == false);
             assert(tc.string({'hello' 'world'}) == false);
             
-            fprintf('Testing function "labels_idx".\n');
+            fprintf('  Testing function "labels_idx".\n');
             
             assert(tc.labels_idx(1,{'1','2'}) == true);
             assert(tc.labels_idx([1 2 1],{'1','2'}) == true);
@@ -259,7 +261,7 @@ classdef tc
             assert(tc.labels_idx({1},{'1','2'}) == false);
             assert(tc.labels_idx(struct('hello',10,'world',20)) == false);
             
-            fprintf('Testing function "labels".\n');
+            fprintf('  Testing function "labels".\n');
             
             assert(tc.labels(true) == true);
             assert(tc.labels(false) == true);
@@ -274,7 +276,7 @@ classdef tc
             assert(tc.labels('hello') == false);
             assert(tc.labels(struct('hello',10,'world',20)) == false);
                         
-            fprintf('Testing function "cell".\n');
+            fprintf('  Testing function "cell".\n');
             
             assert(tc.cell({true}) == true);
             assert(tc.cell({10.3}) == true);
@@ -300,7 +302,7 @@ classdef tc
             
             % Tests for functions that check for specific structure.
             
-            fprintf('Testing function "empty".\n');
+            fprintf('  Testing function "empty".\n');
             
             assert(tc.empty([]) == true);
             assert(tc.empty(zeros(1,0)) == true);
@@ -323,7 +325,7 @@ classdef tc
             assert(tc.empty({10 20; 30 40}) == false);
             assert(tc.empty({'hello' 'world'; 'how' 'are you today?'}) == false);
             
-            fprintf('Testing function "scalar".\n');
+            fprintf('  Testing function "scalar".\n');
             
             assert(tc.scalar(true) == true);
             assert(tc.scalar(10.32) == true);
@@ -340,7 +342,7 @@ classdef tc
             assert(tc.scalar('hello') == false);
             assert(tc.scalar([struct('hello',10,'world',20) struct('hello',100,'world',200)]) == false);
             
-            fprintf('Testing function "vector".\n');
+            fprintf('  Testing function "vector".\n');
             
             assert(tc.vector([true false false]) == true);
             assert(tc.vector([true false false]') == true);
@@ -362,7 +364,7 @@ classdef tc
             assert(tc.vector(ones(100,10)) == false);
             assert(tc.vector(ones(0,0)) == false);
             
-            fprintf('Testing function "matrix".\n');
+            fprintf('  Testing function "matrix".\n');
             
             assert(tc.matrix([true true; false true]) == true);
             assert(tc.matrix([1.3 2.2; 1.4 7.3]) == true);
@@ -390,7 +392,7 @@ classdef tc
             assert(tc.matrix(3.2*ones(100,1)) == false);
             assert(tc.matrix(3.4*ones(1,100)) == false);
                           
-            fprintf('Testing function "tensor".\n');
+            fprintf('  Testing function "tensor".\n');
             
             assert(tc.tensor(true,0) == true);
             assert(tc.tensor(10.32,0) == true);
@@ -427,7 +429,7 @@ classdef tc
             
             % Test functions that check particular object properties.
             
-            fprintf('Testing function "match_dims".\n');
+            fprintf('  Testing function "match_dims".\n');
             
             assert(tc.match_dims(3,3,1) == true);
             assert(tc.match_dims(zeros(4,3),ones(4,1),1) == true);
@@ -439,7 +441,7 @@ classdef tc
             assert(tc.match_dims(zeros(4,4),ones(4,3),2) == false);
             assert(tc.match_dims(zeros(4,3),ones(3,4),1) == false);
             
-            fprintf('Testing function "check".\n');
+            fprintf('  Testing function "check".\n');
             
             assert(tc.check(true) == true);
             assert(tc.check(false) == false);
@@ -457,6 +459,7 @@ classdef tc
             assert(tc.check(['hello';'world']) == true);
             assert(tc.check([1 2 3]) == true);
             assert(tc.check([0 0 0]) == false);
+            assert(tc.check(zeros(4,4,4) > -1 & zeros(4,4,4) < 1) == true);
         end
     end
 end

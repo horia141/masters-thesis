@@ -1,0 +1,4 @@
+- B05.03.2012:E??.??.????
+  Task: Make use of the "Causes" field in MATLAB exception handling in the
+  code so far. This seems like an implementation of the "hierarchical"
+  exception handling I've been thinking about.

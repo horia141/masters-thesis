@@ -32,9 +32,9 @@ classdef samples_set
             assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
                    tc.labels_idx(labels_idx,classes));
 
-            obj.classes = classes;
+            obj.classes = utils.force_col(classes);
             obj.samples = samples;
-            obj.labels_idx = labels_idx;
+            obj.labels_idx = utils.force_col(labels_idx);
         end
         
         function [tr_index,ts_index] = partition(obj,type,param)
@@ -109,14 +109,16 @@ classdef samples_set
     end
     
     methods (Static,Access=public)
-        function unittest
+        function test
+            fprintf('Testing "samples_set".\n');
+            
             % Try a normal run first. Just build an object using the
             % constructor and call the two possible methods ("partition"
             % and "subsamples"). In all cases, see if we obtain correct
-            % results - the internal representation matches what we would
-            % expect given our data.
+            % results, that is the internal representation matches what we 
+            % would expect, given our data.
             
-            fprintf('Testing proper construction, "partition" and "subsamples".\n');
+            fprintf('  Testing proper construction, "partition" and "subsamples".\n');
             
             A = [1 2 3 4;
                  1 2 4 3;
@@ -131,7 +133,7 @@ classdef samples_set
                  2 4 1 3;
                  2 4 3 1];
              
-            c = [1 2 3 1 2 3 1 2 3 1 2 3]';
+            c = [1 2 3 1 2 3 1 2 3 1 2 3];
              
             s1 = samples_set({'1' '2' '3'},A,c);
             
@@ -142,8 +144,8 @@ classdef samples_set
             assert(s1.classes_count == 3);
             assert(all(size(s1.samples) == [12 4]));
             assert(all(all(s1.samples == A)));
-            assert(all(size(s1.labels_idx) == [12 1]));
-            assert(all(s1.labels_idx == c));
+            assert(length(s1.labels_idx) == 12);
+            assert(all(s1.labels_idx == c'));
             assert(s1.samples_count == 12);
             assert(s1.features_count == 4);
             
@@ -157,9 +159,9 @@ classdef samples_set
             assert(strcmp(s1_f11.classes(3),'3'));
             assert(s1_f11.classes_count == 3);
             assert(all(size(s1_f11.samples) == [6 4]));
-            assert(all(all(s1_f11.samples == A(tr_f(:,1)',:))));
-            assert(all(size(s1_f11.labels_idx) == [6 1]));
-            assert(all(all(s1_f11.labels_idx == c(tr_f(:,1)',:))));
+            assert(all(all(s1_f11.samples == A(tr_f(:,1),:))));
+            assert(length(s1_f11.labels_idx) == 6);
+            assert(all(s1_f11.labels_idx == c(tr_f(:,1))'));
             assert(s1_f11.samples_count == 6);
             assert(s1_f11.features_count == 4);
             
@@ -173,9 +175,9 @@ classdef samples_set
             assert(strcmp(s1_f12.classes(3),'3'));
             assert(s1_f12.classes_count == 3);
             assert(all(size(s1_f12.samples) == [6 4]));
-            assert(all(all(s1_f12.samples == A(ts_f(:,1)',:))));
-            assert(all(size(s1_f12.labels_idx) == [6 1]));
-            assert(all(all(s1_f12.labels_idx == c(ts_f(:,1)',:))));
+            assert(all(all(s1_f12.samples == A(ts_f(:,1),:))));
+            assert(length(s1_f12.labels_idx) == 6);
+            assert(all(s1_f12.labels_idx == c(ts_f(:,1))'));
             assert(s1_f12.samples_count == 6);
             assert(s1_f12.features_count == 4);
             
@@ -189,9 +191,9 @@ classdef samples_set
             assert(strcmp(s1_f21.classes(3),'3'));
             assert(s1_f21.classes_count == 3);
             assert(all(size(s1_f21.samples) == [6 4]));
-            assert(all(all(s1_f21.samples == A(tr_f(:,2)',:))));
-            assert(all(size(s1_f21.labels_idx) == [6 1]));
-            assert(all(all(s1_f21.labels_idx == c(tr_f(:,2)',:))));
+            assert(all(all(s1_f21.samples == A(tr_f(:,2),:))));
+            assert(length(s1_f21.labels_idx) == 6);
+            assert(all(s1_f21.labels_idx == c(tr_f(:,2))'));
             assert(s1_f21.samples_count == 6);
             assert(s1_f21.features_count == 4);
             
@@ -205,9 +207,9 @@ classdef samples_set
             assert(strcmp(s1_f22.classes(3),'3'));
             assert(s1_f22.classes_count == 3);
             assert(all(size(s1_f22.samples) == [6 4]));
-            assert(all(all(s1_f22.samples == A(ts_f(:,2)',:))));
-            assert(all(size(s1_f22.labels_idx) == [6 1]));
-            assert(all(all(s1_f22.labels_idx == c(ts_f(:,2)',:))));
+            assert(all(all(s1_f22.samples == A(ts_f(:,2),:))));
+            assert(length(s1_f22.labels_idx) == 6);
+            assert(all(s1_f22.labels_idx == c(ts_f(:,2))'));
             assert(s1_f22.samples_count == 6);
             assert(s1_f22.features_count == 4);
             
@@ -226,8 +228,8 @@ classdef samples_set
             assert(s1_h1.classes_count == 3);
             assert(all(size(s1_h1.samples) == [9 4]));
             assert(all(all(s1_h1.samples == A(tr_h,:))));
-            assert(all(size(s1_h1.labels_idx) == [9 1]));
-            assert(all(all(s1_h1.labels_idx == c(tr_h,:))));
+            assert(length(s1_h1.labels_idx) == 9);
+            assert(all(s1_h1.labels_idx == c(tr_h)'));
             assert(s1_h1.samples_count == 9);
             assert(s1_h1.features_count == 4);
             
@@ -242,8 +244,8 @@ classdef samples_set
             assert(s1_h2.classes_count == 3);
             assert(all(size(s1_h2.samples) == [3 4]));
             assert(all(all(s1_h2.samples == A(ts_h,:))));
-            assert(all(size(s1_h2.labels_idx) == [3 1]));
-            assert(all(all(s1_h2.labels_idx == c(ts_h,:))));
+            assert(length(s1_h2.labels_idx) == 3);
+            assert(all(s1_h2.labels_idx == c(ts_h)'));
             assert(s1_h2.samples_count == 3);
             assert(s1_h2.features_count == 4);
             
@@ -251,7 +253,7 @@ classdef samples_set
             clear tr_h
             clear ts_h
             
-            s1_fi = s1.subsamples([1:2:12]');
+            s1_fi = s1.subsamples([1:2:12]);
             
             assert(length(s1_fi.classes) == 3);
             assert(strcmp(s1_fi.classes(1),'1'));
@@ -260,14 +262,14 @@ classdef samples_set
             assert(s1_fi.classes_count == 3);
             assert(all(size(s1_fi.samples) == [6 4]));
             assert(all(all(s1_fi.samples == A(1:2:12,:))));
-            assert(all(size(s1_fi.labels_idx) == [6 1]));
-            assert(all(all(s1_fi.labels_idx == c(1:2:12,:))));
+            assert(length(s1_fi.labels_idx) == 6);
+            assert(all(s1_fi.labels_idx == c(1:2:12)'));
             assert(s1_fi.samples_count == 6);
             assert(s1_fi.features_count == 4);
             
             clear s1_fi
             
-            s1_fo = s1.subsamples([1:12,1:12]');
+            s1_fo = s1.subsamples([1:12,1:12]);
             
             assert(length(s1_fo.classes) == 3);
             assert(strcmp(s1_fo.classes(1),'1'));
@@ -276,8 +278,8 @@ classdef samples_set
             assert(s1_fo.classes_count == 3);
             assert(all(size(s1_fo.samples) == [24 4]));
             assert(all(all(s1_fo.samples == [A;A])));
-            assert(all(size(s1_fo.labels_idx) == [24 1]));
-            assert(all(all(s1_fo.labels_idx == [c;c])));
+            assert(length(s1_fo.labels_idx) == 24);
+            assert(all(s1_fo.labels_idx == [c c]'));
             assert(s1_fo.samples_count == 24);
             assert(s1_fo.features_count == 4);
             
@@ -288,7 +290,7 @@ classdef samples_set
             % Try building from pre-existing data using the "from_data"
             % static method.
             
-            fprintf('Testing "from_data".\n');
+            fprintf('  Testing "from_data".\n');
             
             A = [1 2 3 4;
                  1 2 4 3;
@@ -303,7 +305,7 @@ classdef samples_set
                  2 4 1 3;
                  2 4 3 1];
              
-            c = [1 2 3 1 2 3 1 2 3 1 2 3]';
+            c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             s2 = samples_set.from_data(A,c);
             
@@ -314,20 +316,20 @@ classdef samples_set
             assert(s2.classes_count == 3);
             assert(all(size(s2.samples) == [12 4]));
             assert(all(all(s2.samples == A)));
-            assert(all(size(s2.labels_idx) == [12 1]));
-            assert(all(s2.labels_idx == c));
+            assert(length(s2.labels_idx) == 12);
+            assert(all(s2.labels_idx == c'));
             assert(s2.samples_count == 12);
             assert(s2.features_count == 4);
             
             clear s2
             
             % Try loading from an CSV file. The file we're going to use is
-            % "$PROJECT_ROOT/data/Iris/iris.csv". This should exist in all
+            % "$PROJECT_ROOT/data/iris/iris.csv". This should exist in all
             % distributions of this project.
             
-            fprintf('Testing "load_csvfile" with Iris data.\n');
+            fprintf('  Testing "load_csvfile" with iris data.\n');
             
-            s3 = samples_set.load_csvfile('../data/Iris/iris.csv','%s','%f%f%f%f',',');
+            s3 = samples_set.load_csvfile('../data/iris/iris.csv','%s','%f%f%f%f',',');
             
             assert(length(s3.classes) == 3);
             assert(strcmp(s3.classes(1),'Iris-setosa'));
@@ -335,6 +337,7 @@ classdef samples_set
             assert(strcmp(s3.classes(3),'Iris-virginica'));
             assert(s3.classes_count == 3);
             assert(all(size(s3.samples) == [150 4]));
+            assert(tc.matrix(s3.samples) && tc.number(s3.samples));
             assert(all(size(s3.labels_idx) == [150 1]));
             assert(all(s3.labels_idx == [1*ones(50,1);2*ones(50,1);3*ones(50,1)]));
             assert(s3.samples_count == 150);
@@ -343,13 +346,13 @@ classdef samples_set
             clear s3
             
             % Try loading from another CSV file. The file we're going to
-            % use is "$PROJECT_ROOT/data/Wine/wine.csv". This should exist
+            % use is "$PROJECT_ROOT/data/wine/wine.csv". This should exist
             % in all distributions of this project. We're not going to
             % specify a delimiter here.
             
-            fprintf('Testing "load_csvfile" with Wine data.\n');
+            fprintf('  Testing "load_csvfile" with Wine data.\n');
             
-            s4 = samples_set.load_csvfile('../data/Wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+            s4 = samples_set.load_csvfile('../data/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
             
             assert(length(s4.classes) == 3);
             assert(strcmp(s4.classes(1),'1'));
@@ -357,6 +360,7 @@ classdef samples_set
             assert(strcmp(s4.classes(3),'3'));
             assert(s4.classes_count == 3);
             assert(all(size(s4.samples) == [178 13]));
+            assert(tc.matrix(s4.samples) && tc.number(s4.samples));
             assert(all(size(s4.labels_idx) == [178 1]));
             assert(all(s4.labels_idx == [1*ones(59,1);2*ones(71,1);3*ones(48,1)]));
             assert(s4.samples_count == 178);
@@ -369,38 +373,39 @@ classdef samples_set
             % beyond the caller's control like improperly formated files or
             % insufficient access rights.
             
-            fprintf('Testing "load_csvfile" with invalid external inputs.\n');
+            fprintf('  Testing "load_csvfile" with invalid external inputs.\n');
             
             try
-                s5 = samples_set.load_csvfile('../data/Wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                s5 = samples_set.load_csvfile('../data/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
-                if strcmp(exp.message,'Could not load csv file "../data/Wine/wine_aaa.csv": No such file or directory!')
-                    fprintf('  Passes "No such file or directory!" test.\n');
+                if strcmp(exp.message,'Could not load csv file "../data/wine/wine_aaa.csv": No such file or directory!')
+                    fprintf('    Passes "No such file or directory!" test.\n');
                 else
                     assert(false);
                 end
             end
             
             try
-                !chmod a-r ../data/Wine/wine.csv
-                s6 = samples_set.load_csvfile('../data/Wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                !chmod a-r ../data/wine/wine.csv
+                s6 = samples_set.load_csvfile('../data/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                !chmod a+r ../data/wine/wine.csv
                 assert(false);
             catch exp
-                !chmod a+r ../data/Wine/wine.csv
-                if strcmp(exp.message,'Could not load csv file "../data/Wine/wine.csv": Permission denied!');
-                    fprintf('  Passes "Permission denied!" test.\n');
+                !chmod a+r ../data/wine/wine.csv
+                if strcmp(exp.message,'Could not load csv file "../data/wine/wine.csv": Permission denied!');
+                    fprintf('    Passes "Permission denied!" test.\n');
                 else
                     assert(false);
                 end
             end
             
             try
-                s7 = samples_set.load_csvfile('../data/Wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
+                s7 = samples_set.load_csvfile('../data/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
-                if strcmp(exp.message,'File "../data/Wine/wine.csv" has an invalid format!')
-                    fprintf('  Passes "Invalid format!" test.\n');
+                if strcmp(exp.message,'File "../data/wine/wine.csv" has an invalid format!')
+                    fprintf('    Passes "Invalid format!" test.\n');
                 else
                     assert(false);
                 end
