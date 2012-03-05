@@ -194,242 +194,219 @@ classdef gray_images_set < samples_set
                 A_s(i,:) = reshape(A(:,:,i),[100 1]);
             end
                         
-            s1 = gray_images_set({'1' '2' '3'},A,c);
+            s = gray_images_set({'1' '2' '3'},A,c);
             
-            assert(length(s1.classes) == 3);
-            assert(strcmp(s1.classes(1),'1'));
-            assert(strcmp(s1.classes(2),'2'));
-            assert(strcmp(s1.classes(3),'3'));
-            assert(s1.classes_count == 3);
-            assert(all(size(s1.samples) == [12 100]));
-            assert(all(all(s1.samples == A_s)));
-            assert(length(s1.labels_idx) == 12);
-            assert(all(s1.labels_idx == c'));
-            assert(s1.samples_count == 12);
-            assert(s1.features_count == 100);
+            assert(length(s.classes) == 3);
+            assert(strcmp(s.classes(1),'1'));
+            assert(strcmp(s.classes(2),'2'));
+            assert(strcmp(s.classes(3),'3'));
+            assert(s.classes_count == 3);
+            assert(all(size(s.samples) == [12 100]));
+            assert(all(all(s.samples == A_s)));
+            assert(length(s.labels_idx) == 12);
+            assert(all(s.labels_idx == c'));
+            assert(s.samples_count == 12);
+            assert(s.features_count == 100);
             for i = 1:12
-                assert(all(all(s1.images(:,:,i) == A(:,:,i))));
+                assert(all(all(s.images(:,:,i) == A(:,:,i))));
             end
-            assert(s1.row_count == 10);
-            assert(s1.col_count == 10);
-            assert(all(all(s1.samples == gray_images_set.to_samples(s1.images))));
+            assert(s.row_count == 10);
+            assert(s.col_count == 10);
+            assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            [tr_f,ts_f] = s1.partition('kfold',2);
+            [tr_f,ts_f] = s.partition('kfold',2);
             
-            s1_f11 = s1.subsamples(tr_f(:,1));
+            s_f11 = s.subsamples(tr_f(:,1));
             
-            assert(length(s1_f11.classes) == 3);
-            assert(strcmp(s1_f11.classes(1),'1'));
-            assert(strcmp(s1_f11.classes(2),'2'));
-            assert(strcmp(s1_f11.classes(3),'3'));
-            assert(s1_f11.classes_count == 3);
-            assert(all(size(s1_f11.samples) == [6 100]));
-            assert(all(all(s1_f11.samples == A_s(tr_f(:,1),:))));
-            assert(length(s1_f11.labels_idx) == 6);
-            assert(all(s1_f11.labels_idx == c(tr_f(:,1))'));
-            assert(s1_f11.samples_count == 6);
-            assert(s1_f11.features_count == 100);
+            assert(length(s_f11.classes) == 3);
+            assert(strcmp(s_f11.classes(1),'1'));
+            assert(strcmp(s_f11.classes(2),'2'));
+            assert(strcmp(s_f11.classes(3),'3'));
+            assert(s_f11.classes_count == 3);
+            assert(all(size(s_f11.samples) == [6 100]));
+            assert(all(all(s_f11.samples == A_s(tr_f(:,1),:))));
+            assert(length(s_f11.labels_idx) == 6);
+            assert(all(s_f11.labels_idx == c(tr_f(:,1))'));
+            assert(s_f11.samples_count == 6);
+            assert(s_f11.features_count == 100);
             j = 1;
             for i = 1:length(tr_f(:,1))
                 if tr_f(i,1)
-                    assert(all(all(s1_f11.images(:,:,j) == A(:,:,i))));
+                    assert(all(all(s_f11.images(:,:,j) == A(:,:,i))));
                     j = j + 1;
                 end
             end
-            assert(s1_f11.row_count == 10);
-            assert(s1_f11.col_count == 10);
-            assert(all(all(s1_f11.samples == gray_images_set.to_samples(s1_f11.images))));
+            assert(s_f11.row_count == 10);
+            assert(s_f11.col_count == 10);
+            assert(all(all(s_f11.samples == gray_images_set.to_samples(s_f11.images))));
             
-            clear s1_f11
+            s_f12 = s.subsamples(ts_f(:,1));
             
-            s1_f12 = s1.subsamples(ts_f(:,1));
-            
-            assert(length(s1_f12.classes) == 3);
-            assert(strcmp(s1_f12.classes(1),'1'));
-            assert(strcmp(s1_f12.classes(2),'2'));
-            assert(strcmp(s1_f12.classes(3),'3'));
-            assert(s1_f12.classes_count == 3);
-            assert(all(size(s1_f12.samples) == [6 100]));
-            assert(all(all(s1_f12.samples == A_s(ts_f(:,1),:))));
-            assert(length(s1_f12.labels_idx) == 6);
-            assert(all(s1_f12.labels_idx == c(ts_f(:,1))'));
-            assert(s1_f12.samples_count == 6);
-            assert(s1_f12.features_count == 100);
+            assert(length(s_f12.classes) == 3);
+            assert(strcmp(s_f12.classes(1),'1'));
+            assert(strcmp(s_f12.classes(2),'2'));
+            assert(strcmp(s_f12.classes(3),'3'));
+            assert(s_f12.classes_count == 3);
+            assert(all(size(s_f12.samples) == [6 100]));
+            assert(all(all(s_f12.samples == A_s(ts_f(:,1),:))));
+            assert(length(s_f12.labels_idx) == 6);
+            assert(all(s_f12.labels_idx == c(ts_f(:,1))'));
+            assert(s_f12.samples_count == 6);
+            assert(s_f12.features_count == 100);
             j = 1;
             for i = 1:length(ts_f(:,1))
                 if ts_f(i,1)
-                    assert(all(all(s1_f12.images(:,:,j) == A(:,:,i))));
+                    assert(all(all(s_f12.images(:,:,j) == A(:,:,i))));
                     j = j + 1;
                 end
             end
-            assert(s1_f12.row_count == 10);
-            assert(s1_f12.col_count == 10);
-            assert(all(all(s1_f12.samples == gray_images_set.to_samples(s1_f12.images))));
+            assert(s_f12.row_count == 10);
+            assert(s_f12.col_count == 10);
+            assert(all(all(s_f12.samples == gray_images_set.to_samples(s_f12.images))));
             
-            clear s1_f12
-            
-            s1_f21 = s1.subsamples(tr_f(:,2));
+            s_f21 = s.subsamples(tr_f(:,2));
 
-            assert(length(s1_f21.classes) == 3);
-            assert(strcmp(s1_f21.classes(1),'1'));
-            assert(strcmp(s1_f21.classes(2),'2'));
-            assert(strcmp(s1_f21.classes(3),'3'));
-            assert(s1_f21.classes_count == 3);
-            assert(all(size(s1_f21.samples) == [6 100]));
-            assert(all(all(s1_f21.samples == A_s(tr_f(:,2),:))));
-            assert(length(s1_f21.labels_idx) == 6);
-            assert(all(s1_f21.labels_idx == c(tr_f(:,2))'));
-            assert(s1_f21.samples_count == 6);
-            assert(s1_f21.features_count == 100);
+            assert(length(s_f21.classes) == 3);
+            assert(strcmp(s_f21.classes(1),'1'));
+            assert(strcmp(s_f21.classes(2),'2'));
+            assert(strcmp(s_f21.classes(3),'3'));
+            assert(s_f21.classes_count == 3);
+            assert(all(size(s_f21.samples) == [6 100]));
+            assert(all(all(s_f21.samples == A_s(tr_f(:,2),:))));
+            assert(length(s_f21.labels_idx) == 6);
+            assert(all(s_f21.labels_idx == c(tr_f(:,2))'));
+            assert(s_f21.samples_count == 6);
+            assert(s_f21.features_count == 100);
             j = 1;
             for i = 1:length(tr_f(:,2))
                 if tr_f(i,2)
-                    assert(all(all(s1_f21.images(:,:,j) == A(:,:,i))));
+                    assert(all(all(s_f21.images(:,:,j) == A(:,:,i))));
                     j = j + 1;
                 end
             end
-            assert(s1_f21.row_count == 10);
-            assert(s1_f21.col_count == 10);
-            assert(all(all(s1_f21.samples == gray_images_set.to_samples(s1_f21.images))));
+            assert(s_f21.row_count == 10);
+            assert(s_f21.col_count == 10);
+            assert(all(all(s_f21.samples == gray_images_set.to_samples(s_f21.images))));
             
-            clear s1_f21
+            s_f22 = s.subsamples(ts_f(:,2));
             
-            s1_f22 = s1.subsamples(ts_f(:,2));
-            
-            assert(length(s1_f22.classes) == 3);
-            assert(strcmp(s1_f22.classes(1),'1'));
-            assert(strcmp(s1_f22.classes(2),'2'));
-            assert(strcmp(s1_f22.classes(3),'3'));
-            assert(s1_f22.classes_count == 3);
-            assert(all(size(s1_f22.samples) == [6 100]));
-            assert(all(all(s1_f22.samples == A_s(ts_f(:,2),:))));
-            assert(length(s1_f22.labels_idx) == 6);
-            assert(all(s1_f22.labels_idx == c(ts_f(:,2))'));
-            assert(s1_f22.samples_count == 6);
-            assert(s1_f22.features_count == 100);
+            assert(length(s_f22.classes) == 3);
+            assert(strcmp(s_f22.classes(1),'1'));
+            assert(strcmp(s_f22.classes(2),'2'));
+            assert(strcmp(s_f22.classes(3),'3'));
+            assert(s_f22.classes_count == 3);
+            assert(all(size(s_f22.samples) == [6 100]));
+            assert(all(all(s_f22.samples == A_s(ts_f(:,2),:))));
+            assert(length(s_f22.labels_idx) == 6);
+            assert(all(s_f22.labels_idx == c(ts_f(:,2))'));
+            assert(s_f22.samples_count == 6);
+            assert(s_f22.features_count == 100);
             j = 1;
             for i = 1:length(ts_f(:,2))
                 if ts_f(i,2)
-                    assert(all(all(s1_f22.images(:,:,j) == A(:,:,i))));
+                    assert(all(all(s_f22.images(:,:,j) == A(:,:,i))));
                     j = j + 1;
                 end
             end
-            assert(s1_f22.row_count == 10);
-            assert(s1_f22.col_count == 10);
-            assert(all(all(s1_f22.samples == gray_images_set.to_samples(s1_f22.images))));
+            assert(s_f22.row_count == 10);
+            assert(s_f22.col_count == 10);
+            assert(all(all(s_f22.samples == gray_images_set.to_samples(s_f22.images))));
             
-            clear s1_f22
-            clear tr_f
-            clear ts_f
+            [tr_h,ts_h] = s.partition('holdout',0.33);
             
-            [tr_h,ts_h] = s1.partition('holdout',0.33);
+            s_h1 = s.subsamples(tr_h);
             
-            s1_h1 = s1.subsamples(tr_h);
-            
-            assert(length(s1_h1.classes) == 3);
-            assert(strcmp(s1_h1.classes(1),'1'));
-            assert(strcmp(s1_h1.classes(2),'2'));
-            assert(strcmp(s1_h1.classes(2),'2'));
-            assert(s1_h1.classes_count == 3);
-            assert(all(size(s1_h1.samples) == [9 100]));
-            assert(all(all(s1_h1.samples == A_s(tr_h,:))));
-            assert(length(s1_h1.labels_idx) == 9);
-            assert(all(s1_h1.labels_idx == c(tr_h)'));
-            assert(s1_h1.samples_count == 9);
-            assert(s1_h1.features_count == 100);
+            assert(length(s_h1.classes) == 3);
+            assert(strcmp(s_h1.classes(1),'1'));
+            assert(strcmp(s_h1.classes(2),'2'));
+            assert(strcmp(s_h1.classes(2),'2'));
+            assert(s_h1.classes_count == 3);
+            assert(all(size(s_h1.samples) == [9 100]));
+            assert(all(all(s_h1.samples == A_s(tr_h,:))));
+            assert(length(s_h1.labels_idx) == 9);
+            assert(all(s_h1.labels_idx == c(tr_h)'));
+            assert(s_h1.samples_count == 9);
+            assert(s_h1.features_count == 100);
             j = 1;
             for i = 1:length(tr_h)
                 if tr_h(i)
-                    assert(all(all(s1_h1.images(:,:,j) == A(:,:,i))));
+                    assert(all(all(s_h1.images(:,:,j) == A(:,:,i))));
                     j = j + 1;
                 end
             end
-            assert(s1_h1.row_count == 10);
-            assert(s1_h1.col_count == 10);
-            assert(all(all(s1_h1.samples == gray_images_set.to_samples(s1_h1.images))));
+            assert(s_h1.row_count == 10);
+            assert(s_h1.col_count == 10);
+            assert(all(all(s_h1.samples == gray_images_set.to_samples(s_h1.images))));
             
-            clear s1_h1
+            s_h2 = s.subsamples(ts_h);
             
-            s1_h2 = s1.subsamples(ts_h);
-            
-            assert(length(s1_h2.classes) == 3);
-            assert(strcmp(s1_h2.classes(1),'1'));
-            assert(strcmp(s1_h2.classes(2),'2'));
-            assert(strcmp(s1_h2.classes(2),'2'));
-            assert(s1_h2.classes_count == 3);
-            assert(all(size(s1_h2.samples) == [3 100]));
-            assert(all(all(s1_h2.samples == A_s(ts_h,:))));
-            assert(length(s1_h2.labels_idx) == 3);
-            assert(all(s1_h2.labels_idx == c(ts_h)'));
-            assert(s1_h2.samples_count == 3);
-            assert(s1_h2.features_count == 100);
+            assert(length(s_h2.classes) == 3);
+            assert(strcmp(s_h2.classes(1),'1'));
+            assert(strcmp(s_h2.classes(2),'2'));
+            assert(strcmp(s_h2.classes(2),'2'));
+            assert(s_h2.classes_count == 3);
+            assert(all(size(s_h2.samples) == [3 100]));
+            assert(all(all(s_h2.samples == A_s(ts_h,:))));
+            assert(length(s_h2.labels_idx) == 3);
+            assert(all(s_h2.labels_idx == c(ts_h)'));
+            assert(s_h2.samples_count == 3);
+            assert(s_h2.features_count == 100);
             j = 1;
             for i = 1:length(ts_h)
                 if ts_h(i)
-                    assert(all(all(s1_h2.images(:,:,j) == A(:,:,i))));
+                    assert(all(all(s_h2.images(:,:,j) == A(:,:,i))));
                     j = j + 1;
                 end
             end
-            assert(s1_h2.row_count == 10);
-            assert(s1_h2.col_count == 10);
-            assert(all(all(s1_h2.samples == gray_images_set.to_samples(s1_h2.images))));
+            assert(s_h2.row_count == 10);
+            assert(s_h2.col_count == 10);
+            assert(all(all(s_h2.samples == gray_images_set.to_samples(s_h2.images))));
             
-            clear s1_h2
-            clear tr_h
-            clear ts_h
+            s_fi = s.subsamples(1:2:12);
             
-            s1_fi = s1.subsamples(1:2:12);
-            
-            assert(length(s1_fi.classes) == 3);
-            assert(strcmp(s1_fi.classes(1),'1'));
-            assert(strcmp(s1_fi.classes(2),'2'));
-            assert(strcmp(s1_fi.classes(3),'3'));
-            assert(s1_fi.classes_count == 3);
-            assert(all(size(s1_fi.samples) == [6 100]));
-            assert(all(all(s1_fi.samples == A_s(1:2:12,:))));
-            assert(length(s1_fi.labels_idx) == 6);
-            assert(all(s1_fi.labels_idx == c(1:2:12)'));
-            assert(s1_fi.samples_count == 6);
-            assert(s1_fi.features_count == 100);
+            assert(length(s_fi.classes) == 3);
+            assert(strcmp(s_fi.classes(1),'1'));
+            assert(strcmp(s_fi.classes(2),'2'));
+            assert(strcmp(s_fi.classes(3),'3'));
+            assert(s_fi.classes_count == 3);
+            assert(all(size(s_fi.samples) == [6 100]));
+            assert(all(all(s_fi.samples == A_s(1:2:12,:))));
+            assert(length(s_fi.labels_idx) == 6);
+            assert(all(s_fi.labels_idx == c(1:2:12)'));
+            assert(s_fi.samples_count == 6);
+            assert(s_fi.features_count == 100);
             j = 1;
             for i = 1:2:12
-                assert(all(all(s1_fi.images(:,:,j) == A(:,:,i))));
+                assert(all(all(s_fi.images(:,:,j) == A(:,:,i))));
                 j = j + 1;
             end
-            assert(s1_fi.row_count == 10);
-            assert(s1_fi.col_count == 10);
-            assert(all(all(s1_fi.samples == gray_images_set.to_samples(s1_fi.images))));
+            assert(s_fi.row_count == 10);
+            assert(s_fi.col_count == 10);
+            assert(all(all(s_fi.samples == gray_images_set.to_samples(s_fi.images))));
             
-            clear s1_fi
+            s_fo = s.subsamples([1:12,1:12]);
             
-            s1_fo = s1.subsamples([1:12,1:12]);
-            
-            assert(length(s1_fo.classes) == 3);
-            assert(strcmp(s1_fo.classes(1),'1'));
-            assert(strcmp(s1_fo.classes(2),'2'));
-            assert(strcmp(s1_fo.classes(3),'3'));
-            assert(s1_fo.classes_count == 3);
-            assert(all(size(s1_fo.samples) == [24 100]));
-            assert(all(all(s1_fo.samples == [A_s;A_s])));
-            assert(length(s1_fo.labels_idx) == 24);
-            assert(all(s1_fo.labels_idx == [c c]'));
-            assert(s1_fo.samples_count == 24);
-            assert(s1_fo.features_count == 100);
+            assert(length(s_fo.classes) == 3);
+            assert(strcmp(s_fo.classes(1),'1'));
+            assert(strcmp(s_fo.classes(2),'2'));
+            assert(strcmp(s_fo.classes(3),'3'));
+            assert(s_fo.classes_count == 3);
+            assert(all(size(s_fo.samples) == [24 100]));
+            assert(all(all(s_fo.samples == [A_s;A_s])));
+            assert(length(s_fo.labels_idx) == 24);
+            assert(all(s_fo.labels_idx == [c c]'));
+            assert(s_fo.samples_count == 24);
+            assert(s_fo.features_count == 100);
             j = 1;
             for i = 0:23
-                assert(all(all(s1_fo.images(:,:,j) == A(:,:,mod(i,12) + 1))));
+                assert(all(all(s_fo.images(:,:,j) == A(:,:,mod(i,12) + 1))));
                 j = j + 1;
             end
-            assert(s1_fo.row_count == 10);
-            assert(s1_fo.col_count == 10);
-            assert(all(all(s1_fo.samples == gray_images_set.to_samples(s1_fo.images))));
+            assert(s_fo.row_count == 10);
+            assert(s_fo.col_count == 10);
+            assert(all(all(s_fo.samples == gray_images_set.to_samples(s_fo.images))));
             
-            clear s1_fo
-            
-            clear s1
-            clear A
-            clear c
-            clear A_s
+            clear all
             
             % Try building from pre-existing data using the "from_data"
             % static method.
@@ -444,30 +421,27 @@ classdef gray_images_set < samples_set
                 A_s(i,:) = reshape(A(:,:,i),[100 1]);
             end
             
-            s2 = gray_images_set.from_data(A,c);
+            s = gray_images_set.from_data(A,c);
             
-            assert(length(s2.classes) == 3);
-            assert(strcmp(s2.classes(1),'1'));
-            assert(strcmp(s2.classes(2),'2'));
-            assert(strcmp(s2.classes(3),'3'));
-            assert(s2.classes_count == 3);
-            assert(all(size(s2.samples) == [12 100]));
-            assert(all(all(s2.samples == A_s)));
-            assert(length(s2.labels_idx) == 12);
-            assert(all(s2.labels_idx == c'));
-            assert(s2.samples_count == 12);
-            assert(s2.features_count == 100);
+            assert(length(s.classes) == 3);
+            assert(strcmp(s.classes(1),'1'));
+            assert(strcmp(s.classes(2),'2'));
+            assert(strcmp(s.classes(3),'3'));
+            assert(s.classes_count == 3);
+            assert(all(size(s.samples) == [12 100]));
+            assert(all(all(s.samples == A_s)));
+            assert(length(s.labels_idx) == 12);
+            assert(all(s.labels_idx == c'));
+            assert(s.samples_count == 12);
+            assert(s.features_count == 100);
             for i = 1:12
-                assert(all(all(s2.images(:,:,i) == A(:,:,i))));
+                assert(all(all(s.images(:,:,i) == A(:,:,i))));
             end
-            assert(s2.row_count == 10);
-            assert(s2.col_count == 10);
-            assert(all(all(s2.samples == gray_images_set.to_samples(s2.images))));
+            assert(s.row_count == 10);
+            assert(s.col_count == 10);
+            assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear s2
-            clear A
-            clear c
-            clear A_s
+            clear all
             
             % Try loading files from a directory. The files are stored in
             % "$PROJECT_ROOT/data/test/". This directory should
@@ -475,24 +449,24 @@ classdef gray_images_set < samples_set
             
             fprintf('  Testing "load_from_dir" with test data.\n');
             
-            s3 = gray_images_set.load_from_dir('../data/test');
+            s = gray_images_set.load_from_dir('../data/test');
             
-            assert(length(s3.classes) == 2);
-            assert(strcmp(s3.classes(1),'0'));
-            assert(strcmp(s3.classes(2),'1'));
-            assert(s3.classes_count == 2);
-            assert(all(size(s3.samples) == [7 192*256]));
-            assert(tc.matrix(s3.samples) && tc.unitreal(s3.samples));
-            assert(all(size(s3.labels_idx) == [7 1]));
-            assert(all(s3.labels_idx == ones(7,1)));
-            assert(s3.samples_count == 7);
-            assert(s3.features_count == 192*256);
-            assert(tc.tensor(s3.images,3) && tc.unitreal(s3.images));
-            assert(s3.row_count == 192);
-            assert(s3.col_count == 256);
-            assert(all(all(s3.samples == gray_images_set.to_samples(s3.images))));
+            assert(length(s.classes) == 2);
+            assert(strcmp(s.classes(1),'0'));
+            assert(strcmp(s.classes(2),'1'));
+            assert(s.classes_count == 2);
+            assert(all(size(s.samples) == [7 192*256]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(all(size(s.labels_idx) == [7 1]));
+            assert(all(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 192*256);
+            assert(tc.tensor(s.images,3) && tc.unitreal(s.images));
+            assert(s.row_count == 192);
+            assert(s.col_count == 256);
+            assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear s3
+            clear all
             
             % Try loading files from a directory, with forced size. The 
             % files are stored in "$PROJECT_ROOT/data/test/". This 
@@ -500,24 +474,24 @@ classdef gray_images_set < samples_set
             
             fprintf('  Testing "load_from_dir" with forced size on test data.\n');
             
-            s4 = gray_images_set.load_from_dir('../data/test',[96 128]);
+            s = gray_images_set.load_from_dir('../data/test',[96 128]);
             
-            assert(length(s4.classes) == 2);
-            assert(strcmp(s4.classes(1),'0'));
-            assert(strcmp(s4.classes(2),'1'));
-            assert(s4.classes_count == 2);
-            assert(all(size(s4.samples) == [7 96*128]));
-            assert(tc.matrix(s4.samples) && tc.unitreal(s4.samples));
-            assert(all(size(s4.labels_idx) == [7 1]));
-            assert(all(s4.labels_idx == ones(7,1)));
-            assert(s4.samples_count == 7);
-            assert(s4.features_count == 96*128);
-            assert(tc.tensor(s4.images,3) && tc.unitreal(s4.images));
-            assert(s4.row_count == 96);
-            assert(s4.col_count == 128);
-            assert(all(all(s4.samples == gray_images_set.to_samples(s4.images))));
+            assert(length(s.classes) == 2);
+            assert(strcmp(s.classes(1),'0'));
+            assert(strcmp(s.classes(2),'1'));
+            assert(s.classes_count == 2);
+            assert(all(size(s.samples) == [7 96*128]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(all(size(s.labels_idx) == [7 1]));
+            assert(all(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 96*128);
+            assert(tc.tensor(s.images,3) && tc.unitreal(s.images));
+            assert(s.row_count == 96);
+            assert(s.col_count == 128);
+            assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear s4
+            clear all
             
             % Try loading files from a directory which contains other types
             % of files besides images. The files are stored in
@@ -526,24 +500,24 @@ classdef gray_images_set < samples_set
             
             fprintf('  Testing "load_from_dir" with heterogenous directory.\n');
             
-            s5 = gray_images_set.load_from_dir('../data/test/heterogeneous_dir');
+            s = gray_images_set.load_from_dir('../data/test/heterogeneous_dir');
             
-            assert(length(s5.classes) == 2);
-            assert(strcmp(s5.classes(1),'0'));
-            assert(strcmp(s5.classes(2),'1'));
-            assert(s5.classes_count == 2);
-            assert(all(size(s5.samples) == [2 192*256]));
-            assert(tc.matrix(s5.samples) && tc.unitreal(s5.samples));
-            assert(all(size(s5.labels_idx) == [2 1]));
-            assert(all(s5.labels_idx == ones(2,1)));
-            assert(s5.samples_count == 2);
-            assert(s5.features_count == 192*256);
-            assert(tc.tensor(s5.images,3) && tc.unitreal(s5.images));
-            assert(s5.row_count == 192);
-            assert(s5.col_count == 256);
-            assert(all(all(s5.samples == gray_images_set.to_samples(s5.images))));
+            assert(length(s.classes) == 2);
+            assert(strcmp(s.classes(1),'0'));
+            assert(strcmp(s.classes(2),'1'));
+            assert(s.classes_count == 2);
+            assert(all(size(s.samples) == [2 192*256]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(all(size(s.labels_idx) == [2 1]));
+            assert(all(s.labels_idx == ones(2,1)));
+            assert(s.samples_count == 2);
+            assert(s.features_count == 192*256);
+            assert(tc.tensor(s.images,3) && tc.unitreal(s.images));
+            assert(s.row_count == 192);
+            assert(s.col_count == 256);
+            assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear s5
+            clear all
             
             % Try some invalid calls to "load_from_dir". These test the
             % failure modes of this function. We're interested in things
@@ -553,7 +527,7 @@ classdef gray_images_set < samples_set
             fprintf('  Testing "load_from_dir" with invalid external inputs.\n');
             
             try
-                s6 = gray_images_set.load_from_dir('../data/test_aaa');
+                s = gray_images_set.load_from_dir('../data/test_aaa');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not find any acceptable images in the directory.')
@@ -565,7 +539,7 @@ classdef gray_images_set < samples_set
             
             try
                 !chmod a-r ../data/test
-                s7 = gray_images_set.load_from_dir('../data/test');
+                s = gray_images_set.load_from_dir('../data/test');
                 !chmod a+r ../data/test
                 assert(false);
             catch exp
@@ -578,7 +552,7 @@ classdef gray_images_set < samples_set
             end
             
             try
-                s8 = gray_images_set.load_from_dir('../data/test/empty_dir');
+                s = gray_images_set.load_from_dir('../data/test/empty_dir');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not find any acceptable images in the directory.')
@@ -588,6 +562,8 @@ classdef gray_images_set < samples_set
                 end
             end
             
+            clear all
+            
             % Try loading images saved in the MNIST format. The images are
             % stored in "$PROJECT_ROOT/data/mnist/train-images-idx3-ubyte",
             % while the labels are stored in
@@ -596,30 +572,32 @@ classdef gray_images_set < samples_set
             
             fprintf('  Testing "load_mnist" with MNIST training data.\n');
             
-            s9 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
+            s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
             
-            assert(length(s9.classes) == 10);
-            assert(strcmp(s9.classes(1),'0'));
-            assert(strcmp(s9.classes(2),'1'));
-            assert(strcmp(s9.classes(3),'2'));
-            assert(strcmp(s9.classes(4),'3'));
-            assert(strcmp(s9.classes(5),'4'));
-            assert(strcmp(s9.classes(6),'5'));
-            assert(strcmp(s9.classes(7),'6'));
-            assert(strcmp(s9.classes(8),'7'));
-            assert(strcmp(s9.classes(9),'8'));
-            assert(strcmp(s9.classes(10),'9'));
-            assert(s9.classes_count == 10);
-            assert(all(size(s9.samples) == [60000 28*28]));
-            assert(tc.matrix(s9.samples) && tc.unitreal(s9.samples));
-            assert(all(size(s9.labels_idx) == [60000 1]));
-            assert(tc.vector(s9.labels_idx) && tc.labels_idx(s9.labels_idx,s9.classes));
-            assert(s9.samples_count == 60000);
-            assert(s9.features_count == 28*28);
-            assert(tc.tensor(s9.images,3) && tc.unitreal(s9.images));
-            assert(s9.row_count == 28);
-            assert(s9.col_count == 28);
-            assert(all(all(s9.samples == gray_images_set.to_samples(s9.images))));
+            assert(length(s.classes) == 10);
+            assert(strcmp(s.classes(1),'0'));
+            assert(strcmp(s.classes(2),'1'));
+            assert(strcmp(s.classes(3),'2'));
+            assert(strcmp(s.classes(4),'3'));
+            assert(strcmp(s.classes(5),'4'));
+            assert(strcmp(s.classes(6),'5'));
+            assert(strcmp(s.classes(7),'6'));
+            assert(strcmp(s.classes(8),'7'));
+            assert(strcmp(s.classes(9),'8'));
+            assert(strcmp(s.classes(10),'9'));
+            assert(s.classes_count == 10);
+            assert(all(size(s.samples) == [60000 28*28]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(all(size(s.labels_idx) == [60000 1]));
+            assert(tc.vector(s.labels_idx) && tc.labels_idx(s.labels_idx,s.classes));
+            assert(s.samples_count == 60000);
+            assert(s.features_count == 28*28);
+            assert(tc.tensor(s.images,3) && tc.unitreal(s.images));
+            assert(s.row_count == 28);
+            assert(s.col_count == 28);
+            assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
+            
+            clear all
             
             % Try some invalid calls to "load_mnist". These test the
             % failure modes of this function. We're interested in things
@@ -634,7 +612,7 @@ classdef gray_images_set < samples_set
             fprintf('  Testing "load_mnist" with invalid external inputs.\n');
             
             try
-                s10 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte_aaa','../data/mnist/train-labels-idx1-ubyte');
+                s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte_aaa','../data/mnist/train-labels-idx1-ubyte');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not load images in "../data/mnist/train-images-idx3-ubyte_aaa": No such file or directory!')
@@ -645,7 +623,7 @@ classdef gray_images_set < samples_set
             end
             
             try
-                s11 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte_aaa');
+                s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte_aaa');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not load labels in "../data/mnist/train-labels-idx1-ubyte_aaa": No such file or directory!')
@@ -657,7 +635,7 @@ classdef gray_images_set < samples_set
             
             try
                 !chmod a-r ../data/mnist/train-images-idx3-ubyte
-                s12 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
+                s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
                 !chmod a+r ../data/mnist/train-images-idx3-ubyte
                 assert(false);
             catch exp
@@ -671,7 +649,7 @@ classdef gray_images_set < samples_set
             
             try
                 !chmod a-r ../data/mnist/train-labels-idx1-ubyte
-                s13 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
+                s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
                 !chmod a+r ../data/mnist/train-labels-idx1-ubyte
                 assert(false);
             catch exp
@@ -684,7 +662,7 @@ classdef gray_images_set < samples_set
             end
             
             try
-                s14 = gray_images_set.load_mnist('../data/test/scenes_small1.jpg','../data/mnist/train-labels-idx1-ubyte');
+                s = gray_images_set.load_mnist('../data/test/scenes_small1.jpg','../data/mnist/train-labels-idx1-ubyte');
             catch exp
                 if strcmp(exp.message,'Images file "../data/test/scenes_small1.jpg" not in MNIST format!')
                     fprintf('    Passes "Not in MNIST format!" for images file.\n');
@@ -694,7 +672,7 @@ classdef gray_images_set < samples_set
             end
             
             try
-                s15 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/test/scenes_small1.jpg');
+                s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/test/scenes_small1.jpg');
             catch exp
                 if strcmp(exp.message,'Labels file "../data/test/scenes_small1.jpg" not in MNIST format!')
                     fprintf('    Passes "Not in MNIST format!" for labels file.\n');
@@ -704,7 +682,7 @@ classdef gray_images_set < samples_set
             end
             
             try
-                s16 = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte');
+                s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte');
             catch exp
                 if strcmp(exp.message,'Different number of labels in "../data/mnist/t10k-labels-idx1-ubyte" for images in "../data/mnist/train-images-idx3-ubyte"!')
                     fprintf('    Passes "Different number of labels!".\n');
@@ -712,6 +690,8 @@ classdef gray_images_set < samples_set
                     assert(false);
                 end
             end
+            
+            clear all
         end
     end
 end

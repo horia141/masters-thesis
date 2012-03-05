@@ -53,13 +53,7 @@ classdef dc_offset_transform < transform
             pause(5);
             
             close(h);
-            clear A
-            clear c
-            clear s
-            clear t
-            clear s_p
-            clear h
-            clear ax
+            clear all;
         end
     end
 end
