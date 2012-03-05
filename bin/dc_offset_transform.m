@@ -6,7 +6,7 @@ classdef dc_offset_transform < transform
         function [new_samples] = code(obj,samples)
             assert(isa(samples,'samples_set'));
             
-            samples_t = samples.samples - repmat(mean(samples.samples,2),1,samples.features_count);
+            samples_t = bsxfun(@minus,samples.samples,mean(samples.samples,2));
             new_samples = samples_set(samples.classes,samples_t,samples.labels_idx);
         end
     end
@@ -15,7 +15,7 @@ classdef dc_offset_transform < transform
         function test
             fprintf('Testing "dc_offset_transform".\n');
             
-            fprintf('  Testing function "code".\n');
+            fprintf('  Testing propert construction and "code".\n');
             
             A = [mvnrnd(randi(5) - 3,2,50)';
                  mvnrnd(randi(5) - 3,2,50)';

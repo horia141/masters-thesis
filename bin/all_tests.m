@@ -11,3 +11,4 @@ gray_images_set.test
 %% Tests for "transform" and derived classes.
 
 dc_offset_transform.test
+mean_substract_transform.test
