@@ -10,7 +10,7 @@ classdef samples_set
     
     methods (Access=public)
         function [obj] = samples_set(classes,samples,labels_idx)
-            assert(tc.vector(classes) && tc.cell(classes));
+            assert(tc.vector(classes) && tc.labels(classes));
             assert(tc.matrix(samples) && tc.number(samples));
             assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
                    tc.labels_idx(labels_idx,classes));

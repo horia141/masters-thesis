@@ -79,7 +79,7 @@ classdef gray_images_set < samples_set
                                  'Could not find any acceptable images in the directory.'));
             end
             
-            new_gray_images_set = gray_images_set({'0','1'},images_t,ones(current_image - 1,1));
+            new_gray_images_set = gray_images_set({'none'},images_t,ones(current_image - 1,1));
         end
         
         function [new_gray_images_set] = load_mnist(images_path,labels_path)
@@ -440,10 +440,9 @@ classdef gray_images_set < samples_set
             
             s = gray_images_set.load_from_dir('../data/test');
             
-            assert(length(s.classes) == 2);
-            assert(strcmp(s.classes(1),'0'));
-            assert(strcmp(s.classes(2),'1'));
-            assert(s.classes_count == 2);
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes(1),'none'));
+            assert(s.classes_count == 1);
             assert(all(size(s.samples) == [7 192*256]));
             assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
             assert(all(size(s.labels_idx) == [7 1]));
@@ -465,10 +464,9 @@ classdef gray_images_set < samples_set
             
             s = gray_images_set.load_from_dir('../data/test',[96 128]);
             
-            assert(length(s.classes) == 2);
-            assert(strcmp(s.classes(1),'0'));
-            assert(strcmp(s.classes(2),'1'));
-            assert(s.classes_count == 2);
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes(1),'none'));
+            assert(s.classes_count == 1);
             assert(all(size(s.samples) == [7 96*128]));
             assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
             assert(all(size(s.labels_idx) == [7 1]));
@@ -491,10 +489,9 @@ classdef gray_images_set < samples_set
             
             s = gray_images_set.load_from_dir('../data/test/heterogeneous_dir');
             
-            assert(length(s.classes) == 2);
-            assert(strcmp(s.classes(1),'0'));
-            assert(strcmp(s.classes(2),'1'));
-            assert(s.classes_count == 2);
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes(1),'none'));
+            assert(s.classes_count == 1);
             assert(all(size(s.samples) == [2 192*256]));
             assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
             assert(all(size(s.labels_idx) == [2 1]));

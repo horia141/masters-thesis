@@ -5,13 +5,13 @@ classdef mean_substract_transform < reversible_transform
     
     methods (Access=public)
         function [obj] = mean_substract_transform(samples)
-            assert(isa(samples,'samples_set'));
+            assert(tc.samples_set(samples));
             
             obj.kept_mean = mean(samples.samples,1);
         end
         
         function [new_samples] = code(obj,samples)
-            assert(isa(samples,'samples_set'));
+            assert(tc.samples_set(samples));
             assert(tc.match_dims(obj.kept_mean,samples.samples,2,2));
             
             samples_t = bsxfun(@minus,samples.samples,obj.kept_mean);
@@ -19,7 +19,7 @@ classdef mean_substract_transform < reversible_transform
         end
         
         function [new_samples] = decode(obj,samples)
-            assert(isa(samples,'samples_set'));
+            assert(tc.samples_set(samples));
             assert(tc.match_dims(obj.kept_mean,samples.samples,2,2));
             
             samples_t = bsxfun(@plus,samples.samples,obj.kept_mean);
@@ -34,9 +34,9 @@ classdef mean_substract_transform < reversible_transform
             fprintf('  Testing proper construction.\n');
             
             A = mvnrnd([3 3],[1 0.4; 0.4 0.3],100);
-            c = randi(2,100,1);
+            c = ones(100,1);
             
-            s = samples_set({'1' '2'},A,c);
+            s = samples_set({'none'},A,c);
             t = mean_substract_transform(s);
             
             assert(length(t.kept_mean) == 2);
@@ -47,17 +47,16 @@ classdef mean_substract_transform < reversible_transform
             fprintf('  Testing function "code".\n');
             
             A = mvnrnd([3 3],[1 0.4; 0.4 0.4],100);
-            c = randi(2,100,1);
+            c = ones(100,1);
             
-            s = samples_set({'1' '2'},A,c);
+            s = samples_set({'none'},A,c);
             t = mean_substract_transform(s);
             
             s_p = t.code(s);
             
-            assert(length(s_p.classes) == 2);
-            assert(strcmp(s_p.classes(1),'1'));
-            assert(strcmp(s_p.classes(2),'2'));
-            assert(s_p.classes_count == 2);
+            assert(length(s_p.classes) == 1);
+            assert(strcmp(s_p.classes(1),'none'));
+            assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [100 2]));
             assert(all(all(s_p.samples == (A - repmat(mean(A,1),100,1)))));
             assert(length(s_p.labels_idx) == 100);
@@ -85,18 +84,17 @@ classdef mean_substract_transform < reversible_transform
             fprintf('  Testing function "decode".\n');
             
             A = mvnrnd([3 3],[1 0.4; 0.4 0.4],100);
-            c = randi(2,100,1);
+            c = ones(100,1);
             
-            s = samples_set({'1' '2'},A,c);
+            s = samples_set({'none'},A,c);
             t = mean_substract_transform(s);
             
             s_p = t.code(s);            
             s_r = t.decode(s_p);
             
-            assert(length(s_r.classes) == 2);
-            assert(strcmp(s_r.classes(1),'1'));
-            assert(strcmp(s_r.classes(2),'2'));
-            assert(s_r.classes_count == 2);
+            assert(length(s_r.classes) == 1);
+            assert(strcmp(s_r.classes(1),'none'));
+            assert(s_r.classes_count == 1);
             assert(all(size(s_r.samples) == [100 2]));
             assert(all(all(s_r.samples == A)));
             assert(length(s_r.labels_idx) == 100);

@@ -4,7 +4,7 @@ classdef dc_offset_transform < transform
         end
         
         function [new_samples] = code(obj,samples)
-            assert(isa(samples,'samples_set'));
+            assert(tc.samples_set(samples));
             
             samples_t = bsxfun(@minus,samples.samples,mean(samples.samples,2));
             new_samples = samples_set(samples.classes,samples_t,samples.labels_idx);
@@ -21,20 +21,19 @@ classdef dc_offset_transform < transform
                  mvnrnd(randi(5) - 3,2,50)';
                  mvnrnd(randi(5) - 3,2,50)';
                  mvnrnd(randi(5) - 3,2,50)'];
-            c = [1 1 2 2];
+            c = ones(4,1);
             
-            s = samples_set({'1' '2'},A,c);
+            s = samples_set({'none'},A,c);
             t = dc_offset_transform();
             s_p = t.code(s);
             
-            assert(length(s_p.classes) == 2);
-            assert(strcmp(s_p.classes(1),'1'));
-            assert(strcmp(s_p.classes(2),'2'));
-            assert(s_p.classes_count == 2);
+            assert(length(s_p.classes) == 1);
+            assert(strcmp(s_p.classes(1),'none'));
+            assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [4 50]));
             assert(all(all(s_p.samples == (A - repmat(mean(A,2),1,50)))));
             assert(length(s_p.labels_idx) == 4);
-            assert(all(s_p.labels_idx == c'));
+            assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 4);
             assert(s_p.features_count == 50);
             assert(all((mean(s_p.samples,2) - [0;0;0;0]) < 1e-7));

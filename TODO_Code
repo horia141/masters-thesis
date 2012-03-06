@@ -1,7 +1,15 @@
-- [4] B:06.03.2012 E:??.??.????
+- [5] B:06.03.2012 E:??.??.????
+  Task: Make code that tests transforms use an approximate test for equality
+    of samples. Due to numeric precision errors we might have problems in our
+    tests. It's not something we want.
+
++ [4] B:06.03.2012 E:??.??.????
   Task: Add tests in "tc" structure functions for empty values. In particular,
     "tc.scalar", "tc.vector", "tc.matrix" and "tc.tensor" should return false on
     empty objects.
+  Resolved: I've redefined the "type-tree" for this project and rewritten
+    tests so they are simpler and more robust. Also, the structural functions
+    have been modified as required by this task.
 
 + [3] B:06.03.2012 E:06.03.2012
   Task: Make all dependent properties be immutable. Since our objects contain
