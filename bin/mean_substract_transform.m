@@ -33,7 +33,7 @@ classdef mean_substract_transform < reversible_transform
             
             fprintf('  Testing proper construction.\n');
             
-            A = mvnrnd([3 3],[1 0.4; 0.4 1],100);
+            A = mvnrnd([3 3],[1 0.4; 0.4 0.3],100);
             c = randi(2,100,1);
             
             s = samples_set({'1' '2'},A,c);
@@ -46,14 +46,11 @@ classdef mean_substract_transform < reversible_transform
             
             fprintf('  Testing function "code".\n');
             
-            A = mvnrnd([3 3],[1 0.4; 0.4 1],100);
+            A = mvnrnd([3 3],[1 0.4; 0.4 0.4],100);
             c = randi(2,100,1);
             
             s = samples_set({'1' '2'},A,c);
             t = mean_substract_transform(s);
-            
-            assert(length(t.kept_mean) == 2);
-            assert(all(t.kept_mean == mean(A,1)));
             
             s_p = t.code(s);
             
@@ -87,29 +84,13 @@ classdef mean_substract_transform < reversible_transform
             
             fprintf('  Testing function "decode".\n');
             
-            A = mvnrnd([3 3],[1 0.4; 0.4 1],100);
+            A = mvnrnd([3 3],[1 0.4; 0.4 0.4],100);
             c = randi(2,100,1);
             
             s = samples_set({'1' '2'},A,c);
             t = mean_substract_transform(s);
             
-            assert(length(t.kept_mean) == 2);
-            assert(all(t.kept_mean == mean(A,1)));
-            
-            s_p = t.code(s);
-            
-            assert(length(s_p.classes) == 2);
-            assert(strcmp(s_p.classes(1),'1'));
-            assert(strcmp(s_p.classes(2),'2'));
-            assert(s_p.classes_count == 2);
-            assert(all(size(s_p.samples) == [100 2]));
-            assert(all(all(s_p.samples == (A - repmat(mean(A,1),100,1)))));
-            assert(length(s_p.labels_idx) == 100);
-            assert(all(s_p.labels_idx == c));
-            assert(s_p.samples_count == 100);
-            assert(s_p.features_count == 2);
-            assert(all((mean(s_p.samples,1) - [0 0]) < 1e-7));
-            
+            s_p = t.code(s);            
             s_r = t.decode(s_p);
             
             assert(length(s_r.classes) == 2);
