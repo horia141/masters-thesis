@@ -1,28 +1,11 @@
 classdef samples_set
     properties (GetAccess=public,SetAccess=immutable)
         classes;
+        classes_count;
         samples;
         labels_idx;
-    end
-    
-    properties (GetAccess=public,SetAccess=private,Dependent=true)
-        classes_count;
         samples_count;
         features_count;
-    end
-    
-    methods
-        function [classes_count] = get.classes_count(obj)
-            classes_count = length(obj.classes);
-        end
-        
-        function [count] = get.samples_count(obj)
-            count = size(obj.samples,1);
-        end
-        
-        function [features_count] = get.features_count(obj)
-            features_count = size(obj.samples,2);
-        end
     end
     
     methods (Access=public)
@@ -33,8 +16,11 @@ classdef samples_set
                    tc.labels_idx(labels_idx,classes));
 
             obj.classes = utils.force_col(classes);
+            obj.classes_count = length(classes);
             obj.samples = samples;
             obj.labels_idx = utils.force_col(labels_idx);
+            obj.samples_count = size(samples,1);
+            obj.features_count = size(samples,2);
         end
         
         function [tr_index,ts_index] = partition(obj,type,param)

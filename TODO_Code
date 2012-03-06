@@ -1,3 +1,16 @@
+- [4] B:06.03.2012 E:??.??.????
+  Task: Add tests in "tc" structure functions for empty values. In particular,
+    "tc.scalar", "tc.vector", "tc.matrix" and "tc.tensor" should return false on
+    empty objects.
+
++ [3] B:06.03.2012 E:06.03.2012
+  Task: Make all dependent properties be immutable. Since our objects contain
+    only immutable fields, it makes no sense to have dependent properties. We
+    can compute them only once, at construction time, and be done with
+    that. This should reduce some of the clutter in "samples_set" and "gray_images_set".
+  Resolved: Changed the properties in "samples_set" and "gray_images_set" to
+    be immutable and computed in the constructor.
+
 + [2] B:05.03.2012 E:05.03.2012
   Task: In all "test" functions, make the destruction of objects between tests
     in the order of object creation. Alternatively, use "clear all".

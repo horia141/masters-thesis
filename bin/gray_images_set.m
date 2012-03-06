@@ -1,21 +1,8 @@
 classdef gray_images_set < samples_set
     properties (GetAccess=public,SetAccess=immutable)
         images;
-    end
-    
-    properties (GetAccess=public,SetAccess=private,Dependent=true)
         row_count;
         col_count;
-    end
-    
-    methods
-        function [row_count] = get.row_count(obj)
-            row_count = size(obj.images,1);
-        end
-        
-        function [col_count] = get.col_count(obj)
-            col_count = size(obj.images,2);
-        end
     end
     
     methods (Access=public)
@@ -27,6 +14,8 @@ classdef gray_images_set < samples_set
             
             obj = obj@samples_set(classes,gray_images_set.to_samples(images),labels_idx);
             obj.images = images;
+            obj.row_count = size(images,1);
+            obj.col_count = size(images,2);
         end
         
         function [new_gray_images_set] = subsamples(obj,index)
