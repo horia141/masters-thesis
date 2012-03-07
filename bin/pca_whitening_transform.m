@@ -136,7 +136,7 @@ classdef pca_whitening_transform < reversible_transform
             ax = subplot(1,2,2,'Parent',h);
             scatter(ax,s_p.samples(:,1),zeros(100,1),'x');
             axis(ax,[-4 6 -4 6]);
-            title(ax,'PCA transformed samples.');
+            title(ax,'PCA transformed and whitened samples.');
             
             pause(5);
             
@@ -207,7 +207,7 @@ classdef pca_whitening_transform < reversible_transform
             ax = subplot(1,3,2,'Parent',h);
             scatter(ax,s_p.samples(:,1),zeros(100,1),'x');
             axis(ax,[-4 6 -4 6]);
-            title(ax,'PCA transform and whitened samples.');
+            title(ax,'PCA transformed and whitened samples.');
             ax = subplot(1,3,3,'Parent',h);
             hold(ax,'on');
             scatter(ax,s.samples(:,1),s.samples(:,2),'o','r');

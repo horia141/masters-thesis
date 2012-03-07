@@ -13,3 +13,4 @@ gray_images_set.test
 dc_offset_transform.test
 mean_substract_transform.test
 pca_transform.test
+pca_whitening_transform.test

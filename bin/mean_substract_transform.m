@@ -96,7 +96,7 @@ classdef mean_substract_transform < reversible_transform
             assert(strcmp(s_r.classes(1),'none'));
             assert(s_r.classes_count == 1);
             assert(all(size(s_r.samples) == [100 2]));
-            assert(all(all(s_r.samples == A)));
+            assert(all(all(s_r.samples - A < 10e-7)));
             assert(length(s_r.labels_idx) == 100);
             assert(all(s_r.labels_idx == c));
             assert(s_r.samples_count == 100);
