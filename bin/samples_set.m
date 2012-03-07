@@ -106,6 +106,8 @@ classdef samples_set
             
             fprintf('  Testing proper construction, "partition" and "subsamples".\n');
             
+            fprintf('    Testing construction.\n');
+            
             A = [1 2 3 4;
                  1 2 4 3;
                  1 3 2 4;
@@ -134,6 +136,8 @@ classdef samples_set
             assert(all(s.labels_idx == c'));
             assert(s.samples_count == 12);
             assert(s.features_count == 4);
+            
+            fprintf('    Testing 2-fold partition and call to "subsamples" with boolean indices.\n');
             
             [tr_f,ts_f] = s.partition('kfold',2);
             
@@ -193,6 +197,8 @@ classdef samples_set
             assert(s_f22.samples_count == 6);
             assert(s_f22.features_count == 4);
             
+            fprintf('    Testing holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
+            
             [tr_h,ts_h] = s.partition('holdout',0.33);
             
             s_h1 = s.subsamples(tr_h);
@@ -223,7 +229,9 @@ classdef samples_set
             assert(s_h2.samples_count == 3);
             assert(s_h2.features_count == 4);
             
-            s_fi = s.subsamples([1:2:12]);
+            fprintf('    Testing call to "subsamples" with natural indices.\n');
+            
+            s_fi = s.subsamples(1:2:12);
             
             assert(length(s_fi.classes) == 3);
             assert(strcmp(s_fi.classes(1),'1'));
@@ -236,6 +244,8 @@ classdef samples_set
             assert(all(s_fi.labels_idx == c(1:2:12)'));
             assert(s_fi.samples_count == 6);
             assert(s_fi.features_count == 4);
+            
+            fprintf('    Testing call to "subsamples" with natural indices and redundant selection.\n');
             
             s_fo = s.subsamples([1:12,1:12]);
             

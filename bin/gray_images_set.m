@@ -175,6 +175,8 @@ classdef gray_images_set < samples_set
             
             fprintf('  Testing proper construction, "partition" and "subsamples".\n');
             
+            fprintf('    Testing construction.\n');
+            
             A = rand(10,10,12);
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
@@ -202,6 +204,8 @@ classdef gray_images_set < samples_set
             assert(s.row_count == 10);
             assert(s.col_count == 10);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
+            
+            fprintf('    Testing 2-fold partition and call to "subsamples" with boolean indices.\n');
             
             [tr_f,ts_f] = s.partition('kfold',2);
             
@@ -301,6 +305,8 @@ classdef gray_images_set < samples_set
             assert(s_f22.col_count == 10);
             assert(all(all(s_f22.samples == gray_images_set.to_samples(s_f22.images))));
             
+            fprintf('    Testing holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
+            
             [tr_h,ts_h] = s.partition('holdout',0.33);
             
             s_h1 = s.subsamples(tr_h);
@@ -351,6 +357,8 @@ classdef gray_images_set < samples_set
             assert(s_h2.col_count == 10);
             assert(all(all(s_h2.samples == gray_images_set.to_samples(s_h2.images))));
             
+            fprintf('    Testing call to "subsamples" with natural indices.\n');
+            
             s_fi = s.subsamples(1:2:12);
             
             assert(length(s_fi.classes) == 3);
@@ -372,6 +380,8 @@ classdef gray_images_set < samples_set
             assert(s_fi.row_count == 10);
             assert(s_fi.col_count == 10);
             assert(all(all(s_fi.samples == gray_images_set.to_samples(s_fi.images))));
+            
+            fprintf('    Testing call to "subsamples" with natural indices and redundant selection.\n');
             
             s_fo = s.subsamples([1:12,1:12]);
             

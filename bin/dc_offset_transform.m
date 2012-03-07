@@ -15,7 +15,7 @@ classdef dc_offset_transform < transform
         function test
             fprintf('Testing "dc_offset_transform".\n');
             
-            fprintf('  Testing propert construction and "code".\n');
+            fprintf('  Testing proper construction and "code".\n');
             
             A = [mvnrnd(randi(5) - 3,2,50)';
                  mvnrnd(randi(5) - 3,2,50)';

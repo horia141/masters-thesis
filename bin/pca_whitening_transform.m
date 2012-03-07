@@ -67,6 +67,8 @@ classdef pca_whitening_transform < reversible_transform
             
             fprintf('  Testing proper construction.\n');
             
+            fprintf('    Testing without specifing argument "div_epsilon".\n');
+            
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
             c = ones(100,1);
@@ -86,6 +88,8 @@ classdef pca_whitening_transform < reversible_transform
             assert(t.div_epsilon == 0);
             
             clear all;
+            
+            fprintf('    Testing with specifing argument "div_epsilon".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
@@ -108,6 +112,8 @@ classdef pca_whitening_transform < reversible_transform
             clear all;
             
             fprintf('  Testing function "code".\n');
+            
+            fprintf('    Testing with 90%% kept energy.\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             c = ones(100,1);
@@ -142,6 +148,8 @@ classdef pca_whitening_transform < reversible_transform
             
             close(h);
             clear all;
+            
+            fprintf('    Testing with 100%% kept energy.\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             c = ones(100,1);

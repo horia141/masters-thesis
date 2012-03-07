@@ -1,5 +1,7 @@
-- [6] B:06.03.2012 E:??.??.????
-  Task: In test functions add "printf" statements for subtests as well as full tests.
++ [6] B:06.03.2012 E:??.??.????
+  Task: In test functions add "printf" statements for subtests as well as full
+    tests.
+  Resolved: Added "printf" statements appropriate to each subtest.
 
 - [5] B:06.03.2012 E:??.??.????
   Task: Make code that tests transforms use an approximate test for equality
