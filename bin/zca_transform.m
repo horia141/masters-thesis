@@ -57,7 +57,7 @@ classdef zca_transform < reversible_transform
         function test;
             fprintf('Testing "zca_transform".\n');
             
-            fprintf('  Testing propert construction.\n');
+            fprintf('  Testing proper construction.\n');
             
             fprintf('    Testing without specifing argument "div_epsilon".\n');
             
