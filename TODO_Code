@@ -1,16 +1,20 @@
-+ [6] B:06.03.2012 E:??.??.????
+- [7] B:07.03.2012 E:??.??.????
+  Task: Move all datasets used  in test in "$PROJECT_ROOT/data/test" so
+    they'll be accessible no matter what.
+
++ [6] B:06.03.2012 E:07.03.2012
   Task: In test functions add "printf" statements for subtests as well as full
     tests.
   Resolved: Added "printf" statements appropriate to each subtest.
 
-+ [5] B:06.03.2012 E:??.??.????
++ [5] B:06.03.2012 E:07.03.2012
   Task: Make code that tests transforms use an approximate test for equality
     of samples. Due to numeric precision errors we might have problems in our
     tests. It's not something we want.
   Resolved: Added the function "utils.approx" and used it in all places where
     transform results comparisons were made.
 
-+ [4] B:06.03.2012 E:??.??.????
++ [4] B:06.03.2012 E:06.03.2012
   Task: Add tests in "tc" structure functions for empty values. In particular,
     "tc.scalar", "tc.vector", "tc.matrix" and "tc.tensor" should return false on
     empty objects.

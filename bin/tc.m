@@ -64,6 +64,10 @@ classdef tc
             o = isa(i,'samples_set');
         end
         
+        function [o] = gray_images_set(i)
+            o = isa(i,'gray_images_set');
+        end
+        
         function [o] = transform(i)
             o = isa(i,'transform');
         end
