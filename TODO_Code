@@ -1,3 +1,7 @@
+- [8] B:07.03.2012 E:??.??.????
+  Task: There is a degree of non-uniformity in the logging for tests. I should
+    fix this.
+
 - [7] B:07.03.2012 E:??.??.????
   Task: Move all datasets used  in test in "$PROJECT_ROOT/data/test" so
     they'll be accessible no matter what.
