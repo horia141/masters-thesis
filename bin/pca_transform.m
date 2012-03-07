@@ -60,10 +60,10 @@ classdef pca_transform < reversible_transform
             t = pca_transform(s,0.9);
             
             assert(all(size(t.coeffs) == [2 2]));
-            assert(all(all((t.coeffs - princomp(A)) < 10e-7)));
-            assert(all(all((t.coeffs * t.coeffs' - eye(2)) < 10e-7)));
+            assert(utils.approx(t.coeffs,princomp(A)));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
             assert(length(t.samples_mean) == 2);
-            assert(all(t.samples_mean == mean(A,1)));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
             assert(t.kept_energy == 0.9);
             assert(t.input_features_count == 2);
             assert(t.output_features_count == 1);
@@ -77,10 +77,10 @@ classdef pca_transform < reversible_transform
             t = pca_transform(s,1);
             
             assert(all(size(t.coeffs) == [2 2]));
-            assert(all(all((t.coeffs - princomp(A)) < 10e-7)));
-            assert(all(all((t.coeffs * t.coeffs' - eye(2)) < 10e-7)));
+            assert(utils.approx(t.coeffs,princomp(A)));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
             assert(length(t.samples_mean) == 2);
-            assert(all(t.samples_mean == mean(A,1)));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
             assert(t.kept_energy == 1);
             assert(t.input_features_count == 2);
             assert(t.output_features_count == 2);
@@ -104,13 +104,13 @@ classdef pca_transform < reversible_transform
             assert(strcmp(s_p.classes(1),'none'));
             assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [100 1]));
-            assert(all(all((s_p.samples - A * p_A(:,1)) < 10e-7)));
+            assert(utils.approx(s_p.samples,bsxfun(@minus,A,mean(A,1)) * p_A(:,1)));
             assert(length(s_p.labels_idx) == 100);
             assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 1);
-            assert(all((var(s_p.samples) - p_latent(1)) < 10e-7));
-            
+            assert(utils.approx(var(s_p.samples),p_latent(1)));
+                        
             h = figure();
             
             ax = subplot(1,2,1,'Parent',h);
@@ -142,14 +142,14 @@ classdef pca_transform < reversible_transform
             assert(strcmp(s_p.classes(1),'none'));
             assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [100 2]));
-            assert(all(all((s_p.samples - A * p_A) < 10e-7)));
+            assert(utils.approx(s_p.samples,bsxfun(@minus,A,mean(A,1)) * p_A));
             assert(length(s_p.labels_idx) == 100);
             assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
-            assert(all((var(s_p.samples) - p_latent') < 10e-7));
-            assert(all(all((cov(s_p.samples) - diag(p_latent)) < 10e-7)));
-            
+            assert(utils.approx(var(s_p.samples),p_latent'));
+            assert(utils.approx(cov(s_p.samples),diag(p_latent)));
+                        
             h = figure();
             
             ax = subplot(1,2,1,'Parent',h);
@@ -225,7 +225,7 @@ classdef pca_transform < reversible_transform
             assert(strcmp(s_r.classes(1),'none'));
             assert(s_r.classes_count == 1);
             assert(all(size(s_r.samples) == [100 2]));
-            assert(all(all(s_r.samples - s.samples < 10e-7)));
+            assert(utils.approx(s_r.samples,s.samples));
             assert(length(s_r.labels_idx) == 100);
             assert(all(s_r.labels_idx == c));
             assert(s_r.samples_count == 100);

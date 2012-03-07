@@ -77,11 +77,12 @@ classdef pca_whitening_transform < reversible_transform
             t = pca_whitening_transform(s,0.9);
             
             assert(all(size(t.coeffs) == [2 2]));
-            assert(all(all((t.coeffs - p_A) < 10e-7)));
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
             assert(length(t.coeffs_eigenvalues) == 2);
-            assert(all((t.coeffs_eigenvalues - p_latent) < 10e-7));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
             assert(length(t.samples_mean) == 2);
-            assert(all(t.samples_mean == mean(A,1)));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
             assert(t.kept_energy == 0.9);
             assert(t.input_features_count == 2);
             assert(t.output_features_count == 1);
@@ -99,11 +100,12 @@ classdef pca_whitening_transform < reversible_transform
             t = pca_whitening_transform(s,0.9,1e-5);
             
             assert(all(size(t.coeffs) == [2 2]));
-            assert(all(all((t.coeffs - p_A) < 10e-7)));
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
             assert(length(t.coeffs_eigenvalues) == 2);
-            assert(all((t.coeffs_eigenvalues - p_latent) < 10e-7));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
             assert(length(t.samples_mean) == 2);
-            assert(all(t.samples_mean == mean(A,1)));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
             assert(t.kept_energy == 0.9);
             assert(t.input_features_count == 2);
             assert(t.output_features_count == 1);
@@ -127,7 +129,7 @@ classdef pca_whitening_transform < reversible_transform
             assert(strcmp(s_p.classes(1),'none'));
             assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [100 1]));
-            assert(var(s_p.samples) - 1 < 10e-7);
+            assert(utils.approx(var(s_p.samples),1));
             assert(length(s_p.labels_idx) == 100);
             assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 100);
@@ -163,13 +165,13 @@ classdef pca_whitening_transform < reversible_transform
             assert(strcmp(s_p.classes(1),'none'));
             assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [100 2]));
-            assert(all(var(s_p.samples) - 1 < 10e-7));
+            assert(utils.approx(var(s_p.samples),[1 1]));
+            assert(utils.approx(cov(s_p.samples),eye(2,2)));
             assert(length(s_p.labels_idx) == 100);
             assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
-            assert(all(all(cov(s_p.samples) - eye(2,2) < 10e-7)));
-            
+                        
             h = figure();
             
             ax = subplot(1,2,1,'Parent',h);

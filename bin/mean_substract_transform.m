@@ -40,7 +40,7 @@ classdef mean_substract_transform < reversible_transform
             t = mean_substract_transform(s);
             
             assert(length(t.kept_mean) == 2);
-            assert(all(t.kept_mean == mean(A,1)));
+            assert(utils.approx(t.kept_mean,mean(A,1)));
             
             clear all
             
@@ -58,12 +58,12 @@ classdef mean_substract_transform < reversible_transform
             assert(strcmp(s_p.classes(1),'none'));
             assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [100 2]));
-            assert(all(all(s_p.samples == (A - repmat(mean(A,1),100,1)))));
+            assert(utils.approx(s_p.samples,A - repmat(mean(A,1),100,1)));
             assert(length(s_p.labels_idx) == 100);
             assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
-            assert(all((mean(s_p.samples,1) - [0 0]) < 1e-7));
+            assert(utils.approx(mean(s_p.samples,1),[0 0]));
             
             h = figure();
             
@@ -96,7 +96,7 @@ classdef mean_substract_transform < reversible_transform
             assert(strcmp(s_r.classes(1),'none'));
             assert(s_r.classes_count == 1);
             assert(all(size(s_r.samples) == [100 2]));
-            assert(all(all(s_r.samples - A < 10e-7)));
+            assert(utils.approx(s_r.samples,A));
             assert(length(s_r.labels_idx) == 100);
             assert(all(s_r.labels_idx == c));
             assert(s_r.samples_count == 100);

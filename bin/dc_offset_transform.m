@@ -31,12 +31,12 @@ classdef dc_offset_transform < transform
             assert(strcmp(s_p.classes(1),'none'));
             assert(s_p.classes_count == 1);
             assert(all(size(s_p.samples) == [4 50]));
-            assert(all(all(s_p.samples == (A - repmat(mean(A,2),1,50)))));
+            assert(utils.approx(s_p.samples,A - repmat(mean(A,2),1,50)));
             assert(length(s_p.labels_idx) == 4);
             assert(all(s_p.labels_idx == c));
             assert(s_p.samples_count == 4);
             assert(s_p.features_count == 50);
-            assert(all((mean(s_p.samples,2) - [0;0;0;0]) < 1e-7));
+            assert(utils.approx(mean(s_p.samples,2),zeros(4,1)));
             
             h = figure();
             
