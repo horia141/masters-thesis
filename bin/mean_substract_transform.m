@@ -28,7 +28,7 @@ classdef mean_substract_transform < reversible_transform
     end
     
     methods (Static,Access=public)
-        function test
+        function test(display)
             fprintf('Testing "mean_substract_transform".\n');
             
             fprintf('  Proper construction.\n');
@@ -42,7 +42,7 @@ classdef mean_substract_transform < reversible_transform
             assert(length(t.kept_mean) == 2);
             assert(utils.approx(t.kept_mean,mean(A,1)));
             
-            clear all
+            clearvars -except display;
             
             fprintf('  Function "code".\n');
             
@@ -65,20 +65,21 @@ classdef mean_substract_transform < reversible_transform
             assert(s_p.features_count == 2);
             assert(utils.approx(mean(s_p.samples,1),[0 0]));
             
-            figure();
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,2,2);
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+                axis([-4 6 -4 6]);
+                title('Mean substracted samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            subplot(1,2,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,2,2);
-            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis([-4 6 -4 6]);
-            title('Mean substracted samples.');
-            pause(5);
-            close(gcf());
-            
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "decode".\n');
             
@@ -101,23 +102,25 @@ classdef mean_substract_transform < reversible_transform
             assert(s_r.samples_count == 100);
             assert(s_r.features_count == 2);
             
-            figure();
-            subplot(1,3,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,3,2);
-            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis([-4 6 -4 6]);
-            title('Mean substracted samples.');
-            subplot(1,3,3);
-            scatter(s_r.samples(:,1),s_r.samples(:,2),'.');
-            axis([-4 6 -4 6]);
-            title('Restored samples.');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,3,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,3,2);
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+                axis([-4 6 -4 6]);
+                title('Mean substracted samples.');
+                subplot(1,3,3);
+                scatter(s_r.samples(:,1),s_r.samples(:,2),'.');
+                axis([-4 6 -4 6]);
+                title('Restored samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

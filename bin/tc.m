@@ -121,7 +121,7 @@ classdef tc
     end
     
     methods (Static,Access=public)        
-        function test
+        function test(~)
             fprintf('Testing "tc".\n');
             
             % Tests for functions that check for specific types.

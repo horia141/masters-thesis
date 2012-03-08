@@ -27,14 +27,14 @@ classdef remove_pinknoise_transform < transform
     end
     
     methods (Static,Access=public)
-        function test
+        function test(display)
             fprintf('Testing "remove_pinknoise_transform".\n');
             
             fprintf('  Proper construction.\n');
             
             t = remove_pinknoise_transform();
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "code".\n');
             
@@ -59,15 +59,17 @@ classdef remove_pinknoise_transform < transform
             assert(s_p.col_count == 40);
             assert(tc.tensor(s_p.images,3) && tc.unitreal(s_p.images));
             
-            figure();
-            subplot(2,1,1);
-            imshow(utils.format_as_tiles(p_s.images,8,10));
-            subplot(2,1,2);
-            imshow(utils.format_as_tiles(s_p.images,8,10));
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(2,1,1);
+                imshow(utils.format_as_tiles(p_s.images,8,10));
+                subplot(2,1,2);
+                imshow(utils.format_as_tiles(s_p.images,8,10));
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

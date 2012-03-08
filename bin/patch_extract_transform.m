@@ -48,7 +48,7 @@ classdef patch_extract_transform < transform
     end
     
     methods (Static,Access=public)
-        function test
+        function test(display)
             fprintf('Testing "patch_extract_transform".\n');
             
             fprintf('  Pproper construction.\n');
@@ -80,12 +80,14 @@ classdef patch_extract_transform < transform
             assert(s_p.col_count == 40);
             assert(tc.tensor(s_p.images,3) && tc.unitreal(s_p.images));
 
-            figure();
-            imshow(utils.format_as_tiles(s_p.images,5,10));
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                imshow(utils.format_as_tiles(s_p.images,5,10));
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

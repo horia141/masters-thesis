@@ -54,7 +54,7 @@ classdef zca_transform < reversible_transform
     end
     
     methods (Static,Access=public)
-        function test;
+        function test(display)
             fprintf('Testing "zca_transform".\n');
             
             fprintf('  Proper construction.\n');
@@ -77,7 +77,7 @@ classdef zca_transform < reversible_transform
             assert(utils.approx(t.samples_mean,mean(A,1)));
             assert(t.div_epsilon == 0);
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With specifing of argument "div_epsilon".\n');
             
@@ -97,7 +97,7 @@ classdef zca_transform < reversible_transform
             assert(utils.approx(t.samples_mean,mean(A,1)));
             assert(t.div_epsilon == 1e-5);
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "code".\n');
             
@@ -121,19 +121,21 @@ classdef zca_transform < reversible_transform
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
             
-            figure();
-            subplot(1,2,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,2,2);
-            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis([-4 6 -4 6]);
-            title('ZCA transformed samples.');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,2,2);
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+                axis([-4 6 -4 6]);
+                title('ZCA transformed samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "decode".\n');
             
@@ -156,25 +158,27 @@ classdef zca_transform < reversible_transform
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
             
-            figure();
-            subplot(1,3,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,3,2);
-            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis([-4 6 -4 6]);
-            title('ZCA transformed samples.');
-            subplot(1,3,3);
-            hold('on');
-            scatter(s.samples(:,1),s.samples(:,2),'o','r');
-            scatter(s_r.samples(:,1),s_r.samples(:,2),'.','b');
-            axis([-4 6 -4 6]);
-            title('Restored samples.');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,3,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,3,2);
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+                axis([-4 6 -4 6]);
+                title('ZCA transformed samples.');
+                subplot(1,3,3);
+                hold('on');
+                scatter(s.samples(:,1),s.samples(:,2),'o','r');
+                scatter(s_r.samples(:,1),s_r.samples(:,2),'.','b');
+                axis([-4 6 -4 6]);
+                title('Restored samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Apply ZCA on image patches.\n');
             
@@ -200,17 +204,19 @@ classdef zca_transform < reversible_transform
             assert(s3.row_count == 16);
             assert(s3.col_count == 16);
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(s2.images(:,:,1:4:end)));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s3.images(:,:,1:4:end)));
-            title('Reconstructed images.');            
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(s2.images(:,:,1:4:end)));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s3.images(:,:,1:4:end)));
+                title('Reconstructed images.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

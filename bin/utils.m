@@ -120,7 +120,7 @@ classdef utils
     end
     
     methods (Static,Access=public)
-        function test
+        function test(display)
             fprintf('Testing "utils".\n');
             
             fprintf('  Function "force_row".\n');
@@ -149,7 +149,7 @@ classdef utils
             assert(utils.approx(2,2.5) == false);
             assert(utils.approx(1,1 + 1e-7,1e-9) == false);
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "format_as_tiles".\n');
             
@@ -158,48 +158,56 @@ classdef utils
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t);
             
-            figure();
-            imshow(tt);            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                imshow(tt);
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With unspecified "tiles_col_count".\n');
             
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t,7);
             
-            figure();
-            imshow(tt);            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                imshow(tt);
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With both "tiles_row_count" and "tiles_col_count" specified.\n');
             
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t,5,8);
             
-            figure();
-            imshow(tt);
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                imshow(tt);
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With relaxed input ("images" does not have to be "unitreal").\n');
             
             t = 3*rand(20,20,36) - 1.5;
             tt = utils.format_as_tiles(t,6,6,true);
             
-            figure();
-            imshow(tt);            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                imshow(tt);
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "clamp_images_to_unit".\n');
             
@@ -212,17 +220,19 @@ classdef utils
             assert(max(tp(:)) <= 1);
             assert(tc.unitreal(tp));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(t,6,6,true));
-            title('Problem images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(tp));
-            title('Clamped images.');            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Clamped images.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With large excursions below 0 and above 1.\n');
             
@@ -233,17 +243,19 @@ classdef utils
             assert(max(tp(:)) <= 1);
             assert(tc.unitreal(tp));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(t,6,6,true));
-            title('Problem images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(tp));
-            title('Clamped images.');            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Clamped images.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
 
             fprintf('  Function "remap_images_to_unit".\n');
             
@@ -257,17 +269,19 @@ classdef utils
             assert(max(tp(:)) == 1);
             assert(tc.unitreal(tp));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(t,6,6,true));
-            title('Problem images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(tp));
-            title('Remaped images.');            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Remaped images.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "local".\n');
             
@@ -279,17 +293,19 @@ classdef utils
             assert(max(tp(:)) == 1);
             assert(tc.unitreal(tp));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(t,6,6,true));
-            title('Problem images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(tp));
-            title('Remaped images.');            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Remaped images.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "global".\n');
             
@@ -301,17 +317,19 @@ classdef utils
             assert(max(tp(:)) == 1);
             assert(tc.unitreal(tp));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(t,6,6,true));
-            title('Problem images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(tp));
-            title('Remaped images.');            
-            pause(5);            
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Remaped images.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

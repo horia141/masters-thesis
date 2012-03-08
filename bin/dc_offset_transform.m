@@ -12,7 +12,7 @@ classdef dc_offset_transform < transform
     end
     
     methods (Static,Access=public)
-        function test
+        function test(display)
             fprintf('Testing "dc_offset_transform".\n');
             
             fprintf('  Proper construction and "code".\n');
@@ -38,19 +38,21 @@ classdef dc_offset_transform < transform
             assert(s_p.features_count == 50);
             assert(utils.approx(mean(s_p.samples,2),zeros(4,1)));
             
-            figure();
-            for i = 1:4
-                subplot(4,2,(i - 1)*2 + 1);
-                plot(s.samples(i,:));
-                axis([1 50 -5 5]);
-                subplot(4,2,(i - 1)*2 + 2);
-                plot(s_p.samples(i,:));
-                axis([1 50 -5 5]);
-            end            
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                for i = 1:4
+                    subplot(4,2,(i - 1)*2 + 1);
+                    plot(s.samples(i,:));
+                    axis([1 50 -5 5]);
+                    subplot(4,2,(i - 1)*2 + 2);
+                    plot(s_p.samples(i,:));
+                    axis([1 50 -5 5]);
+                end
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

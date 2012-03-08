@@ -62,7 +62,7 @@ classdef pca_whitening_transform < reversible_transform
     end
     
     methods (Static,Access=public)
-        function test
+        function test(display)
             fprintf('Testing "pca_whitening_transform".\n');
             
             fprintf('  Proper construction.\n');
@@ -88,7 +88,7 @@ classdef pca_whitening_transform < reversible_transform
             assert(t.output_features_count == 1);
             assert(t.div_epsilon == 0);
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With specifing of argument "div_epsilon".\n');
             
@@ -111,7 +111,7 @@ classdef pca_whitening_transform < reversible_transform
             assert(t.output_features_count == 1);
             assert(t.div_epsilon == 1e-5);
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "code".\n');
             
@@ -135,19 +135,21 @@ classdef pca_whitening_transform < reversible_transform
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 1);
             
-            figure();
-            subplot(1,2,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,2,2);
-            scatter(s_p.samples(:,1),zeros(100,1),'x');
-            axis([-4 6 -4 6]);
-            title('PCA transformed and whitened samples.');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,2,2);
+                scatter(s_p.samples(:,1),zeros(100,1),'x');
+                axis([-4 6 -4 6]);
+                title('PCA transformed and whitened samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With 100%% kept energy.\n');
             
@@ -170,19 +172,21 @@ classdef pca_whitening_transform < reversible_transform
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
                         
-            figure();
-            subplot(1,2,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,2,2);
-            scatter(s_p.samples(:,1),zeros(100,1),'x');
-            axis([-4 6 -4 6]);
-            title('PCA transformed and whitened samples.');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,2,2);
+                scatter(s_p.samples(:,1),zeros(100,1),'x');
+                axis([-4 6 -4 6]);
+                title('PCA transformed and whitened samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('  Function "decode".\n');
             
@@ -204,25 +208,27 @@ classdef pca_whitening_transform < reversible_transform
             assert(s_r.samples_count == 100);
             assert(s_r.features_count == 2);
             
-            figure();
-            subplot(1,3,1);
-            scatter(s.samples(:,1),s.samples(:,2),'o');
-            axis([-4 6 -4 6]);
-            title('Original samples.');
-            subplot(1,3,2);
-            scatter(s_p.samples(:,1),zeros(100,1),'x');
-            axis([-4 6 -4 6]);
-            title('PCA transformed and whitened samples.');
-            subplot(1,3,3);
-            hold('on');
-            scatter(s.samples(:,1),s.samples(:,2),'o','r');
-            scatter(s_r.samples(:,1),s_r.samples(:,2),'.','b');
-            axis([-4 6 -4 6]);
-            title('Restored samples.');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,3,1);
+                scatter(s.samples(:,1),s.samples(:,2),'o');
+                axis([-4 6 -4 6]);
+                title('Original samples.');
+                subplot(1,3,2);
+                scatter(s_p.samples(:,1),zeros(100,1),'x');
+                axis([-4 6 -4 6]);
+                title('PCA transformed and whitened samples.');
+                subplot(1,3,3);
+                hold('on');
+                scatter(s.samples(:,1),s.samples(:,2),'o','r');
+                scatter(s_r.samples(:,1),s_r.samples(:,2),'.','b');
+                axis([-4 6 -4 6]);
+                title('Restored samples.');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end

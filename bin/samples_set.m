@@ -95,7 +95,7 @@ classdef samples_set
     end
     
     methods (Static,Access=public)
-        function test
+        function test(~)
             fprintf('Testing "samples_set".\n');
             
             % Try a normal run first. Just build an object using the
@@ -261,7 +261,7 @@ classdef samples_set
             assert(s_fo.samples_count == 24);
             assert(s_fo.features_count == 4);
             
-            clear all
+            clearvars -except display;
 
             % Try building from pre-existing data using the "from_data"
             % static method.
@@ -297,7 +297,7 @@ classdef samples_set
             assert(s.samples_count == 12);
             assert(s.features_count == 4);
             
-            clear all
+            clearvars -except display;
             
             % Try loading from an CSV file. The file we're going to use is
             % "$PROJECT_ROOT/data/iris/iris.csv". This should exist in all
@@ -321,7 +321,7 @@ classdef samples_set
             assert(s.samples_count == 150);
             assert(s.features_count == 4);
             
-            clear all
+            clearvars -except display;
             
             % Try loading from another CSV file. The file we're going to
             % use is "$PROJECT_ROOT/data/wine/wine.csv". This should exist
@@ -344,7 +344,7 @@ classdef samples_set
             assert(s.samples_count == 178);
             assert(s.features_count == 13);
             
-            clear all
+            clearvars -except display;
             
             % Try some invalid calls to "load_csvfile". These test the
             % failure modes of this function. We're interested in things
@@ -389,7 +389,7 @@ classdef samples_set
                 end
             end
             
-            clear all
+            clearvars -except display;
         end
     end
 end

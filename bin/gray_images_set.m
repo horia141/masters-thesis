@@ -201,7 +201,7 @@ classdef gray_images_set < samples_set
     end
     
     methods (Static,Access=public)        
-        function test
+        function test(display)
             fprintf('Testing "gray_images_set".\n');
             
             % Try a normal run first. Just build an object using the
@@ -442,7 +442,7 @@ classdef gray_images_set < samples_set
             assert(s_fo.col_count == 10);
             assert(all(all(s_fo.samples == gray_images_set.to_samples(s_fo.images))));
             
-            clear all
+            clearvars -except display;
             
             % Try building from pre-existing data stored in a "samples_set"
             % object. This might be the case when we apply "samples_set"
@@ -480,17 +480,19 @@ classdef gray_images_set < samples_set
             assert(all(all(s.samples == gray_images_set.to_samples(s_i.images))));
             assert(all(all(A == gray_images_set.to_samples(s_i.images))));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(A_i,4,5));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray\_images\_set".');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(A_i,4,5));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s_i.images,4,5));
+                title('Images in "gray\_images\_set".');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "none".\n');
             
@@ -522,17 +524,19 @@ classdef gray_images_set < samples_set
             assert(all(all(s.samples == gray_images_set.to_samples(s_i.images))));
             assert(all(all(A == gray_images_set.to_samples(s_i.images))));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(A_i,4,5));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray\_images\_set".');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(A_i,4,5));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s_i.images,4,5));
+                title('Images in "gray\_images\_set".');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "clamp".\n');
             
@@ -560,17 +564,19 @@ classdef gray_images_set < samples_set
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
 
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(A_i,4,5,true));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray\_images\_set".');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(A_i,4,5,true));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s_i.images,4,5));
+                title('Images in "gray\_images\_set".');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "remap" and "local" (default).\n');
             
@@ -600,17 +606,19 @@ classdef gray_images_set < samples_set
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(A_i,4,5,true));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray\_images\_set".');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(A_i,4,5,true));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s_i.images,4,5));
+                title('Images in "gray\_images\_set".');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "remap" and "local".\n');
             
@@ -640,17 +648,19 @@ classdef gray_images_set < samples_set
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(A_i,4,5,true));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray\_images\_set".');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(A_i,4,5,true));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s_i.images,4,5));
+                title('Images in "gray\_images\_set".');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             fprintf('    With mode "remap" and "global".\n');
             
@@ -681,17 +691,19 @@ classdef gray_images_set < samples_set
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
             
-            figure();
-            subplot(1,2,1);
-            imshow(utils.format_as_tiles(A_i,4,5,true));
-            title('Original images.');
-            subplot(1,2,2);
-            imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray\_images\_set".');
-            pause(5);
-            close(gcf());
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(A_i,4,5,true));
+                title('Original images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(s_i.images,4,5));
+                title('Images in "gray\_images\_set".');
+                pause(5);
+                close(gcf());
+            end
             
-            clear all;
+            clearvars -except display;
             
             % Try building from pre-existing data using the "from_data"
             % static method.
@@ -726,7 +738,7 @@ classdef gray_images_set < samples_set
             assert(s.col_count == 10);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear all
+            clearvars -except display;
             
             % Try loading files from a directory. The files are stored in
             % "$PROJECT_ROOT/data/test/". This directory should
@@ -752,7 +764,7 @@ classdef gray_images_set < samples_set
             assert(s.col_count == 256);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear all
+            clearvars -except display;
             
             % Try loading files from a directory, with forced size. The 
             % files are stored in "$PROJECT_ROOT/data/test/". This 
@@ -776,7 +788,7 @@ classdef gray_images_set < samples_set
             assert(s.col_count == 128);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear all
+            clearvars -except display;
             
             % Try loading files from a directory which contains other types
             % of files besides images. The files are stored in
@@ -801,7 +813,7 @@ classdef gray_images_set < samples_set
             assert(s.col_count == 256);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear all
+            clearvars -except display;
             
             % Try some invalid calls to "load_from_dir". These test the
             % failure modes of this function. We're interested in things
@@ -846,7 +858,7 @@ classdef gray_images_set < samples_set
                 end
             end
             
-            clear all
+            clearvars -except display;
             
             % Try loading images saved in the MNIST format. The images are
             % stored in "$PROJECT_ROOT/data/mnist/train-images-idx3-ubyte",
@@ -883,7 +895,7 @@ classdef gray_images_set < samples_set
             assert(s.col_count == 28);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            clear all
+            clearvars -except display;
             
             % Try some invalid calls to "load_mnist". These test the
             % failure modes of this function. We're interested in things
@@ -977,7 +989,7 @@ classdef gray_images_set < samples_set
                 end
             end
             
-            clear all;
+            clearvars -except display;
         end
     end
 end
