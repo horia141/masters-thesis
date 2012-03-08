@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = false;
+DISPLAY = true;
 
 %% Tests for basic classes.
 

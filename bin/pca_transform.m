@@ -257,7 +257,7 @@ classdef pca_transform < reversible_transform
             
             fprintf('    With 95%% kept energy.\n');
             
-            s1 = gray_images_set.load_from_dir('../data/test');
+            s1 = gray_images_set.load_from_dir('../data/test/scenes_small');
             t1 = patch_extract_transform(200,10,10,0.0001);
             s2 = t1.code(s1);
             t2 = pca_transform(s2,0.95);
@@ -296,7 +296,7 @@ classdef pca_transform < reversible_transform
             
             fprintf('    With 100%% kept energy.\n');
             
-            s1 = gray_images_set.load_from_dir('../data/test');
+            s1 = gray_images_set.load_from_dir('../data/test/scenes_small');
             t1 = patch_extract_transform(200,10,10,0.0001);
             s2 = t1.code(s1);
             t2 = pca_transform(s2,1);

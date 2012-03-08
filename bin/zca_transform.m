@@ -182,7 +182,7 @@ classdef zca_transform < reversible_transform
             
             fprintf('  Apply ZCA on image patches.\n');
             
-            s1 = gray_images_set.load_from_dir('../data/test');
+            s1 = gray_images_set.load_from_dir('../data/test/scenes_small');
             t1 = patch_extract_transform(500,16,16,0.01);
             s2 = t1.code(s1);
             t2 = zca_transform(s2,0.95);

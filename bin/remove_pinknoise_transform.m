@@ -38,7 +38,7 @@ classdef remove_pinknoise_transform < transform
             
             fprintf('  Function "code".\n');
             
-            s = gray_images_set.load_from_dir('../data/test');
+            s = gray_images_set.load_from_dir('../data/test/scenes_small');
             t = remove_pinknoise_transform();
             
             p_t = patch_extract_transform(80,40,40,0.0001);

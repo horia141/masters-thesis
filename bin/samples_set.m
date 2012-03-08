@@ -300,14 +300,14 @@ classdef samples_set
             clearvars -except display;
             
             % Try loading from an CSV file. The file we're going to use is
-            % "$PROJECT_ROOT/data/iris/iris.csv". This should exist in all
-            % distributions of this project.
+            % "$PROJECT_ROOT/data/test/iris/iris.csv". This should exist in
+            % all distributions of this project.
             
             fprintf('  Function "load_csvfile".\n');
             
             fprintf('    With iris data.\n');
             
-            s = samples_set.load_csvfile('../data/iris/iris.csv','%s','%f%f%f%f',',');
+            s = samples_set.load_csvfile('../data/test/iris/iris.csv','%s','%f%f%f%f',',');
             
             assert(length(s.classes) == 3);
             assert(strcmp(s.classes(1),'Iris-setosa'));
@@ -324,13 +324,13 @@ classdef samples_set
             clearvars -except display;
             
             % Try loading from another CSV file. The file we're going to
-            % use is "$PROJECT_ROOT/data/wine/wine.csv". This should exist
+            % use is "$PROJECT_ROOT/data/test/wine/wine.csv". This should exist
             % in all distributions of this project. We're not going to
             % specify a delimiter here.
             
             fprintf('    With Wine data.\n');
             
-            s = samples_set.load_csvfile('../data/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+            s = samples_set.load_csvfile('../data/test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
             
             assert(length(s.classes) == 3);
             assert(strcmp(s.classes(1),'1'));
@@ -354,10 +354,10 @@ classdef samples_set
             fprintf('    With invalid external inputs.\n');
             
             try
-                s = samples_set.load_csvfile('../data/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                s = samples_set.load_csvfile('../data/test/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
-                if strcmp(exp.message,'Could not load csv file "../data/wine/wine_aaa.csv": No such file or directory!')
+                if strcmp(exp.message,'Could not load csv file "../data/test/wine/wine_aaa.csv": No such file or directory!')
                     fprintf('      Passes "No such file or directory!" test.\n');
                 else
                     assert(false);
@@ -365,13 +365,13 @@ classdef samples_set
             end
             
             try
-                !chmod a-r ../data/wine/wine.csv
-                s = samples_set.load_csvfile('../data/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
-                !chmod a+r ../data/wine/wine.csv
+                !chmod a-r ../data/test/wine/wine.csv
+                s = samples_set.load_csvfile('../data/test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                !chmod a+r ../data/test/wine/wine.csv
                 assert(false);
             catch exp
-                !chmod a+r ../data/wine/wine.csv
-                if strcmp(exp.message,'Could not load csv file "../data/wine/wine.csv": Permission denied!');
+                !chmod a+r ../data/test/wine/wine.csv
+                if strcmp(exp.message,'Could not load csv file "../data/test/wine/wine.csv": Permission denied!');
                     fprintf('      Passes "Permission denied!" test.\n');
                 else
                     assert(false);
@@ -379,10 +379,10 @@ classdef samples_set
             end
             
             try
-                s = samples_set.load_csvfile('../data/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
+                s = samples_set.load_csvfile('../data/test/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
-                if strcmp(exp.message,'File "../data/wine/wine.csv" has an invalid format!')
+                if strcmp(exp.message,'File "../data/test/wine/wine.csv" has an invalid format!')
                     fprintf('      Passes "Invalid format!" test.\n');
                 else
                     assert(false);

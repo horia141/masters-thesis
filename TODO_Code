@@ -36,9 +36,10 @@
   Resolved: I've made all test logging messages follow a similar format and
     I've also made them more succint.
 
-- [7] B:07.03.2012 E:??.??.????
++ [7] B:07.03.2012 E:??.??.????
   Task: Move all datasets used  in test in "$PROJECT_ROOT/data/test" so
     they'll be accessible no matter what.
+  Resolved: I've moved all datesets used in testing in the required directory.
 
 + [6] B:06.03.2012 E:07.03.2012
   Task: In test functions add "printf" statements for subtests as well as full
