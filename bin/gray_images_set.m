@@ -732,7 +732,9 @@ classdef gray_images_set < samples_set
             % "$PROJECT_ROOT/data/test/". This directory should
             % exist in all distributions of this project.
             
-            fprintf('  Function "load_from_dir" with test data.\n');
+            fprintf('  Function "load_from_dir".\n');
+            
+            fprintf('    With test data.\n');
             
             s = gray_images_set.load_from_dir('../data/test');
             
@@ -756,7 +758,7 @@ classdef gray_images_set < samples_set
             % files are stored in "$PROJECT_ROOT/data/test/". This 
             % directory should exist in all distributions of this project.
             
-            fprintf('  Function "load_from_dir" with forced size on test data.\n');
+            fprintf('    With forced size on test data.\n');
             
             s = gray_images_set.load_from_dir('../data/test',[96 128]);
             
@@ -781,7 +783,7 @@ classdef gray_images_set < samples_set
             % "$PROJECT_ROOT/data/test/heterogeneous_dir". This directory
             % should exits for all distributions of this project.
             
-            fprintf('  Function "load_from_dir" with heterogenous directory.\n');
+            fprintf('    With heterogenous directory.\n');
             
             s = gray_images_set.load_from_dir('../data/test/heterogeneous_dir');
             
@@ -806,14 +808,14 @@ classdef gray_images_set < samples_set
             % beyond the caller's control, like empty directories,
             % insufficient access rights and images of different sizes.
             
-            fprintf('  Function "load_from_dir" with invalid external inputs.\n');
+            fprintf('    With invalid external inputs.\n');
             
             try
                 s = gray_images_set.load_from_dir('../data/test_aaa');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not find any acceptable images in the directory.')
-                    fprintf('    Passes "No such file or directory!"\n');
+                    fprintf('      Passes "No such file or directory!"\n');
                 else
                     assert(false);
                 end
@@ -827,7 +829,7 @@ classdef gray_images_set < samples_set
             catch exp
                 !chmod a+r ../data/test
                 if strcmp(exp.message,'Could not find any acceptable images in the directory.')
-                    fprintf('    Passes "Permission denied!"\n');
+                    fprintf('      Passes "Permission denied!"\n');
                 else
                     assert(false);
                 end
@@ -838,7 +840,7 @@ classdef gray_images_set < samples_set
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not find any acceptable images in the directory.')
-                    fprintf('    Passes "Empty directory!"\n');
+                    fprintf('      Passes "Empty directory!"\n');
                 else
                     assert(false);
                 end
@@ -852,7 +854,9 @@ classdef gray_images_set < samples_set
             % "$PROJECT_ROOT/data/mnist/train-labels-idx1-ubyte". These two
             % files should exist in all distributions of this project.
             
-            fprintf('  Function "load_mnist" with MNIST training data.\n');
+            fprintf('  Function "load_mnist".\n');
+            
+            fprintf('    With MNIST training data.\n');
             
             s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
             
@@ -891,14 +895,14 @@ classdef gray_images_set < samples_set
             % not enough images are present or any of a number of binary
             % format decoding errors.
             
-            fprintf('  Function "load_mnist" with invalid external inputs.\n');
+            fprintf('    With invalid external inputs.\n');
             
             try
                 s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte_aaa','../data/mnist/train-labels-idx1-ubyte');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not load images in "../data/mnist/train-images-idx3-ubyte_aaa": No such file or directory!')
-                    fprintf('    Passes "No such file or directory!" for images file.\n');
+                    fprintf('      Passes "No such file or directory!" for images file.\n');
                 else
                     assert(false);
                 end
@@ -909,7 +913,7 @@ classdef gray_images_set < samples_set
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not load labels in "../data/mnist/train-labels-idx1-ubyte_aaa": No such file or directory!')
-                    fprintf('    Passes "No such file or directory!" for labels file.\n');
+                    fprintf('      Passes "No such file or directory!" for labels file.\n');
                 else
                     assert(false);
                 end
@@ -923,7 +927,7 @@ classdef gray_images_set < samples_set
             catch exp
                 !chmod a+r ../data/mnist/train-images-idx3-ubyte
                 if strcmp(exp.message,'Could not load images in "../data/mnist/train-images-idx3-ubyte": Permission denied!')
-                    fprintf('    Passes "Permission denied!" for images file.\n');
+                    fprintf('      Passes "Permission denied!" for images file.\n');
                 else
                     assert(false);
                 end
@@ -937,7 +941,7 @@ classdef gray_images_set < samples_set
             catch exp
                 !chmod a+r ../data/mnist/train-labels-idx1-ubyte
                 if strcmp(exp.message,'Could not load labels in "../data/mnist/train-labels-idx1-ubyte": Permission denied!')
-                    fprintf('    Passes "Permission denied!" for labels file.\n');
+                    fprintf('      Passes "Permission denied!" for labels file.\n');
                 else
                     assert(false);
                 end
@@ -947,7 +951,7 @@ classdef gray_images_set < samples_set
                 s = gray_images_set.load_mnist('../data/test/scenes_small1.jpg','../data/mnist/train-labels-idx1-ubyte');
             catch exp
                 if strcmp(exp.message,'Images file "../data/test/scenes_small1.jpg" not in MNIST format!')
-                    fprintf('    Passes "Not in MNIST format!" for images file.\n');
+                    fprintf('      Passes "Not in MNIST format!" for images file.\n');
                 else
                     assert(false);
                 end
@@ -957,7 +961,7 @@ classdef gray_images_set < samples_set
                 s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/test/scenes_small1.jpg');
             catch exp
                 if strcmp(exp.message,'Labels file "../data/test/scenes_small1.jpg" not in MNIST format!')
-                    fprintf('    Passes "Not in MNIST format!" for labels file.\n');
+                    fprintf('      Passes "Not in MNIST format!" for labels file.\n');
                 else
                     assert(false);
                 end
@@ -967,7 +971,7 @@ classdef gray_images_set < samples_set
                 s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte');
             catch exp
                 if strcmp(exp.message,'Different number of labels in "../data/mnist/t10k-labels-idx1-ubyte" for images in "../data/mnist/train-images-idx3-ubyte"!')
-                    fprintf('    Passes "Different number of labels!".\n');
+                    fprintf('      Passes "Different number of labels!".\n');
                 else
                     assert(false);
                 end

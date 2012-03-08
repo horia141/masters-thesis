@@ -175,6 +175,42 @@ classdef zca_transform < reversible_transform
             close(gcf());
             
             clear all;
+            
+            fprintf('  Apply ZCA on image patches.\n');
+            
+            s1 = gray_images_set.load_from_dir('../data/test');
+            t1 = patch_extract_transform(500,16,16,0.01);
+            s2 = t1.code(s1);
+            t2 = zca_transform(s2,0.95);
+            
+            s2_p = t2.code(s2);
+            
+            s3 = gray_images_set.from_samples(s2_p,16,16,'remap');
+            
+            assert(length(s3.classes) == 1);
+            assert(strcmp(s3.classes(1),'none'));
+            assert(s3.classes_count == 1);
+            assert(all(size(s3.samples) == [500 256]));
+            assert(tc.matrix(s3.samples) && tc.unitreal(s3.samples));
+            assert(all(size(s3.labels_idx) == [500 1]));
+            assert(all(s3.labels_idx == ones(500,1)));
+            assert(s3.samples_count == 500);
+            assert(s3.features_count == 256);
+            assert(tc.tensor(s3.images,3) && tc.unitreal(s3.images));
+            assert(s3.row_count == 16);
+            assert(s3.col_count == 16);
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(s2.images(:,:,1:4:end)));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s3.images(:,:,1:4:end)));
+            title('Reconstructed images.');            
+            pause(5);
+            close(gcf());
+            
+            clear all;
         end
     end
 end

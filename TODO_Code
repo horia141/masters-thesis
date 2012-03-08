@@ -1,3 +1,5 @@
+
+
 + [12] B:08.03.2012 E:08.08.2012
   Task: There are bugs in the part of the test where we display images. More
    precisely, some figures are not properly closed after a test. I must make
@@ -14,11 +16,14 @@
   Task: Add timing code to "all_tests" so we know how much time a full test
     suite takes.
 
-- [9] B:08.03.2012 E:??.??.????
++ [9] B:08.03.2012 E:??.??.????
   Task: Add tests which work on images to "pca_transform",  "pca_whitening_transform"
     and "zca_transform". Also display the original images in the tests for
     "utils.remap_images_to_unit" because it is helpful to see how MatLAB displays
     such images badly.
+  Resolved: I've added the image viewing code for "pca_transform" and
+    "pca_whitening_transform" as it made the most sense there. Other commits
+     have fixed the "utils.remap_images_to_unit" tests.
 
 + [8] B:07.03.2012 E:08.03.2012
   Task: There is a degree of non-uniformity in the logging for tests. I should

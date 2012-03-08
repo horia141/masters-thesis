@@ -303,7 +303,9 @@ classdef samples_set
             % "$PROJECT_ROOT/data/iris/iris.csv". This should exist in all
             % distributions of this project.
             
-            fprintf('  Function "load_csvfile" with iris data.\n');
+            fprintf('  Function "load_csvfile".\n');
+            
+            fprintf('    With iris data.\n');
             
             s = samples_set.load_csvfile('../data/iris/iris.csv','%s','%f%f%f%f',',');
             
@@ -326,7 +328,7 @@ classdef samples_set
             % in all distributions of this project. We're not going to
             % specify a delimiter here.
             
-            fprintf('  Function "load_csvfile" with Wine data.\n');
+            fprintf('    With Wine data.\n');
             
             s = samples_set.load_csvfile('../data/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
             
@@ -349,14 +351,14 @@ classdef samples_set
             % beyond the caller's control like improperly formated files or
             % insufficient access rights.
             
-            fprintf('  Function "load_csvfile" with invalid external inputs.\n');
+            fprintf('    With invalid external inputs.\n');
             
             try
                 s = samples_set.load_csvfile('../data/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not load csv file "../data/wine/wine_aaa.csv": No such file or directory!')
-                    fprintf('    Passes "No such file or directory!" test.\n');
+                    fprintf('      Passes "No such file or directory!" test.\n');
                 else
                     assert(false);
                 end
@@ -370,7 +372,7 @@ classdef samples_set
             catch exp
                 !chmod a+r ../data/wine/wine.csv
                 if strcmp(exp.message,'Could not load csv file "../data/wine/wine.csv": Permission denied!');
-                    fprintf('    Passes "Permission denied!" test.\n');
+                    fprintf('      Passes "Permission denied!" test.\n');
                 else
                     assert(false);
                 end
@@ -381,7 +383,7 @@ classdef samples_set
                 assert(false);
             catch exp
                 if strcmp(exp.message,'File "../data/wine/wine.csv" has an invalid format!')
-                    fprintf('    Passes "Invalid format!" test.\n');
+                    fprintf('      Passes "Invalid format!" test.\n');
                 else
                     assert(false);
                 end
