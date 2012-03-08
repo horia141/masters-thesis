@@ -35,8 +35,9 @@ classdef utils
             o = all(r(:));
         end
         
-        function [tiles_image] = format_as_tiles(images,tiles_row_count,tiles_col_count)
-            assert(tc.tensor(images,3) && tc.unitreal(images));
+        function [tiles_image] = format_as_tiles(images,tiles_row_count,tiles_col_count,bypass_unitreal)
+            assert(tc.tensor(images,3) && ...
+                   (tc.unitreal(images) || (exist('bypass_unitreal','var') && tc.number(images))));
             assert(~exist('tiles_row_count','var') || ...
                    (tc.scalar(tiles_row_count) && tc.natural(tiles_row_count) && (tiles_row_count > 1)));
             assert(~exist('tiles_col_count','var') || ...
@@ -45,6 +46,7 @@ classdef utils
                      (tiles_row_count * tiles_col_count >= size(images,3)));
             assert(~(exist('tiles_row_count','var') && ~exist('tiles_col_count','var')) || ...
                      (tiles_row_count * tiles_row_count >= size(images,3)));
+            assert(~exist('bypas_unitreal','var') || (tc.scalar(bypass_unitreal) && bypass_unitreal));
             
             images_count = size(images,3);
             row_count = size(images,1);
@@ -76,6 +78,12 @@ classdef utils
                     end
                 end
             end
+        end
+        
+        function [new_images] = clamp_images_to_unit(images)
+            assert(tc.tensor(images,3) && tc.number(images));
+            
+            new_images = max(min(images,1),0);
         end
         
         function [new_images] = remap_images_to_unit(images,mode)
@@ -150,11 +158,11 @@ classdef utils
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t);
             
-            imshow(tt);
-            
-            pause(5);
-            
+            figure();
+            imshow(tt);            
+            pause(5);            
             close(gcf());
+            
             clear all;
             
             fprintf('    With unspecified "tiles_col_count".\n');
@@ -162,11 +170,11 @@ classdef utils
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t,7);
             
-            imshow(tt);
-            
-            pause(5);
-            
+            figure();
+            imshow(tt);            
+            pause(5);            
             close(gcf());
+            
             clear all;
             
             fprintf('    With both "tiles_row_count" and "tiles_col_count" specified.\n');
@@ -174,13 +182,69 @@ classdef utils
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t,5,8);
             
+            figure();
             imshow(tt);
-
-            pause(5);
-            
+            pause(5);            
             close(gcf());
+            
             clear all;
             
+            fprintf('    With relaxed input ("images" does not have to be "unitreal").\n');
+            
+            t = 3*rand(20,20,36) - 1.5;
+            tt = utils.format_as_tiles(t,6,6,true);
+            
+            figure();
+            imshow(tt);            
+            pause(5);            
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('  Function "clamp_images_to_unit".\n');
+            
+            fprintf('    With small excursions below 0 and above 1.\n');
+            
+            t = rand(20,20,36) + 0.2;
+            tp = utils.clamp_images_to_unit(t);
+            
+            assert(min(tp(:)) >= 0);
+            assert(max(tp(:)) <= 1);
+            assert(tc.unitreal(tp));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(t,6,6,true));
+            title('Problem images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(tp));
+            title('Clamped images.');            
+            pause(5);            
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('    With large excursions below 0 and above 1.\n');
+            
+            t = 4 * rand(20,20,36) - 2;
+            tp = utils.clamp_images_to_unit(t);
+            
+            assert(min(tp(:)) >= 0);
+            assert(max(tp(:)) <= 1);
+            assert(tc.unitreal(tp));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(t,6,6,true));
+            title('Problem images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(tp));
+            title('Clamped images.');            
+            pause(5);            
+            close(gcf());
+            
+            clear all;
+
             fprintf('  Function "remap_images_to_unit".\n');
             
             fprintf('    With mode "local" (default).\n');
@@ -189,13 +253,20 @@ classdef utils
             t(:,:,12:18) = 4 * t(:,:,12:18);
             tp = utils.remap_images_to_unit(t);
             
+            assert(min(tp(:)) == 0);
+            assert(max(tp(:)) == 1);
             assert(tc.unitreal(tp));
             
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(t,6,6,true));
+            title('Problem images.');
+            subplot(1,2,2);
             imshow(utils.format_as_tiles(tp));
-            
-            pause(5);
-            
+            title('Remaped images.');            
+            pause(5);            
             close(gcf());
+            
             clear all;
             
             fprintf('    With mode "local".\n');
@@ -204,13 +275,20 @@ classdef utils
             t(:,:,12:18) = 4 * t(:,:,12:18);
             tp = utils.remap_images_to_unit(t,'local');
             
+            assert(min(tp(:)) == 0);
+            assert(max(tp(:)) == 1);
             assert(tc.unitreal(tp));
             
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(t,6,6,true));
+            title('Problem images.');
+            subplot(1,2,2);
             imshow(utils.format_as_tiles(tp));
-            
-            pause(5);
-            
+            title('Remaped images.');            
+            pause(5);            
             close(gcf());
+            
             clear all;
             
             fprintf('    With mode "global".\n');
@@ -219,13 +297,20 @@ classdef utils
             t(:,:,12:18) = 4 * t(:,:,12:18);
             tp = utils.remap_images_to_unit(t,'global');
             
+            assert(min(tp(:)) == 0);
+            assert(max(tp(:)) == 1);
             assert(tc.unitreal(tp));
             
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(t,6,6,true));
+            title('Problem images.');
+            subplot(1,2,2);
             imshow(utils.format_as_tiles(tp));
-            
-            pause(5);
-            
+            title('Remaped images.');            
+            pause(5);            
             close(gcf());
+            
             clear all;
         end
     end

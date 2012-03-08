@@ -1,3 +1,16 @@
+- [12] B:08.03.2012 E:??.??.????
+  Task: There are bugs in the part of the test where we display images. More
+   precisely, some figures are not properly closed after a test. I must make
+   sure they work as intended.
+
+- [11] B:08.03.2012 E:??.??.????
+  Task: Whenever we test for an "object" we should also test for it being a
+    scalar.
+
+- [10] B:08.03.2012 E:??.??.????
+  Task: Add timing code to "all_tests" so we know how much time a full test
+    suite takes.
+
 - [9] B:08.03.2012 E:??.??.????
   Task: Add tests which work on images to "pca_transform",  "pca_whitening_transform"
     and "zca_transform". Also display the original images in the tests for

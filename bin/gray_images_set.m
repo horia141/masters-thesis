@@ -28,6 +28,44 @@ classdef gray_images_set < samples_set
     end
     
     methods (Static,Access=public)
+        function [new_gray_images_set] = from_samples(samples,row_count,col_count,remap_type,remap_mode)
+            assert(tc.samples_set(samples));
+            assert(tc.scalar(row_count) && tc.natural(row_count) && (row_count > 0));
+            assert(tc.scalar(col_count) && tc.natural(col_count) && (col_count > 0));
+            assert(~exist('remap_type','var') || (tc.string(remap_type) && ...
+                    (strcmp(remap_type,'none') || strcmp(remap_type,'clamp') || strcmp(remap_type,'remap'))));
+            assert(~(exist('remap_type','var') && exist('remap_mode','var')) || ...
+                    (strcmp(remap_type,'remap') && (tc.string(remap_mode) && (strcmp(remap_mode,'local') || strcmp(remap_mode,'global')))));
+                
+            if exist('remap_type','var')
+                remap_type_t = remap_type;
+            else
+                remap_type_t = 'none';
+            end
+            
+            if exist('remap_mode','var')
+                remap_mode_t = remap_mode;
+            else
+                remap_mode_t = 'local';
+            end
+            
+            new_gray_images_set_t1 = zeros(row_count,col_count,samples.samples_count);
+            
+            for i = 1:samples.samples_count
+                new_gray_images_set_t1(:,:,i) = reshape(samples.samples(i,:),[row_count col_count]);
+            end
+            
+            if strcmp(remap_type_t,'none')
+                new_gray_images_set_t2 = new_gray_images_set_t1;
+            elseif strcmp(remap_type_t,'clamp')
+                new_gray_images_set_t2 = utils.clamp_images_to_unit(new_gray_images_set_t1);
+            else
+                new_gray_images_set_t2 = utils.remap_images_to_unit(new_gray_images_set_t1,remap_mode_t);
+            end
+            
+            new_gray_images_set = gray_images_set(samples.classes,new_gray_images_set_t2,samples.labels_idx);
+        end
+        
         function [new_gray_images_set] = from_data(images,labels)
             assert(tc.tensor(images,3) && tc.unitreal(images));
             assert(tc.vector(labels) && tc.match_dims(images,labels,3) && tc.labels(labels));
@@ -54,9 +92,8 @@ classdef gray_images_set < samples_set
                     if exist('force_size','var')
                         image = imresize(image,force_size);
                         
-                        % Correct domain overflows caused by resizing.
-                        image = min(image,1);
-                        image = max(image,0);
+                        % Correct small domain overflows caused by resizing.
+                        image = utils.remap_images_to_unit(image);
                     end
                     
                     if (current_image > 1) && ...
@@ -407,6 +444,254 @@ classdef gray_images_set < samples_set
             
             clear all
             
+            % Try building from pre-existing data stored in a "samples_set"
+            % object. This might be the case when we apply "samples_set"
+            % specific transforms to a "gray_images_set".
+            
+            fprintf('  Function "from_samples".\n');
+            
+            fprintf('    With mode "none" (default).\n');
+            
+            A = rand(20,100);
+            A_i = zeros(10,10,20);
+            for i = 1:20
+                A_i(:,:,i) = reshape(A(i,:),[10 10]);
+            end
+            c = ones(20,1);
+            
+            s = samples_set({'none'},A,c);
+            s_i = gray_images_set.from_samples(s,10,10);
+            
+            assert(length(s_i.classes) == 1);
+            assert(strcmp(s_i.classes(1),'none'));
+            assert(s_i.classes_count == 1);
+            assert(all(size(s_i.samples) == [20 100]));
+            assert(all(all(s_i.samples == A)));
+            assert(length(s_i.labels_idx) == 20);
+            assert(all(s_i.labels_idx == c));
+            assert(s_i.samples_count == 20);
+            assert(s_i.features_count == 100);
+            for i = 1:20
+                assert(all(all(s_i.images(:,:,i) == reshape(A(i,:),[10 10]))));
+            end
+            assert(s_i.row_count == 10);
+            assert(s_i.col_count == 10);
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(s.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(A == gray_images_set.to_samples(s_i.images))));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(A_i,4,5));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s_i.images,4,5));
+            title('Images in "gray_images_set".');
+            pause(5);
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('    With mode "none".\n');
+            
+            A = rand(20,100);
+            A_i = zeros(10,10,20);
+            for i = 1:20
+                A_i(:,:,i) = reshape(A(i,:),[10 10]);
+            end
+            c = ones(20,1);
+            
+            s = samples_set({'none'},A,c);
+            s_i = gray_images_set.from_samples(s,10,10,'none');
+            
+            assert(length(s_i.classes) == 1);
+            assert(strcmp(s_i.classes(1),'none'));
+            assert(s_i.classes_count == 1);
+            assert(all(size(s_i.samples) == [20 100]));
+            assert(all(all(s_i.samples == A)));
+            assert(length(s_i.labels_idx) == 20);
+            assert(all(s_i.labels_idx == c));
+            assert(s_i.samples_count == 20);
+            assert(s_i.features_count == 100);
+            for i = 1:20
+                assert(all(all(s_i.images(:,:,i) == reshape(A(i,:),[10 10]))));
+            end
+            assert(s_i.row_count == 10);
+            assert(s_i.col_count == 10);
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(s.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(A == gray_images_set.to_samples(s_i.images))));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(A_i,4,5));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s_i.images,4,5));
+            title('Images in "gray_images_set".');
+            pause(5);
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('    With mode "clamp".\n');
+            
+            A = 3*rand(20,100) - 1.5;
+            A_i = zeros(10,10,20);
+            for i = 1:20
+                A_i(:,:,i) = reshape(A(i,:),[10 10]);
+            end
+            c = ones(20,1);
+            
+            s = samples_set({'none'},A,c);
+            s_i = gray_images_set.from_samples(s,10,10,'clamp');
+            
+            assert(length(s_i.classes) == 1);
+            assert(strcmp(s_i.classes(1),'none'));
+            assert(s_i.classes_count == 1);
+            assert(all(size(s_i.samples) == [20 100]));
+            assert(length(s_i.labels_idx) == 20);
+            assert(all(s_i.labels_idx == c));
+            assert(s_i.samples_count == 20);
+            assert(s_i.features_count == 100);
+            assert(tc.tensor(s_i.images,3) && tc.unitreal(s_i.images));
+            assert(s_i.row_count == 10);
+            assert(s_i.col_count == 10);
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(A_i,4,5,true));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s_i.images,4,5));
+            title('Images in "gray_images_set".');
+            pause(5);
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('    With mode "remap" and "local" (default).\n');
+            
+            A = 3*rand(20,100) - 1.5;
+            A_i = zeros(10,10,20);
+            for i = 1:20
+                A_i(:,:,i) = reshape(A(i,:),[10 10]);
+            end
+            c = ones(20,1);
+            
+            s = samples_set({'none'},A,c);
+            s_i = gray_images_set.from_samples(s,10,10,'remap');
+            
+            assert(length(s_i.classes) == 1);
+            assert(strcmp(s_i.classes(1),'none'));
+            assert(s_i.classes_count == 1);
+            assert(all(size(s_i.samples) == [20 100]));
+            assert(length(s_i.labels_idx) == 20);
+            assert(all(s_i.labels_idx == c));
+            assert(s_i.samples_count == 20);
+            assert(s_i.features_count == 100);
+            assert(tc.tensor(s_i.images,3) && tc.unitreal(s_i.images));
+            assert(min(s_i.images(:)) == 0);
+            assert(max(s_i.images(:)) == 1);
+            assert(s_i.row_count == 10);
+            assert(s_i.col_count == 10);
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(A_i,4,5,true));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s_i.images,4,5));
+            title('Images in "gray_images_set".');
+            pause(5);
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('    With mode "remap" and "local".\n');
+            
+            A = 3*rand(20,100) - 1.5;
+            A_i = zeros(10,10,20);
+            for i = 1:20
+                A_i(:,:,i) = reshape(A(i,:),[10 10]);
+            end
+            c = ones(20,1);
+            
+            s = samples_set({'none'},A,c);
+            s_i = gray_images_set.from_samples(s,10,10,'remap','local');
+            
+            assert(length(s_i.classes) == 1);
+            assert(strcmp(s_i.classes(1),'none'));
+            assert(s_i.classes_count == 1);
+            assert(all(size(s_i.samples) == [20 100]));
+            assert(length(s_i.labels_idx) == 20);
+            assert(all(s_i.labels_idx == c));
+            assert(s_i.samples_count == 20);
+            assert(s_i.features_count == 100);
+            assert(tc.tensor(s_i.images,3) && tc.unitreal(s_i.images));
+            assert(min(s_i.images(:)) == 0);
+            assert(max(s_i.images(:)) == 1);
+            assert(s_i.row_count == 10);
+            assert(s_i.col_count == 10);
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(A_i,4,5,true));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s_i.images,4,5));
+            title('Images in "gray_images_set".');
+            pause(5);
+            close(gcf());
+            
+            clear all;
+            
+            fprintf('    With mode "remap" and "global".\n');
+            
+            A = 3*rand(20,100) - 1.5;
+            A_i = zeros(10,10,20);
+            for i = 1:20
+                A_i(:,:,i) = reshape(A(i,:),[10 10]);
+            end
+            c = ones(20,1);
+            
+            s = samples_set({'none'},A,c);
+            s_i = gray_images_set.from_samples(s,10,10,'remap','global');
+            
+            assert(length(s_i.classes) == 1);
+            assert(strcmp(s_i.classes(1),'none'));
+            assert(s_i.classes_count == 1);
+            assert(all(size(s_i.samples) == [20 100]));
+            assert(length(s_i.labels_idx) == 20);
+            assert(all(s_i.labels_idx == c));
+            assert(s_i.samples_count == 20);
+            assert(s_i.features_count == 100);
+            assert(tc.tensor(s_i.images,3) && tc.unitreal(s_i.images));
+            assert(min(s_i.images(:)) == 0);
+            assert(max(s_i.images(:)) == 1);
+            assert(s_i.row_count == 10);
+            assert(s_i.col_count == 10);
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            assert(all(all(s_i.samples == gray_images_set.to_samples(s_i.images))));
+            
+            figure();
+            subplot(1,2,1);
+            imshow(utils.format_as_tiles(A_i,4,5,true));
+            title('Original images.');
+            subplot(1,2,2);
+            imshow(utils.format_as_tiles(s_i.images,4,5));
+            title('Images in "gray_images_set".');
+            pause(5);
+            close(gcf());
+            
+            clear all;
+            
             % Try building from pre-existing data using the "from_data"
             % static method.
             
@@ -687,7 +972,7 @@ classdef gray_images_set < samples_set
                 end
             end
             
-            clear all
+            clear all;
         end
     end
 end

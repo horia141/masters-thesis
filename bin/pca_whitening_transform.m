@@ -63,7 +63,7 @@ classdef pca_whitening_transform < reversible_transform
     
     methods (Static,Access=public)
         function test
-            fprintf('Testing class "pca_whitening_transform".\n');
+            fprintf('Testing "pca_whitening_transform".\n');
             
             fprintf('  Proper construction.\n');
             
@@ -228,7 +228,7 @@ classdef pca_whitening_transform < reversible_transform
             pause(5);
             
             close(h);
-            close all;
+            clear all;
         end
     end
 end
