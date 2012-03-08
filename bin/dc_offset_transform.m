@@ -38,20 +38,18 @@ classdef dc_offset_transform < transform
             assert(s_p.features_count == 50);
             assert(utils.approx(mean(s_p.samples,2),zeros(4,1)));
             
-            h = figure();
-            
+            figure();
             for i = 1:4
-                ax = subplot(4,2,(i - 1)*2 + 1,'Parent',h);
-                plot(ax,s.samples(i,:));
-                axis(ax,[1 50 -5 5]);
-                ax = subplot(4,2,(i - 1)*2 + 2,'Parent',h);
-                plot(ax,s_p.samples(i,:));
-                axis(ax,[1 50 -5 5]);
-            end
-            
+                subplot(4,2,(i - 1)*2 + 1);
+                plot(s.samples(i,:));
+                axis([1 50 -5 5]);
+                subplot(4,2,(i - 1)*2 + 2);
+                plot(s_p.samples(i,:));
+                axis([1 50 -5 5]);
+            end            
             pause(5);
+            close(gcf());
             
-            close(h);
             clear all;
         end
     end

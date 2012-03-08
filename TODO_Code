@@ -1,7 +1,9 @@
-- [12] B:08.03.2012 E:??.??.????
++ [12] B:08.03.2012 E:08.08.2012
   Task: There are bugs in the part of the test where we display images. More
    precisely, some figures are not properly closed after a test. I must make
    sure they work as intended.
+  Resolved: I've made the code much simpler. It depends on MatLAB keeping
+    track of the required interal figure handle and axis handle state.
 
 + [11] B:08.03.2012 E:08.03.2012
   Task: Whenever we test for an "object" we should also test for it being a

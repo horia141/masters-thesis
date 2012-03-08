@@ -121,20 +121,18 @@ classdef zca_transform < reversible_transform
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
             
-            h = figure();
-            
-            ax = subplot(1,2,1,'Parent',h);
-            scatter(ax,s.samples(:,1),s.samples(:,2),'o');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Original samples.');
-            ax = subplot(1,2,2,'Parent',h);
-            scatter(ax,s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'ZCA transformed samples.');
-            
+            figure();
+            subplot(1,2,1);
+            scatter(s.samples(:,1),s.samples(:,2),'o');
+            axis([-4 6 -4 6]);
+            title('Original samples.');
+            subplot(1,2,2);
+            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+            axis([-4 6 -4 6]);
+            title('ZCA transformed samples.');
             pause(5);
+            close(gcf());
             
-            close(h);
             clear all;
             
             fprintf('  Function "decode".\n');
@@ -158,26 +156,24 @@ classdef zca_transform < reversible_transform
             assert(s_p.samples_count == 100);
             assert(s_p.features_count == 2);
             
-            h = figure();
-            
-            ax = subplot(1,3,1,'Parent',h);
-            scatter(ax,s.samples(:,1),s.samples(:,2),'o');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Original samples.');
-            ax = subplot(1,3,2,'Parent',h);
-            scatter(ax,s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'ZCA transformed samples.');
-            ax = subplot(1,3,3,'Parent',h);
-            hold(ax,'on');
-            scatter(ax,s.samples(:,1),s.samples(:,2),'o','r');
-            scatter(ax,s_r.samples(:,1),s_r.samples(:,2),'.','b');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Restored samples.');
-            
+            figure();
+            subplot(1,3,1);
+            scatter(s.samples(:,1),s.samples(:,2),'o');
+            axis([-4 6 -4 6]);
+            title('Original samples.');
+            subplot(1,3,2);
+            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+            axis([-4 6 -4 6]);
+            title('ZCA transformed samples.');
+            subplot(1,3,3);
+            hold('on');
+            scatter(s.samples(:,1),s.samples(:,2),'o','r');
+            scatter(s_r.samples(:,1),s_r.samples(:,2),'.','b');
+            axis([-4 6 -4 6]);
+            title('Restored samples.');
             pause(5);
+            close(gcf());
             
-            close(h);
             clear all;
         end
     end

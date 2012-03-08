@@ -65,20 +65,19 @@ classdef mean_substract_transform < reversible_transform
             assert(s_p.features_count == 2);
             assert(utils.approx(mean(s_p.samples,1),[0 0]));
             
-            h = figure();
+            figure();
             
-            ax = subplot(1,2,1,'Parent',h);
-            scatter(ax,s.samples(:,1),s.samples(:,2),'o');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Original samples.');
-            ax = subplot(1,2,2,'Parent',h);
-            scatter(ax,s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Mean substracted samples.');
-            
+            subplot(1,2,1);
+            scatter(s.samples(:,1),s.samples(:,2),'o');
+            axis([-4 6 -4 6]);
+            title('Original samples.');
+            subplot(1,2,2);
+            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+            axis([-4 6 -4 6]);
+            title('Mean substracted samples.');
             pause(5);
+            close(gcf());
             
-            close(h);
             clear all;
             
             fprintf('  Function "decode".\n');
@@ -102,24 +101,22 @@ classdef mean_substract_transform < reversible_transform
             assert(s_r.samples_count == 100);
             assert(s_r.features_count == 2);
             
-            h = figure();
-            
-            ax = subplot(1,3,1,'Parent',h);
-            scatter(ax,s.samples(:,1),s.samples(:,2),'o');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Original samples.');
-            ax = subplot(1,3,2,'Parent',h);
-            scatter(ax,s_p.samples(:,1),s_p.samples(:,2),'x');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Mean substracted samples.');
-            ax = subplot(1,3,3,'Parent',h);
-            scatter(ax,s_r.samples(:,1),s_r.samples(:,2),'.');
-            axis(ax,[-4 6 -4 6]);
-            title(ax,'Restored samples.');
-            
+            figure();
+            subplot(1,3,1);
+            scatter(s.samples(:,1),s.samples(:,2),'o');
+            axis([-4 6 -4 6]);
+            title('Original samples.');
+            subplot(1,3,2);
+            scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
+            axis([-4 6 -4 6]);
+            title('Mean substracted samples.');
+            subplot(1,3,3);
+            scatter(s_r.samples(:,1),s_r.samples(:,2),'.');
+            axis([-4 6 -4 6]);
+            title('Restored samples.');
             pause(5);
+            close(gcf());
             
-            close(h);
             clear all;
         end
     end

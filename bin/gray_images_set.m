@@ -486,7 +486,7 @@ classdef gray_images_set < samples_set
             title('Original images.');
             subplot(1,2,2);
             imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray_images_set".');
+            title('Images in "gray\_images\_set".');
             pause(5);
             close(gcf());
             
@@ -528,7 +528,7 @@ classdef gray_images_set < samples_set
             title('Original images.');
             subplot(1,2,2);
             imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray_images_set".');
+            title('Images in "gray\_images\_set".');
             pause(5);
             close(gcf());
             
@@ -566,7 +566,7 @@ classdef gray_images_set < samples_set
             title('Original images.');
             subplot(1,2,2);
             imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray_images_set".');
+            title('Images in "gray\_images\_set".');
             pause(5);
             close(gcf());
             
@@ -606,7 +606,7 @@ classdef gray_images_set < samples_set
             title('Original images.');
             subplot(1,2,2);
             imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray_images_set".');
+            title('Images in "gray\_images\_set".');
             pause(5);
             close(gcf());
             
@@ -646,7 +646,7 @@ classdef gray_images_set < samples_set
             title('Original images.');
             subplot(1,2,2);
             imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray_images_set".');
+            title('Images in "gray\_images\_set".');
             pause(5);
             close(gcf());
             
@@ -655,6 +655,7 @@ classdef gray_images_set < samples_set
             fprintf('    With mode "remap" and "global".\n');
             
             A = 3*rand(20,100) - 1.5;
+            A(5:10,:) = 5*A(5:10,:);
             A_i = zeros(10,10,20);
             for i = 1:20
                 A_i(:,:,i) = reshape(A(i,:),[10 10]);
@@ -686,7 +687,7 @@ classdef gray_images_set < samples_set
             title('Original images.');
             subplot(1,2,2);
             imshow(utils.format_as_tiles(s_i.images,4,5));
-            title('Images in "gray_images_set".');
+            title('Images in "gray\_images\_set".');
             pause(5);
             close(gcf());
             

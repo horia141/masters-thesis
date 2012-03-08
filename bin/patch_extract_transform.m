@@ -79,12 +79,12 @@ classdef patch_extract_transform < transform
             assert(s_p.row_count == 40);
             assert(s_p.col_count == 40);
             assert(tc.tensor(s_p.images,3) && tc.unitreal(s_p.images));
-            
+
+            figure();
             imshow(utils.format_as_tiles(s_p.images,5,10));
-            
             pause(5);
-            
             close(gcf());
+            
             clear all;
         end
     end
