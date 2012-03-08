@@ -4,7 +4,7 @@ classdef remove_pinknoise_transform < transform
         end
         
         function [new_gray_images] = code(obj,gray_images)
-            assert(tc.gray_images_set(gray_images));
+            assert(tc.scalar(gray_images) && tc.gray_images_set(gray_images));
             assert(gray_images.row_count == gray_images.col_count);
             
             N = gray_images.row_count;

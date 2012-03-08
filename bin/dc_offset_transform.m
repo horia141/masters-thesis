@@ -4,7 +4,7 @@ classdef dc_offset_transform < transform
         end
         
         function [new_samples] = code(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             
             samples_t = bsxfun(@minus,samples.samples,mean(samples.samples,2));
             new_samples = samples_set(samples.classes,samples_t,samples.labels_idx);

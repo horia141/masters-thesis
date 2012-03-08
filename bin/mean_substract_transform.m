@@ -5,13 +5,13 @@ classdef mean_substract_transform < reversible_transform
     
     methods (Access=public)
         function [obj] = mean_substract_transform(samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             
             obj.kept_mean = mean(samples.samples,1);
         end
         
         function [new_samples] = code(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(tc.match_dims(obj.kept_mean,samples.samples,2,2));
             
             samples_t = bsxfun(@minus,samples.samples,obj.kept_mean);
@@ -19,7 +19,7 @@ classdef mean_substract_transform < reversible_transform
         end
         
         function [new_samples] = decode(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(tc.match_dims(obj.kept_mean,samples.samples,2,2));
             
             samples_t = bsxfun(@plus,samples.samples,obj.kept_mean);

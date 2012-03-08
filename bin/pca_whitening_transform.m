@@ -11,7 +11,7 @@ classdef pca_whitening_transform < reversible_transform
     
     methods (Access=public)
         function [obj] = pca_whitening_transform(samples,kept_energy,div_epsilon)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(tc.scalar(kept_energy) && tc.unitreal(kept_energy));
             assert(~exist('div_epsilon','var') || ...
                    (tc.scalar(div_epsilon) && tc.number(div_epsilon) && tc.check(div_epsilon >= 0)));
@@ -38,7 +38,7 @@ classdef pca_whitening_transform < reversible_transform
         end
         
         function [new_samples] = code(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(obj.input_features_count == samples.features_count);
             
             new_samples_t1 = bsxfun(@minus,samples.samples,obj.samples_mean);
@@ -49,7 +49,7 @@ classdef pca_whitening_transform < reversible_transform
         end
         
         function [new_samples] = decode(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(obj.output_features_count == samples.features_count);
             
             coeffs_t = obj.coeffs';

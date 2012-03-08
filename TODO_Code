@@ -3,9 +3,10 @@
    precisely, some figures are not properly closed after a test. I must make
    sure they work as intended.
 
-- [11] B:08.03.2012 E:??.??.????
++ [11] B:08.03.2012 E:08.03.2012
   Task: Whenever we test for an "object" we should also test for it being a
     scalar.
+  Resolved: I've added the required checks.
 
 - [10] B:08.03.2012 E:??.??.????
   Task: Add timing code to "all_tests" so we know how much time a full test

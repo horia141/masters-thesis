@@ -9,7 +9,7 @@ classdef zca_transform < reversible_transform
     
     methods (Access=public)
         function [obj] = zca_transform(samples,div_epsilon)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(~exist('div_epsilon','var') || ...
                    (tc.scalar(div_epsilon) && tc.number(div_epsilon) && tc.check(div_epsilon >= 0)));
             
@@ -29,7 +29,7 @@ classdef zca_transform < reversible_transform
         end
         
         function [new_samples] = code(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(obj.features_count == samples.features_count);
             
             new_samples_t1 = bsxfun(@minus,samples.samples,obj.samples_mean);
@@ -41,7 +41,7 @@ classdef zca_transform < reversible_transform
         end
         
         function [new_samples] = decode(obj,samples)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(obj.features_count == samples.features_count);
             
             new_samples_t1 = samples.samples * obj.coeffs;

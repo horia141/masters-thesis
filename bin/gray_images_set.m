@@ -29,7 +29,7 @@ classdef gray_images_set < samples_set
     
     methods (Static,Access=public)
         function [new_gray_images_set] = from_samples(samples,row_count,col_count,remap_type,remap_mode)
-            assert(tc.samples_set(samples));
+            assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(tc.scalar(row_count) && tc.natural(row_count) && (row_count > 0));
             assert(tc.scalar(col_count) && tc.natural(col_count) && (col_count > 0));
             assert(~exist('remap_type','var') || (tc.string(remap_type) && ...

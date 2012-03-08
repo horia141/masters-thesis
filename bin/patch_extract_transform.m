@@ -20,7 +20,7 @@ classdef patch_extract_transform < transform
         end
 
         function [new_gray_images] = code(obj,gray_images)
-            assert(tc.gray_images_set(gray_images));
+            assert(tc.scalar(gray_images) && tc.gray_images_set(gray_images));
             assert(obj.patch_row_count <= gray_images.row_count);
             assert(obj.patch_col_count <= gray_images.col_count);
             
