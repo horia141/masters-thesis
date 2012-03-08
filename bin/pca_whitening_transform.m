@@ -65,9 +65,9 @@ classdef pca_whitening_transform < reversible_transform
         function test
             fprintf('Testing class "pca_whitening_transform".\n');
             
-            fprintf('  Testing proper construction.\n');
+            fprintf('  Proper construction.\n');
             
-            fprintf('    Testing without specifing argument "div_epsilon".\n');
+            fprintf('    Without specifing argument "div_epsilon".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
@@ -90,7 +90,7 @@ classdef pca_whitening_transform < reversible_transform
             
             clear all;
             
-            fprintf('    Testing with specifing of argument "div_epsilon".\n');
+            fprintf('    With specifing of argument "div_epsilon".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
@@ -113,9 +113,9 @@ classdef pca_whitening_transform < reversible_transform
             
             clear all;
             
-            fprintf('  Testing function "code".\n');
+            fprintf('  Function "code".\n');
             
-            fprintf('    Testing with 90%% kept energy.\n');
+            fprintf('    With 90%% kept energy.\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             c = ones(100,1);
@@ -151,7 +151,7 @@ classdef pca_whitening_transform < reversible_transform
             close(h);
             clear all;
             
-            fprintf('    Testing with 100%% kept energy.\n');
+            fprintf('    With 100%% kept energy.\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             c = ones(100,1);
@@ -188,7 +188,7 @@ classdef pca_whitening_transform < reversible_transform
             close(h);
             clear all;
             
-            fprintf('  Testing function "decode".\n');
+            fprintf('  Function "decode".\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
             c = ones(100,1);

@@ -51,7 +51,7 @@ classdef patch_extract_transform < transform
         function test
             fprintf('Testing "patch_extract_transform".\n');
             
-            fprintf('  Testing proper construction.\n');
+            fprintf('  Pproper construction.\n');
             
             t = patch_extract_transform(10,5,5,0.3);
             
@@ -60,7 +60,7 @@ classdef patch_extract_transform < transform
             assert(t.patch_col_count == 5);
             assert(t.required_variance == 0.3);
             
-            fprintf('  Testing function "code".\n');
+            fprintf('  Function "code".\n');
             
             s = gray_images_set.load_from_dir('../data/test');
             t = patch_extract_transform(50,40,40,0.0001);

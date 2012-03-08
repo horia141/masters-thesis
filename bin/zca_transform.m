@@ -57,9 +57,9 @@ classdef zca_transform < reversible_transform
         function test;
             fprintf('Testing "zca_transform".\n');
             
-            fprintf('  Testing proper construction.\n');
+            fprintf('  Proper construction.\n');
             
-            fprintf('    Testing without specifing argument "div_epsilon".\n');
+            fprintf('    Without specifing argument "div_epsilon".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
@@ -79,7 +79,7 @@ classdef zca_transform < reversible_transform
             
             clear all;
             
-            fprintf('    Testing with specifing of argument "div_epsilon".\n');
+            fprintf('    With specifing of argument "div_epsilon".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
@@ -99,7 +99,7 @@ classdef zca_transform < reversible_transform
             
             clear all;
             
-            fprintf('  Testing function "code".\n');
+            fprintf('  Function "code".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             [p_A,~,p_latent] = princomp(A);
@@ -137,7 +137,7 @@ classdef zca_transform < reversible_transform
             close(h);
             clear all;
             
-            fprintf('  Testing function "decode".\n');
+            fprintf('  Function "decode".\n');
             
             A = mvnrnd([3 3],[4 2.4; 2.4 2],100);
             c = ones(100,1);

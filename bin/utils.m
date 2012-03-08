@@ -115,21 +115,21 @@ classdef utils
         function test
             fprintf('Testing "utils".\n');
             
-            fprintf('  Testing function "force_row".\n');
+            fprintf('  Function "force_row".\n');
             
             assert(all(utils.force_row([1 2 3]) == [1 2 3]));
             assert(all(utils.force_row([1;2;3]) == [1 2 3]));
             assert(all(utils.force_row(zeros(1,45)) == zeros(1,45)));
             assert(all(utils.force_row(ones(41,1)) == ones(1,41)));
             
-            fprintf('  Testing function "force_col".\n');
+            fprintf('  Function "force_col".\n');
             
             assert(all(utils.force_col([1 2 3]) == [1;2;3]));
             assert(all(utils.force_col([1;2;3]) == [1;2;3]));
             assert(all(utils.force_col(zeros(1,45)) == zeros(45,1)));
             assert(all(utils.force_col(ones(41,1)) == ones(41,1)));
             
-            fprintf('  Testing function "approx".\n');
+            fprintf('  Function "approx".\n');
             
             t = rand(100,100);
             
@@ -143,9 +143,9 @@ classdef utils
             
             clear all;
             
-            fprintf('  Testing "format_as_tiles".\n');
+            fprintf('  Function "format_as_tiles".\n');
             
-            fprintf('    Testing with unspecified "tiles_row_count" and "tiles_col_count".\n');
+            fprintf('    With unspecified "tiles_row_count" and "tiles_col_count".\n');
             
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t);
@@ -157,7 +157,7 @@ classdef utils
             close(gcf());
             clear all;
             
-            fprintf('    Testing with unspecified "tiles_col_count".\n');
+            fprintf('    With unspecified "tiles_col_count".\n');
             
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t,7);
@@ -169,7 +169,7 @@ classdef utils
             close(gcf());
             clear all;
             
-            fprintf('    Testing with both "tiles_row_count" and "tiles_col_count" specified.\n');
+            fprintf('    With both "tiles_row_count" and "tiles_col_count" specified.\n');
             
             t = rand(20,20,36);
             tt = utils.format_as_tiles(t,5,8);
@@ -181,9 +181,9 @@ classdef utils
             close(gcf());
             clear all;
             
-            fprintf('  Testing "remap_images_to_unit".\n');
+            fprintf('  Function "remap_images_to_unit".\n');
             
-            fprintf('    Testing with mode "local" (default).\n');
+            fprintf('    With mode "local" (default).\n');
             
             t = 4 * rand(20,20,36) - 2;
             t(:,:,12:18) = 4 * t(:,:,12:18);
@@ -198,7 +198,7 @@ classdef utils
             close(gcf());
             clear all;
             
-            fprintf('    Testing with mode "local".\n');
+            fprintf('    With mode "local".\n');
             
             t = 4 * rand(20,20,36) - 2;
             t(:,:,12:18) = 4 * t(:,:,12:18);
@@ -213,7 +213,7 @@ classdef utils
             close(gcf());
             clear all;
             
-            fprintf('    Testing with mode "global".\n');
+            fprintf('    With mode "global".\n');
             
             t = 4 * rand(20,20,36) - 2;
             t(:,:,12:18) = 4 * t(:,:,12:18);

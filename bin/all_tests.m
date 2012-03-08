@@ -16,3 +16,4 @@ pca_transform.test
 pca_whitening_transform.test
 zca_transform.test
 patch_extract_transform.test
+remove_pinknoise_transform.test

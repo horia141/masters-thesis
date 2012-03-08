@@ -106,7 +106,7 @@ classdef samples_set
             
             fprintf('  Testing proper construction, "partition" and "subsamples".\n');
             
-            fprintf('    Testing construction.\n');
+            fprintf('    Proper construction.\n');
             
             A = [1 2 3 4;
                  1 2 4 3;
@@ -137,7 +137,7 @@ classdef samples_set
             assert(s.samples_count == 12);
             assert(s.features_count == 4);
             
-            fprintf('    Testing 2-fold partition and call to "subsamples" with boolean indices.\n');
+            fprintf('    2-fold partition and call to "subsamples" with boolean indices.\n');
             
             [tr_f,ts_f] = s.partition('kfold',2);
             
@@ -197,7 +197,7 @@ classdef samples_set
             assert(s_f22.samples_count == 6);
             assert(s_f22.features_count == 4);
             
-            fprintf('    Testing holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
+            fprintf('    Holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
             
             [tr_h,ts_h] = s.partition('holdout',0.33);
             
@@ -229,7 +229,7 @@ classdef samples_set
             assert(s_h2.samples_count == 3);
             assert(s_h2.features_count == 4);
             
-            fprintf('    Testing call to "subsamples" with natural indices.\n');
+            fprintf('    Call to "subsamples" with natural indices.\n');
             
             s_fi = s.subsamples(1:2:12);
             
@@ -245,7 +245,7 @@ classdef samples_set
             assert(s_fi.samples_count == 6);
             assert(s_fi.features_count == 4);
             
-            fprintf('    Testing call to "subsamples" with natural indices and redundant selection.\n');
+            fprintf('    Call to "subsamples" with natural indices and redundant selection.\n');
             
             s_fo = s.subsamples([1:12,1:12]);
             
@@ -266,7 +266,7 @@ classdef samples_set
             % Try building from pre-existing data using the "from_data"
             % static method.
             
-            fprintf('  Testing "from_data".\n');
+            fprintf('  Function "from_data".\n');
             
             A = [1 2 3 4;
                  1 2 4 3;
@@ -303,7 +303,7 @@ classdef samples_set
             % "$PROJECT_ROOT/data/iris/iris.csv". This should exist in all
             % distributions of this project.
             
-            fprintf('  Testing "load_csvfile" with iris data.\n');
+            fprintf('  Function "load_csvfile" with iris data.\n');
             
             s = samples_set.load_csvfile('../data/iris/iris.csv','%s','%f%f%f%f',',');
             
@@ -326,7 +326,7 @@ classdef samples_set
             % in all distributions of this project. We're not going to
             % specify a delimiter here.
             
-            fprintf('  Testing "load_csvfile" with Wine data.\n');
+            fprintf('  Function "load_csvfile" with Wine data.\n');
             
             s = samples_set.load_csvfile('../data/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
             
@@ -349,7 +349,7 @@ classdef samples_set
             % beyond the caller's control like improperly formated files or
             % insufficient access rights.
             
-            fprintf('  Testing "load_csvfile" with invalid external inputs.\n');
+            fprintf('  Function "load_csvfile" with invalid external inputs.\n');
             
             try
                 s = samples_set.load_csvfile('../data/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');

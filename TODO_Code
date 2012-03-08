@@ -1,6 +1,14 @@
-- [8] B:07.03.2012 E:??.??.????
+- [9] B:08.03.2012 E:??.??.????
+  Task: Add tests which work on images to "pca_transform",  "pca_whitening_transform"
+    and "zca_transform". Also display the original images in the tests for
+    "utils.remap_images_to_unit" because it is helpful to see how MatLAB displays
+    such images badly.
+
++ [8] B:07.03.2012 E:08.03.2012
   Task: There is a degree of non-uniformity in the logging for tests. I should
     fix this.
+  Resolved: I've made all test logging messages follow a similar format and
+    I've also made them more succint.
 
 - [7] B:07.03.2012 E:??.??.????
   Task: Move all datasets used  in test in "$PROJECT_ROOT/data/test" so

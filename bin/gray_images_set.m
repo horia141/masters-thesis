@@ -175,7 +175,7 @@ classdef gray_images_set < samples_set
             
             fprintf('  Testing proper construction, "partition" and "subsamples".\n');
             
-            fprintf('    Testing construction.\n');
+            fprintf('    Construction.\n');
             
             A = rand(10,10,12);
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
@@ -205,7 +205,7 @@ classdef gray_images_set < samples_set
             assert(s.col_count == 10);
             assert(all(all(s.samples == gray_images_set.to_samples(s.images))));
             
-            fprintf('    Testing 2-fold partition and call to "subsamples" with boolean indices.\n');
+            fprintf('    2-fold partition and call to "subsamples" with boolean indices.\n');
             
             [tr_f,ts_f] = s.partition('kfold',2);
             
@@ -305,7 +305,7 @@ classdef gray_images_set < samples_set
             assert(s_f22.col_count == 10);
             assert(all(all(s_f22.samples == gray_images_set.to_samples(s_f22.images))));
             
-            fprintf('    Testing holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
+            fprintf('    Holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
             
             [tr_h,ts_h] = s.partition('holdout',0.33);
             
@@ -357,7 +357,7 @@ classdef gray_images_set < samples_set
             assert(s_h2.col_count == 10);
             assert(all(all(s_h2.samples == gray_images_set.to_samples(s_h2.images))));
             
-            fprintf('    Testing call to "subsamples" with natural indices.\n');
+            fprintf('    Call to "subsamples" with natural indices.\n');
             
             s_fi = s.subsamples(1:2:12);
             
@@ -381,7 +381,7 @@ classdef gray_images_set < samples_set
             assert(s_fi.col_count == 10);
             assert(all(all(s_fi.samples == gray_images_set.to_samples(s_fi.images))));
             
-            fprintf('    Testing call to "subsamples" with natural indices and redundant selection.\n');
+            fprintf('    Call to "subsamples" with natural indices and redundant selection.\n');
             
             s_fo = s.subsamples([1:12,1:12]);
             
@@ -410,7 +410,7 @@ classdef gray_images_set < samples_set
             % Try building from pre-existing data using the "from_data"
             % static method.
             
-            fprintf('  Testing function "from_data".\n');
+            fprintf('  Function "from_data".\n');
             
             A = rand(10,10,12);
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
@@ -446,7 +446,7 @@ classdef gray_images_set < samples_set
             % "$PROJECT_ROOT/data/test/". This directory should
             % exist in all distributions of this project.
             
-            fprintf('  Testing "load_from_dir" with test data.\n');
+            fprintf('  Function "load_from_dir" with test data.\n');
             
             s = gray_images_set.load_from_dir('../data/test');
             
@@ -470,7 +470,7 @@ classdef gray_images_set < samples_set
             % files are stored in "$PROJECT_ROOT/data/test/". This 
             % directory should exist in all distributions of this project.
             
-            fprintf('  Testing "load_from_dir" with forced size on test data.\n');
+            fprintf('  Function "load_from_dir" with forced size on test data.\n');
             
             s = gray_images_set.load_from_dir('../data/test',[96 128]);
             
@@ -495,7 +495,7 @@ classdef gray_images_set < samples_set
             % "$PROJECT_ROOT/data/test/heterogeneous_dir". This directory
             % should exits for all distributions of this project.
             
-            fprintf('  Testing "load_from_dir" with heterogenous directory.\n');
+            fprintf('  Function "load_from_dir" with heterogenous directory.\n');
             
             s = gray_images_set.load_from_dir('../data/test/heterogeneous_dir');
             
@@ -520,7 +520,7 @@ classdef gray_images_set < samples_set
             % beyond the caller's control, like empty directories,
             % insufficient access rights and images of different sizes.
             
-            fprintf('  Testing "load_from_dir" with invalid external inputs.\n');
+            fprintf('  Function "load_from_dir" with invalid external inputs.\n');
             
             try
                 s = gray_images_set.load_from_dir('../data/test_aaa');
@@ -566,7 +566,7 @@ classdef gray_images_set < samples_set
             % "$PROJECT_ROOT/data/mnist/train-labels-idx1-ubyte". These two
             % files should exist in all distributions of this project.
             
-            fprintf('  Testing "load_mnist" with MNIST training data.\n');
+            fprintf('  Function "load_mnist" with MNIST training data.\n');
             
             s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
             
@@ -605,7 +605,7 @@ classdef gray_images_set < samples_set
             % not enough images are present or any of a number of binary
             % format decoding errors.
             
-            fprintf('  Testing "load_mnist" with invalid external inputs.\n');
+            fprintf('  Function "load_mnist" with invalid external inputs.\n');
             
             try
                 s = gray_images_set.load_mnist('../data/mnist/train-images-idx3-ubyte_aaa','../data/mnist/train-labels-idx1-ubyte');

@@ -30,13 +30,13 @@ classdef remove_pinknoise_transform < transform
         function test
             fprintf('Testing "remove_pinknoise_transform".\n');
             
-            fprintf('  Testing proper construction.\n');
+            fprintf('  Proper construction.\n');
             
             t = remove_pinknoise_transform();
             
             clear all;
             
-            fprintf('  Testing function "code".\n');
+            fprintf('  Function "code".\n');
             
             s = gray_images_set.load_from_dir('../data/test');
             t = remove_pinknoise_transform();

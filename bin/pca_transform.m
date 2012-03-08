@@ -51,7 +51,7 @@ classdef pca_transform < reversible_transform
         function test
             fprintf('Testing "pca_transform".\n');
             
-            fprintf('  Testing proper construction.\n');
+            fprintf('  Proper construction.\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.5],100);
             c = ones(100,1);
@@ -87,9 +87,9 @@ classdef pca_transform < reversible_transform
             
             clear all;
             
-            fprintf('  Testing function "code".\n');
+            fprintf('  Function "code".\n');
             
-            fprintf('    Testing with 90%% kept energy.\n');
+            fprintf('    With 90%% kept energy.\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
             [p_A,~,p_latent] = princomp(A);
@@ -127,7 +127,7 @@ classdef pca_transform < reversible_transform
             close(h);
             clear all;
             
-            fprintf('    Testing with 100%% kept energy.\n');
+            fprintf('    With 100%% kept energy.\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
             [p_A,~,p_latent] = princomp(A);
@@ -166,9 +166,9 @@ classdef pca_transform < reversible_transform
             close(h);
             clear all;
             
-            fprintf('  Testing function "decode".\n');
+            fprintf('  Function "decode".\n');
             
-            fprintf('    Testing with 90%% kept energy.\n');
+            fprintf('    With 90%% kept energy.\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
             c = ones(100,1);
@@ -210,7 +210,7 @@ classdef pca_transform < reversible_transform
             close(h);
             close all;
             
-            fprintf('    Testing with 100%% kept energy.\n');
+            fprintf('    With 100%% kept energy.\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
             c = ones(100,1);
