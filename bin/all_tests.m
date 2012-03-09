@@ -25,3 +25,4 @@ remove_pinknoise_transform.test(DISPLAY)
 %% Tests for "classifier" and derived classes.
 
 knn_classifier.test(DISPLAY)
+svm_classifier.test(DISPLAY)

@@ -5,12 +5,13 @@ classdef knn_classifier < classifier
     end
     
     methods (Access=public)
-        function [obj] = knn_classifier(samples,k)
-            assert(tc.scalar(samples) && tc.samples_set(samples));
+        function [obj] = knn_classifier(train_samples,k)
+            assert(tc.scalar(train_samples) && tc.samples_set(train_samples));
+            assert(train_samples.samples_count > 0);
             assert(tc.scalar(k) && tc.natural(k) && (k > 0));
         
-            obj = obj@classifier(samples);
-            obj.samples = samples;
+            obj = obj@classifier(train_samples);
+            obj.samples = train_samples;
             obj.k = k;
         end
     end
