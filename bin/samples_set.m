@@ -23,6 +23,34 @@ classdef samples_set
             obj.features_count = size(samples,2);
         end
         
+        function [o] = eq(obj,another_samples)
+            assert(tc.scalar(another_samples) && tc.samples_set(another_samples));
+            
+            o = true;
+            o = o && samples_set.same_classes(obj.classes,another_samples.classes);
+            o = o && obj.compatible(another_samples);
+            o = o && tc.check(size(obj.samples) == size(another_samples.samples));
+            o = o && tc.check(obj.samples == another_samples.samples);
+            o = o && tc.check(size(obj.labels_idx) == size(another_samples.labels_idx));
+            o = o && tc.check(obj.labels_idx == another_samples.labels_idx);
+            o = o && (obj.samples_count == another_samples.samples_count);
+            o = o && (obj.features_count == another_samples.features_count);
+        end
+        
+        function [o] = ne(obj,another_samples)
+            assert(tc.scalar(another_samples) && tc.samples_set(another_samples));
+            
+            o = ~obj.eq(another_samples);
+        end
+        
+        function [o] = compatible(obj,another_samples)
+            assert(tc.scalar(another_samples) && tc.samples_set(another_samples));
+            
+            o = true;
+            o = o && samples_set.same_classes(obj.classes,another_samples.classes);
+            o = o && (obj.features_count == another_samples.features_count);
+        end
+            
         function [tr_index,ts_index] = partition(obj,type,param)
             assert(tc.string(type) && (strcmp(type,'kfold') || strcmp(type,'holdout')));
             assert(tc.scalar(param) && tc.number(param) && ...
@@ -82,7 +110,7 @@ classdef samples_set
                 throw(MException('master:Samples:load_csvfile:NoLoad',exp.message));
             end
             
-            if ~all(cellfun(@tc.number,samples_raw(:,2:end)))
+            if ~tc.check(cellfun(@tc.number,samples_raw(:,2:end)))
                 throw(MException('master:Samples:load_csvfile:InvalidFormat',...
                          sprintf('File "%s" has an invalid format!',csvfile_path)));
             end
@@ -91,6 +119,25 @@ classdef samples_set
             labels_t = samples_raw{:,1};
             
             new_samples_set = samples_set.from_data(samples_t,labels_t);
+        end
+    end
+    
+    methods (Static,Access=private)
+        function [o] = same_classes(classes1,classes2)
+            assert(tc.vector(classes1) && tc.labels(classes1));
+            assert(tc.vector(classes2) && tc.labels(classes2));
+            
+            o = true;
+            o = o && tc.match_dims(classes1,classes2);
+            o = o && ((tc.logical(classes1) && tc.logical(classes2)) || ...
+                      (tc.natural(classes1) && tc.natural(classes2)) || ...
+                      (tc.cell(classes1) && tc.cell(classes2)));
+            
+            if tc.cell(classes1)
+                o = o && tc.check(arrayfun(@(i) tc.check(classes1{i} == classes2{i}),1:length(classes1)));
+            else
+                o = o && tc.check(classes1 == classes2);
+            end
         end
     end
     
@@ -260,6 +307,50 @@ classdef samples_set
             assert(all(s_fo.labels_idx == [c c]'));
             assert(s_fo.samples_count == 24);
             assert(s_fo.features_count == 4);
+            
+            clearvars -except display;
+            
+            fprintf('  Functions "eq" and "ne".\n');
+            
+            s1 = samples_set({'1' '2'},[1 2 3; 1 3 2],[1 2]);
+            s2 = samples_set({'1' '2'},[1 2 3; 1 3 2],[1 2]);
+            s3 = samples_set({'1' '2' '3'},[1 2 3; 1 3 2],[1 2]);
+            s4 = samples_set({'hello' 'world'},[1 2 3; 1 3 2],[1 2]);
+            s5 = samples_set([1 2],[1 2 3; 1 3 2],[1 2]);
+            s6 = samples_set([true false],[1 2 3; 1 3 2],[1 2]);
+            s7 = samples_set({'1' '2'},[1 2 3 4; 1 3 2 4],[1 2]);
+            s8 = samples_set({'1' '2'},[1 2 3; 1 3 2; 2 1 3],[1 2 2]);
+            s9 = samples_set({'1' '2'},[1 2 3; 1 3 3],[1 2]);
+            s10 = samples_set({'1' '2'},[1 2 3; 1 3 2],[1 1]);
+            
+            assert(s1 == s2);
+            assert(s1 ~= s3);
+            assert(s1 ~= s4);
+            assert(s1 ~= s5);
+            assert(s1 ~= s6);
+            assert(s1 ~= s7);
+            assert(s1 ~= s8);
+            assert(s1 ~= s9);
+            assert(s1 ~= s10);
+                        
+            clearvars -except display;
+            
+            fprintf('  Function "compatible".\n');
+            
+            s1 = samples_set({'1' '2'},rand(100,10),randi(2,100,1));
+            s2 = samples_set({'1' '2'},rand(150,10),randi(2,150,1));
+            s3 = samples_set({'1' '2' '3'},rand(50,10),randi(2,50,1));
+            s4 = samples_set({'hello' 'world'},rand(50,10),randi(2,50,1));
+            s5 = samples_set([1 2],rand(50,10),randi(2,50,1));
+            s6 = samples_set([true false],rand(50,10),randi(2,50,1));
+            s7 = samples_set({'1' '2'},rand(50,15),randi(2,50,1));
+            
+            assert(s1.compatible(s2) == true);
+            assert(s1.compatible(s3) == false);
+            assert(s1.compatible(s4) == false);
+            assert(s1.compatible(s5) == false);
+            assert(s1.compatible(s6) == false);
+            assert(s1.compatible(s7) == false);
             
             clearvars -except display;
 

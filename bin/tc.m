@@ -106,12 +106,24 @@ classdef tc
         end
         
         function [o] = match_dims(a,b,d1,d2)
-            if tc.vector(b)
-                o = size(a,d1) == length(b);
-            elseif ~exist('d2','var')
-                o = size(a,d1) == size(b,d1);
-            else
+            if exist('d1','var') && exist('d2','var')
                 o = size(a,d1) == size(b,d2);
+            elseif exist('d1','var')
+                if tc.vector(a) && tc.vector(b)
+                    o = size(a,d1) == size(b,d1);
+                elseif tc.vector(a)
+                    o = length(a) == size(b,d1);
+                elseif tc.vector(b)
+                    o = length(b) == size(a,d1);
+                else
+                    o = size(a,d1) == size(b,d1);
+                end
+            else
+                if tc.vector(a) && tc.vector(b);
+                    o = length(a) == length(b);
+                else
+                    o = size(a,1) == size(b,1);
+                end
             end
         end
                 
@@ -391,15 +403,42 @@ classdef tc
             
             fprintf('  Function "match_dims".\n');
             
-            assert(tc.match_dims(3,3,1) == true);
-            assert(tc.match_dims(zeros(4,3),ones(4,1),1) == true);
-            assert(tc.match_dims(zeros(4,3),ones(1,4),1) == true);
-            assert(tc.match_dims(zeros(4,4),ones(4,3),1) == true);
-            assert(tc.match_dims(zeros(4,4),ones(3,4),1,2) == true);
-            assert(tc.match_dims(zeros(4,5,3),ones(4,5,5),1,1) == true);
-            assert(tc.match_dims(zeros(4,4,3),ones(4,5,5),2,1) == true);
-            assert(tc.match_dims(zeros(4,4),ones(4,3),2) == false);
-            assert(tc.match_dims(zeros(4,3),ones(3,4),1) == false);
+            assert(tc.match_dims(1,1) == true);
+            assert(tc.match_dims([1 2 3],[1 3 2]) == true);
+            assert(tc.match_dims([1;2;3],[1 3 2]) == true);
+            assert(tc.match_dims(zeros(4,3),zeros(4,3)) == true);
+            assert(tc.match_dims(zeros(4,4),zeros(4,3)) == true);
+            assert(tc.match_dims(1,[1 2]) == false);
+            assert(tc.match_dims([1 2 3],[1 3 2 4]) == false);
+            assert(tc.match_dims([1;2;3],[1 3 2 4]) == false);
+            assert(tc.match_dims(zeros(4,2),zeros(3,2)) == false);
+            assert(tc.match_dims(1,1,1) == true);
+            assert(tc.match_dims(1,1,2) == true);
+            assert(tc.match_dims(1,1,3) == true);
+            assert(tc.match_dims([1 2 3],[1 3 2],1) == true);
+            assert(tc.match_dims([1 2 3],[1 3 2],2) == true);
+            assert(tc.match_dims([1 2 3],[1 3 2],3) == true);
+            assert(tc.match_dims([1 2 3],zeros(3,4),1) == true);
+            assert(tc.match_dims([1 2 3 4],zeros(3,4),2) == true);
+            assert(tc.match_dims(zeros(3,4),[1 2 3],1) == true);
+            assert(tc.match_dims(zeros(3,4),[1 2 3 4],2) == true);
+            assert(tc.match_dims(zeros(3,3),zeros(3,4),1) == true);
+            assert(tc.match_dims(zeros(3,4),zeros(2,4),2) == true);
+            assert(tc.match_dims(1,[1 2],2) == false);
+            assert(tc.match_dims([1 2 3],[1 3 2 4],2) == false);
+            assert(tc.match_dims([1 2 3],zeros(3,4),2) == false);
+            assert(tc.match_dims(zeros(3,4),zeros(4,3),1) == false);
+            assert(tc.match_dims(zeros(3,4),zeros(4,3),2) == false);
+            assert(tc.match_dims(1,1,1,1) == true);
+            assert(tc.match_dims([1 2 3],[1 2 3],1,1) == true);
+            assert(tc.match_dims([1;2;3],[1 2 3],1,2) == true);
+            assert(tc.match_dims([1 2 3],[1 2 3],1,3) == true);
+            assert(tc.match_dims([1;2;3],[1 2 3],1,2) == true);
+            assert(tc.match_dims(zeros(3,4),zeros(5,3),1,2) == true);
+            assert(tc.match_dims(zeros(3,4),zeros(3,5),1,1) == true);
+            assert(tc.match_dims(1,[1 2],1,2) == false);
+            assert(tc.match_dims([1;2;3],[1 2 3],1,1) == false);
+            assert(tc.match_dims(zeros(4,3),zeros(4,3),1,2) == false);
             
             fprintf('  Function "check".\n');
             

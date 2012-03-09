@@ -7,7 +7,7 @@ classdef gray_images_set < samples_set
     
     methods (Access=public)
         function [obj] = gray_images_set(classes,images,labels_idx)
-            assert(tc.vector(classes) && tc.cell(classes));
+            assert(tc.vector(classes) && tc.labels(classes));
             assert(tc.tensor(images,3) && tc.unitreal(images));
             assert(tc.vector(labels_idx) && tc.match_dims(images,labels_idx,3) && ...
                    tc.labels_idx(labels_idx,classes));
@@ -16,6 +16,24 @@ classdef gray_images_set < samples_set
             obj.images = images;
             obj.row_count = size(images,1);
             obj.col_count = size(images,2);
+        end
+        
+        function [o] = eq(obj,another_gray_images)
+            assert(tc.scalar(another_gray_images) && tc.gray_images_set(another_gray_images));
+            
+            o = obj.eq@samples_set(another_gray_images);
+            o = o && tc.check(size(obj.images) == size(another_gray_images.images));
+            o = o && tc.check(obj.images == another_gray_images.images);
+            o = o && (obj.row_count == another_gray_images.row_count);
+            o = o && (obj.col_count == another_gray_images.col_count);
+        end
+        
+        function [o] = compatible(obj,another_gray_images)
+            assert(tc.scalar(another_gray_images) && tc.gray_images_set(another_gray_images));
+            
+            o = obj.compatible@samples_set(another_gray_images);
+            o = o && (obj.row_count == another_gray_images.row_count);
+            o = o && (obj.col_count == another_gray_images.col_count);
         end
         
         function [new_gray_images_set] = subsamples(obj,index)
@@ -443,6 +461,52 @@ classdef gray_images_set < samples_set
             assert(all(all(s_fo.samples == gray_images_set.to_samples(s_fo.images))));
             
             clearvars -except display;
+            
+            fprintf('  Functions "eq" and "ne".\n');
+            
+            s1 = gray_images_set({'1' '2'},cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s2 = gray_images_set({'1' '2'},cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s3 = gray_images_set({'1' '2' '3'},cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s4 = gray_images_set({'true' 'false'},cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s5 = gray_images_set([1 2],cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s6 = gray_images_set([true false],cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s7 = gray_images_set({'1' '2'},cat(3,[0.1 0.2 0.3; 0.1 0.3 0.2],[0.1 0.2 0.4; 0.1 0.4 0.2]),[1 2]);
+            s8 = gray_images_set({'1' '2'},cat(3,[0.1 0.2 0.2 0.1],[0.1 0.3 0.3 0.1]),[1 2]);
+            s9 = gray_images_set({'1' '2'},cat(3,[0.1 0.2; 0.2 0.2],[0.1 0.3; 0.3 0.1]),[1 2]);
+            s10 = gray_images_set({'1' '2'},cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),[1 1]);
+            
+            assert(s1 == s2);
+            assert(s1 ~= s3);
+            assert(s1 ~= s4);
+            assert(s1 ~= s5);
+            assert(s1 ~= s6);
+            assert(s1 ~= s7);
+            assert(s1 ~= s8);
+            assert(s1 ~= s9);
+            assert(s1 ~= s10);
+            
+            clearvars -except display
+            
+            fprintf('  Function "compatible".\n');
+            
+            s1 = gray_images_set({'1' '2'},rand(10,10,3),randi(2,3,1));
+            s2 = gray_images_set({'1' '2'},rand(10,10,4),randi(2,4,1));
+            s3 = gray_images_set({'1' '2' '3'},rand(10,10,3),randi(2,3,1));
+            s4 = gray_images_set({'hello' 'world'},rand(10,10,3),randi(2,3,1));
+            s5 = gray_images_set([1 2],rand(10,10,3),randi(2,3,1));
+            s6 = gray_images_set([true false],rand(10,10,3),randi(2,3,1));
+            s7 = gray_images_set({'1' '2'},rand(12,12,3),randi(2,3,1));
+            s8 = gray_images_set({'1' '2'},rand(4,25,4),randi(2,4,1));
+            
+            assert(s1.compatible(s2) == true);
+            assert(s1.compatible(s3) == false);
+            assert(s1.compatible(s4) == false);
+            assert(s1.compatible(s5) == false);
+            assert(s1.compatible(s6) == false);
+            assert(s1.compatible(s7) == false);
+            assert(s1.compatible(s8) == false);
+            
+            clearvars -except display;            
             
             % Try building from pre-existing data stored in a "samples_set"
             % object. This might be the case when we apply "samples_set"

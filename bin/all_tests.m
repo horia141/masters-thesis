@@ -21,3 +21,7 @@ pca_whitening_transform.test(DISPLAY)
 zca_transform.test(DISPLAY)
 patch_extract_transform.test(DISPLAY)
 remove_pinknoise_transform.test(DISPLAY)
+
+%% Tests for "classifier" and derived classes.
+
+knn_classifier.test(DISPLAY)

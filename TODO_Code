@@ -1,3 +1,15 @@
+- [15] B:09.03.2012 E:??.??.????
+  Task: Introduce more succint assertions for the objects we work with to use
+    in tests. Instead of writing 10-15 assert statements, a function could
+    take as parameters the desired form of an object and return true or false
+    and the problem localization. 
+
+- [14] B:09.03.2012 E:??.??.????
+  Task: Make tests more to the point. We should test computed values to be of
+    a certain value, instead of testing also for form, domain etc. There are
+    some cases where, indeed, this cannot be done, but we should try to do it
+    for the rest.
+
 + [13] B:08.03.2012 E:08.03.2012
   Task: Add a fast mode for testing where no display of images is done. This
     is also useful for running tests on other machines which may not have X.
@@ -36,7 +48,7 @@
   Resolved: I've made all test logging messages follow a similar format and
     I've also made them more succint.
 
-+ [7] B:07.03.2012 E:??.??.????
++ [7] B:07.03.2012 E:08.03.2012
   Task: Move all datasets used  in test in "$PROJECT_ROOT/data/test" so
     they'll be accessible no matter what.
   Resolved: I've moved all datesets used in testing in the required directory.
