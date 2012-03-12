@@ -11,11 +11,12 @@ classdef classifier
             obj.one_sample = train_samples.subsamples(1);
         end
         
-        function [labels_idx_hat,score,conf_matrix,misclassified] = classify(obj,samples)
+        function [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
+                  score,conf_matrix,misclassified] = classify(obj,samples)
             assert(tc.scalar(samples) && tc.samples_set(samples));
             assert(obj.one_sample.compatible(samples));
             
-            labels_idx_hat = obj.do_classify(samples);
+            [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2] = obj.do_classify(samples);
             score = 100 * sum(samples.labels_idx == labels_idx_hat) / length(samples.labels_idx);
             conf_matrix = confusionmat(samples.labels_idx,labels_idx_hat);
             misclassified = find(labels_idx_hat ~= samples.labels_idx);

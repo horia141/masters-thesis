@@ -10,9 +10,9 @@ classdef tc
         
         function [o] = atomic(i,classes)
             if exist('classes','var')
-                o = tc.value(i) || tc.labels(i) || tc.labels_idx(i,classes) || tc.cell(i);
+                o = tc.value(i) || tc.labels(i) || tc.labels_idx(i,classes) || tc.cell(i) || tc.function_h(i);
             else
-                o = tc.value(i) || tc.labels(i) || tc.cell(i);
+                o = tc.value(i) || tc.labels(i) || tc.cell(i) || tc.function_h(i);
             end
         end
         
@@ -50,11 +50,15 @@ classdef tc
         
         function [o] = labels_idx(i,classes)
             o = tc.natural(i) && tc.check(i > 0 & i <= length(classes));
-        end        
+        end
         
         function [o] = cell(i)
             o = iscell(i);
-        end        
+        end
+        
+        function [o] = function_h(i)
+            o = isa(i,'function_handle');
+        end
         
         function [o] = object(i)
             o = tc.samples(i) || tc.transform(i) || tc.classifier(i);
@@ -152,6 +156,7 @@ classdef tc
             assert(tc.any({0}) == true);
             assert(tc.any({1 2 3}) == true);
             assert(tc.any({'hello' 'world'}) == true);
+            assert(tc.any(@()fprintf('hello')) == true);
             
             fprintf('  Function "atomic".\n');
             
@@ -167,6 +172,7 @@ classdef tc
             assert(tc.atomic({0}) == true);
             assert(tc.atomic({1 2 3}) == true);
             assert(tc.atomic({'hello' 'world'}) == true);
+            assert(tc.atomic(@()fprintf('hello')) == true);
             
             fprintf('  Function "value".\n');
             
@@ -181,6 +187,7 @@ classdef tc
             assert(tc.value({0}) == false);
             assert(tc.value({1 2 3}) == false);
             assert(tc.value({'hello' 'world'}) == false);
+            assert(tc.value(@()fprintf('hello')) == false);
             
             fprintf('  Function "logical".\n');
             
@@ -195,6 +202,7 @@ classdef tc
             assert(tc.logical({0}) == false);
             assert(tc.logical({1 2 3}) == false);
             assert(tc.logical({'hello' 'world'}) == false);
+            assert(tc.logical(@()fprintf('hello')) == false);
             
             fprintf('  Function "number".\n');
             
@@ -209,6 +217,7 @@ classdef tc
             assert(tc.number({0}) == false);
             assert(tc.number({1 2 3}) == false);
             assert(tc.number({'hello' 'world'}) == false);
+            assert(tc.number(@()fprintf('hello')) == false);
             
             fprintf('  Function "integer".\n');
             
@@ -223,6 +232,7 @@ classdef tc
             assert(tc.integer({0}) == false);
             assert(tc.integer({1 2 3}) == false);
             assert(tc.integer({'hello' 'world'}) == false);
+            assert(tc.integer(@()fprintf('hello')) == false);
             
             fprintf('  Function "natural".\n');
             
@@ -237,6 +247,7 @@ classdef tc
             assert(tc.natural({0}) == false);
             assert(tc.natural({1 2 3}) == false);
             assert(tc.natural({'hello' 'world'}) == false);
+            assert(tc.natural(@()fprintf('hello')) == false);
             
             fprintf('  Function "unitreal".\n');
             
@@ -251,6 +262,7 @@ classdef tc
             assert(tc.unitreal({0}) == false);
             assert(tc.unitreal({1 2 3}) == false);
             assert(tc.unitreal({'hello' 'world'}) == false);
+            assert(tc.unitreal(@()fprintf('hello')) == false);
             
             fprintf('  Function "string".\n');
             
@@ -265,6 +277,7 @@ classdef tc
             assert(tc.string({0}) == false);
             assert(tc.string({1 2 3}) == false);
             assert(tc.string({'hello' 'world'}) == false);
+            assert(tc.string(@()fprintf('hello')) == false);
             
             fprintf('  Function "labels".\n');
             
@@ -279,6 +292,7 @@ classdef tc
             assert(tc.labels({0}) == false);
             assert(tc.labels({1 2 3}) == false);
             assert(tc.labels({'hello' 'world'}) == true);
+            assert(tc.labels(@()fprintf('hello')) == false);
             
             fprintf('  Function "labels_idx".\n');
             
@@ -294,6 +308,7 @@ classdef tc
             assert(tc.labels_idx({0},{'0' '1'}) == false);
             assert(tc.labels_idx({1 2 3},{'0' '1'}) == false);
             assert(tc.labels_idx({'hello' 'world'},{'0' '1'}) == false);
+            assert(tc.labels_idx(@()fprintf('hello')) == false);
             
             fprintf('  Function "cell".\n');
             
@@ -308,6 +323,22 @@ classdef tc
             assert(tc.cell({0}) == true);
             assert(tc.cell({1 2 3}) == true);
             assert(tc.cell({'hello' 'world'}) == true);
+            assert(tc.cell(@()fprintf('hello')) == false);
+            
+            fprintf('  Function "function_h".\n');
+            
+            assert(tc.function_h(true) == false);
+            assert(tc.function_h(false) == false);
+            assert(tc.function_h(10.3) == false);
+            assert(tc.function_h(-4) == false);
+            assert(tc.function_h(7) == false);
+            assert(tc.function_h(0.3) == false);
+            assert(tc.function_h('hello') == false);
+            assert(tc.function_h({'0' '1' '2'}) == false);
+            assert(tc.function_h({0}) == false);
+            assert(tc.function_h({1 2 3}) == false);
+            assert(tc.function_h({'hello' 'world'}) == false);
+            assert(tc.function_h(@()fprintf('hello')) == true);
              
             % Tests for functions that check for specific structure.
             

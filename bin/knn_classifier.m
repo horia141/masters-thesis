@@ -17,8 +17,17 @@ classdef knn_classifier < classifier
     end
     
     methods (Access=protected)
-        function [labels_idx_hat] = do_classify(obj,samples)
+        function [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2] = do_classify(obj,samples)
             labels_idx_hat = knnclassify(samples.samples,obj.samples.samples,obj.samples.labels_idx);
+            labels_confidence = ones(size(labels_idx_hat));
+            labels_idx_hat2 = repmat(1:samples.classes_count,samples.samples_count,1);
+            labels_confidence2 = zeros(samples.samples_count,samples.classes_count);
+
+            for i = 1:samples.samples_count
+                labels_idx_hat2(i,labels_idx_hat(i)) = 1;
+                labels_idx_hat2(i,1) = labels_idx_hat(i);
+                labels_confidence2(i,1) = 1;
+            end
         end
     end
     
@@ -58,10 +67,13 @@ classdef knn_classifier < classifier
             
             cl = knn_classifier(s_tr,3);
             
-            [labels_idx_hat,score,conf_matrix,misclassified] = cl.classify(s_ts);
+            [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
+                score,conf_matrix,misclassified] = cl.classify(s_ts);
             
-            assert(length(labels_idx_hat) == s_ts.samples_count);
-            assert(all(labels_idx_hat == s_ts.labels_idx));
+            assert(tc.check(labels_idx_hat == s_ts.labels_idx));
+            assert(tc.check(labels_confidence == ones(60,1)));
+            assert(tc.check(labels_idx_hat2 == [repmat([1 2 3],20,1);repmat([2 1 3],20,1);repmat([3 2 1],20,1)]));
+            assert(tc.check(labels_confidence2 == [ones(60,1),zeros(60,2)]));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -69,16 +81,12 @@ classdef knn_classifier < classifier
             if exist('display','var') && (display == true)
                 figure();
                 hold on;
-                scatter(s_tr.samples(s_tr.labels_idx == 1,1),s_tr.samples(s_tr.labels_idx == 1,2),'x','r');
-                scatter(s_tr.samples(s_tr.labels_idx == 2,1),s_tr.samples(s_tr.labels_idx == 2,2),'x','g');
-                scatter(s_tr.samples(s_tr.labels_idx == 3,1),s_tr.samples(s_tr.labels_idx == 3,2),'x','b');
-                scatter(s_ts.samples(labels_idx_hat == 1,1),s_ts.samples(labels_idx_hat == 1,2),'o','r');
-                scatter(s_ts.samples(labels_idx_hat == 2,1),s_ts.samples(labels_idx_hat == 2,2),'o','g');
-                scatter(s_ts.samples(labels_idx_hat == 3,1),s_ts.samples(labels_idx_hat == 3,2),'o','b');
-                ptmp = allcomb(0:0.1:4,0:0.1:4);
+                gscatter(s_tr.samples(:,1),s_tr.samples(:,2),s_tr.labels_idx,'rgb','o',6);
+                gscatter(s_ts.samples(:,1),s_ts.samples(:,2),s_ts.labels_idx,'rgb','o',6);
+                ptmp = allcomb(-1:0.05:5,-1:0.05:5);
                 l = cl.classify(samples_set({'1' '2' '3'},ptmp,ones(length(ptmp),1)));
                 gscatter(ptmp(:,1),ptmp(:,2),l,'rgb','*',2);
-                axis([0 4 0 4]);                
+                axis([-1 5 -1 5]);                
                 pause(5);
                 close(gcf());
             end
@@ -106,9 +114,9 @@ classdef knn_classifier < classifier
             s_ts = samples_set({'1' '2' '3'},A_ts,c_ts);
             cl = knn_classifier(s_tr,3);
             
-            [labels_idx_hat,score,conf_matrix,misclassified] = cl.classify(s_ts);
+            [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
+                score,conf_matrix,misclassified] = cl.classify(s_ts);
             
-            assert(length(labels_idx_hat) == s_ts.samples_count);
             assert(tc.check(labels_idx_hat(1:18) == s_ts.labels_idx(1:18)));
             assert(tc.check(labels_idx_hat(21:38) == s_ts.labels_idx(21:38)));
             assert(tc.check(labels_idx_hat(41:58) == s_ts.labels_idx(41:58)));
@@ -118,6 +126,17 @@ classdef knn_classifier < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
+            assert(tc.check(labels_confidence == ones(60,1)));
+            assert(tc.check(labels_idx_hat2(1:18,:) == repmat([1 2 3],18,1)));
+            assert(tc.check(labels_idx_hat2(21:38,:) == repmat([2 1 3],18,1)));
+            assert(tc.check(labels_idx_hat2(41:58,:) == repmat([3 2 1],18,1)));
+            assert(tc.check(labels_idx_hat2(19,:) == [2 1 3]));
+            assert(tc.check(labels_idx_hat2(20,:) == [3 2 1]));
+            assert(tc.check(labels_idx_hat2(39,:) == [1 2 3]));
+            assert(tc.check(labels_idx_hat2(40,:) == [3 2 1]));
+            assert(tc.check(labels_idx_hat2(59,:) == [1 2 3]));
+            assert(tc.check(labels_idx_hat2(60,:) == [2 1 3]));
+            assert(tc.check(labels_confidence2 == [ones(60,1),zeros(60,2)]));
             assert(score == 90);
             assert(tc.check(conf_matrix == [18 1 1; 1 18 1; 1 1 18]));
             assert(tc.check(misclassified == [19 20 39 40 59 60]'));
@@ -125,16 +144,12 @@ classdef knn_classifier < classifier
             if exist('display','var') && (display == true)
                 figure();
                 hold on;
-                scatter(s_tr.samples(s_tr.labels_idx == 1,1),s_tr.samples(s_tr.labels_idx == 1,2),'x','r');
-                scatter(s_tr.samples(s_tr.labels_idx == 2,1),s_tr.samples(s_tr.labels_idx == 2,2),'x','g');
-                scatter(s_tr.samples(s_tr.labels_idx == 3,1),s_tr.samples(s_tr.labels_idx == 3,2),'x','b');
-                scatter(s_ts.samples(labels_idx_hat == 1,1),s_ts.samples(labels_idx_hat == 1,2),'o','r');
-                scatter(s_ts.samples(labels_idx_hat == 2,1),s_ts.samples(labels_idx_hat == 2,2),'o','g');
-                scatter(s_ts.samples(labels_idx_hat == 3,1),s_ts.samples(labels_idx_hat == 3,2),'o','b');
-                ptmp = allcomb(0:0.1:4,0:0.1:4);
+                gscatter(s_tr.samples(:,1),s_tr.samples(:,2),s_tr.labels_idx,'rgb','o',6);
+                gscatter(s_ts.samples(:,1),s_ts.samples(:,2),s_ts.labels_idx,'rgb','o',6);
+                ptmp = allcomb(-1:0.05:5,-1:0.05:5);
                 l = cl.classify(samples_set({'1' '2' '3'},ptmp,ones(length(ptmp),1)));
                 gscatter(ptmp(:,1),ptmp(:,2),l,'rgb','*',2);
-                axis([0 4 0 4]);                
+                axis([-1 5 -1 5]);                
                 pause(5);
                 close(gcf());
             end
@@ -156,21 +171,15 @@ classdef knn_classifier < classifier
             
             cl = knn_classifier(s_tr,3);
             
-            [labels_idx_hat,~,~,~] = cl.classify(s_ts);
-            
             if exist('display','var') && (display == true)
                 figure();
                 hold on;
-                scatter(s_tr.samples(s_tr.labels_idx == 1,1),s_tr.samples(s_tr.labels_idx == 1,2),'x','r');
-                scatter(s_tr.samples(s_tr.labels_idx == 2,1),s_tr.samples(s_tr.labels_idx == 2,2),'x','g');
-                scatter(s_tr.samples(s_tr.labels_idx == 3,1),s_tr.samples(s_tr.labels_idx == 3,2),'x','b');
-                scatter(s_ts.samples(labels_idx_hat == 1,1),s_ts.samples(labels_idx_hat == 1,2),'o','r');
-                scatter(s_ts.samples(labels_idx_hat == 2,1),s_ts.samples(labels_idx_hat == 2,2),'o','g');
-                scatter(s_ts.samples(labels_idx_hat == 3,1),s_ts.samples(labels_idx_hat == 3,2),'o','b');
-                ptmp = allcomb(0:0.1:4,0:0.1:4);
+                gscatter(s_tr.samples(:,1),s_tr.samples(:,2),s_tr.labels_idx,'rgb','o',6);
+                gscatter(s_ts.samples(:,1),s_ts.samples(:,2),s_ts.labels_idx,'rgb','o',6);
+                ptmp = allcomb(-1:0.05:5,-1:0.05:5);
                 l = cl.classify(samples_set({'1' '2' '3'},ptmp,ones(length(ptmp),1)));
                 gscatter(ptmp(:,1),ptmp(:,2),l,'rgb','*',2);
-                axis([0 4 0 4]);                
+                axis([-1 5 -1 5]);                
                 pause(5);
                 close(gcf());
             end
@@ -192,21 +201,15 @@ classdef knn_classifier < classifier
             
             cl = knn_classifier(s_tr,7);
             
-            [labels_idx_hat,~,~,~] = cl.classify(s_ts);
-            
             if exist('display','var') && (display == true)
                 figure();
                 hold on;
-                scatter(s_tr.samples(s_tr.labels_idx == 1,1),s_tr.samples(s_tr.labels_idx == 1,2),'x','r');
-                scatter(s_tr.samples(s_tr.labels_idx == 2,1),s_tr.samples(s_tr.labels_idx == 2,2),'x','g');
-                scatter(s_tr.samples(s_tr.labels_idx == 3,1),s_tr.samples(s_tr.labels_idx == 3,2),'x','b');
-                scatter(s_ts.samples(labels_idx_hat == 1,1),s_ts.samples(labels_idx_hat == 1,2),'o','r');
-                scatter(s_ts.samples(labels_idx_hat == 2,1),s_ts.samples(labels_idx_hat == 2,2),'o','g');
-                scatter(s_ts.samples(labels_idx_hat == 3,1),s_ts.samples(labels_idx_hat == 3,2),'o','b');
-                ptmp = allcomb(0:0.1:4,0:0.1:4);
+                gscatter(s_tr.samples(:,1),s_tr.samples(:,2),s_tr.labels_idx,'rgb','o',6);
+                gscatter(s_ts.samples(:,1),s_ts.samples(:,2),s_ts.labels_idx,'rgb','o',6);
+                ptmp = allcomb(-1:0.05:5,-1:0.05:5);
                 l = cl.classify(samples_set({'1' '2' '3'},ptmp,ones(length(ptmp),1)));
                 gscatter(ptmp(:,1),ptmp(:,2),l,'rgb','*',2);
-                axis([0 4 0 4]);                
+                axis([-1 5 -1 5]);                
                 pause(5);
                 close(gcf());
             end
