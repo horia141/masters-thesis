@@ -27,7 +27,7 @@ classdef samples_set
             assert(tc.scalar(another_samples) && tc.samples_set(another_samples));
             
             o = true;
-            o = o && samples_set.same_classes(obj.classes,another_samples.classes);
+            o = o && utils.same_classes(obj.classes,another_samples.classes);
             o = o && obj.compatible(another_samples);
             o = o && tc.check(size(obj.samples) == size(another_samples.samples));
             o = o && tc.check(obj.samples == another_samples.samples);
@@ -47,7 +47,7 @@ classdef samples_set
             assert(tc.scalar(another_samples) && tc.samples_set(another_samples));
             
             o = true;
-            o = o && samples_set.same_classes(obj.classes,another_samples.classes);
+            o = o && utils.same_classes(obj.classes,another_samples.classes);
             o = o && (obj.features_count == another_samples.features_count);
         end
             
@@ -123,22 +123,7 @@ classdef samples_set
     end
     
     methods (Static,Access=private)
-        function [o] = same_classes(classes1,classes2)
-            assert(tc.vector(classes1) && tc.labels(classes1));
-            assert(tc.vector(classes2) && tc.labels(classes2));
-            
-            o = true;
-            o = o && tc.match_dims(classes1,classes2);
-            o = o && ((tc.logical(classes1) && tc.logical(classes2)) || ...
-                      (tc.natural(classes1) && tc.natural(classes2)) || ...
-                      (tc.cell(classes1) && tc.cell(classes2)));
-            
-            if tc.cell(classes1)
-                o = o && tc.check(arrayfun(@(i) tc.check(classes1{i} == classes2{i}),1:length(classes1)));
-            else
-                o = o && tc.check(classes1 == classes2);
-            end
-        end
+        
     end
     
     methods (Static,Access=public)

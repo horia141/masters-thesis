@@ -53,6 +53,8 @@ classdef pca_transform < reversible_transform
             
             fprintf('  Proper construction.\n');
             
+            fprintf('    With 90%% kept energy.\n');
+            
             A = mvnrnd([3 3],[1 0.6; 0.6 0.5],100);
             c = ones(100,1);
             
@@ -69,6 +71,8 @@ classdef pca_transform < reversible_transform
             assert(t.output_features_count == 1);
             
             clearvars -except display;
+            
+            fprintf('  With 100%% kept energy.\n');
             
             A = mvnrnd([3 3],[1 0.6; 0.6 0.5],100);
             c = ones(100,1);

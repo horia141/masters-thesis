@@ -1,3 +1,54 @@
+- [20] B:13.03.2012 E:??.??.????
+  Task: Lots of small tasks for "sparse_sgdmp_transform".
+    * Change normalization code to work vectorized. Implement norm by hand
+      and do fast matrix math on whole dict.
+    * Store an learning rate schedule as a vector of learning rates at
+      different times, computed from "initial_learning_rate",
+      "final_learning_rate" and "max_iter_count". This will make calling
+      "dict_gradient_descent" easier and will make it easier somewhat to
+      change the learning rate schedule.
+    * Make "matching_pursuit" work on multiple samples at a time. This is
+      required both for fast batch mode operations and for fast coding.
+    * Optionally make it accept an initial directory (for cases where you
+      have hints of what a good directory might be or when you want to
+      continue the training from a previous session). It could also accept a
+      schedule parameter directly, instead of several schedule defining
+      parameters.
+
+- [19] B:13.03.2012 E:??.??.????
+  Task: Add batch mode options for learning the dictionary. Currently it does
+    only online learning. A "batch_size" parameter should control how many
+    vectors are selected per update.
+
+- [18] B:13.03.2012 E:??.??.????
+  Task: Make the testing code for "gray_images_set" which load the MNIST
+    training data, load a smaller set instead (either MNIST test data or a
+    smaller version alltogether).
+
+- [17] B:13.03.2012 E:??.??.????
+  Task: Transforms which require training should also store one sample of
+    their training data. This should be used later in calls to "code" and
+    "decode" for compatibility testing.
+
+- [16] B:13.03.2012 E:??.??.????
+  Task: We currently have no support for data of an unknown class. These
+    appear quite a lot as data for which we have no labels and that we want to
+    classify or as data for unsupervised pre-training. The support for this is
+    "sketchy" at best: the "gray_images_set.load_from_dir" function assigns a
+    class of "none" to the images it loaded. I should fix this. There should
+    indeed be a special class, name it "__none__" or something which is not a
+    valid label now, like -1, and make it present in every dataset "classes"
+    list. Also a label index of -1 could mean that we don't know the class of
+    the data. We should add the required code and add and change the required
+    tests for this to work well. Transforms won't be affected by this change
+    but classifiers should. They should ignore data that has the "__none__"
+    label. This would be useful for "nicer" implementations of "one-vs-one"
+    and "one-vs-all" classification. To prevent excessive copying we could
+    also introduce a special mask operation so certain samples are ignored for
+    purposes of classification etc.
+    In any case, at first, think about this, then implement it, because it
+    seems like a big change for the framework.
+
 - [15] B:09.03.2012 E:??.??.????
   Task: Introduce more succint assertions for the objects we work with to use
     in tests. Instead of writing 10-15 assert statements, a function could

@@ -212,7 +212,7 @@ classdef zca_transform < reversible_transform
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s3.images(:,:,1:4:end)));
                 title('Reconstructed images.');
-                pause(500);
+                pause(5);
                 close(gcf());
             end
             

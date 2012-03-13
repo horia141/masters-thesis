@@ -117,6 +117,23 @@ classdef utils
                 new_images = (images - im_min) / (im_max - im_min);
             end
         end
+        
+        function [o] = same_classes(classes1,classes2)
+            assert(tc.vector(classes1) && tc.labels(classes1));
+            assert(tc.vector(classes2) && tc.labels(classes2));
+            
+            o = true;
+            o = o && tc.match_dims(classes1,classes2);
+            o = o && ((tc.logical(classes1) && tc.logical(classes2)) || ...
+                      (tc.natural(classes1) && tc.natural(classes2)) || ...
+                      (tc.cell(classes1) && tc.cell(classes2)));
+            
+            if tc.cell(classes1)
+                o = o && tc.check(arrayfun(@(i) tc.check(classes1{i} == classes2{i}),1:length(classes1)));
+            else
+                o = o && tc.check(classes1 == classes2);
+            end
+        end
     end
     
     methods (Static,Access=public)
@@ -330,6 +347,19 @@ classdef utils
             end
             
             clearvars -except display;
+            
+            fprintf('  Function "same_classes".\n');
+            
+            assert(utils.same_classes(true,true) == true);
+            assert(utils.same_classes([1 2 3],[1 2 3]) == true);
+            assert(utils.same_classes({'1' '2'},{'1' '2'}) == true);
+            assert(utils.same_classes([1 2 3],[1 2]) == false);
+            assert(utils.same_classes([1 2],[1 2 3 4]) == false);
+            assert(utils.same_classes(true,1) == false);
+            assert(utils.same_classes(false,{'1'}) == false);
+            assert(utils.same_classes(1,{'1'}) == false);
+            assert(utils.same_classes([1 2],[3 4]) == false);
+            assert(utils.same_classes({'1' '2' '3'},{'1' '2' 'none'}) == false);
         end
     end
 end
