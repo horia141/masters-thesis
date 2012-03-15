@@ -1,39 +1,46 @@
-classdef knn_classifier < classifier
+classdef cmeans_classifier < classifier
     properties (GetAccess=public,SetAccess=immutable)
-        samples;
-        k;
+        centers;
     end
     
     methods (Access=public)
-        function [obj] = knn_classifier(train_samples,k)
+        function [obj] = cmeans_classifier(train_samples)
             assert(tc.scalar(train_samples) && tc.samples_set(train_samples));
             assert(train_samples.samples_count > 0);
-            assert(tc.scalar(k) && tc.natural(k) && (k > 0));
-        
+            
             obj = obj@classifier(train_samples);
-            obj.samples = train_samples;
-            obj.k = k;
+            
+            centers_t = zeros(train_samples.classes_count,train_samples.features_count);
+            
+            for i = 1:train_samples.classes_count
+                centers_t(i,:) = mean(train_samples.samples(train_samples.labels_idx == i,:));
+            end
+            
+            obj.centers = centers_t;
         end
     end
     
     methods (Access=protected)
         function [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2] = do_classify(obj,samples)
-            labels_idx_hat = knnclassify(samples.samples,obj.samples.samples,obj.samples.labels_idx);
-            labels_confidence = ones(size(labels_idx_hat));
-            labels_idx_hat2 = repmat(1:samples.classes_count,samples.samples_count,1);
-            labels_confidence2 = zeros(samples.samples_count,samples.classes_count);
-
-            for i = 1:samples.samples_count
-                labels_idx_hat2(i,labels_idx_hat(i)) = 1;
-                labels_idx_hat2(i,1) = labels_idx_hat(i);
-                labels_confidence2(i,1) = 1;
+            distances = zeros(samples.samples_count,obj.one_sample.classes_count);
+            
+            for i = 1:obj.one_sample.classes_count
+                distances(:,i) = sum((samples.samples - repmat(obj.centers(i,:),samples.samples_count,1)) .^ 2,2);
             end
+            
+            normed_distances = bsxfun(@rdivide,distances,sum(distances,2));
+            [sorted_distances,sorted_indices] = sort(normed_distances,2,'ascend');
+            
+            labels_idx_hat = sorted_indices(:,1);
+            labels_confidence = 1 - sorted_distances(:,1);
+            labels_idx_hat2 = sorted_indices;
+            labels_confidence2 = 1 - sorted_distances;
         end
     end
     
     methods (Static,Access=public)
         function test(display)
-            fprintf('Testing "knn_classifier".\n');
+            fprintf('Testing "cmeans_classifier".\n');
             
             fprintf('  Proper construction.\n');
             
@@ -43,10 +50,10 @@ classdef knn_classifier < classifier
             c = [1*ones(100,1);2*ones(100,1);3*ones(100,1)];
             
             s = samples_set({'1' '2' '3'},A,c);
-            cl = knn_classifier(s,1);
+            cl = cmeans_classifier(s);
             
-            assert(cl.samples == s);
-            assert(cl.k == 1);
+            assert(tc.check(arrayfun(@(i)utils.approx(cl.centers(i,:),mean(s.samples(s.labels_idx == i,:))),1:3)));
+            assert(utils.approx(cl.centers,[3 1;3 3;1 3],0.1));
             
             clearvars -except display;
             
@@ -65,15 +72,20 @@ classdef knn_classifier < classifier
             s_tr = s.subsamples(tr_i);
             s_ts = s.subsamples(ts_i);
             
-            cl = knn_classifier(s_tr,3);
+            t_centers = cell2mat(arrayfun(@(i)mean(s_tr.samples(s_tr.labels_idx == i,:))',1:3,'UniformOutput',false))';
+            AA = cell2mat(arrayfun(@(i)sum((s_ts.samples - repmat(t_centers(i,:),60,1)) .^ 2,2),1:3,'UniformOutput',false));
+            AA = bsxfun(@rdivide,AA',sum(AA,2)')';
+            [AA_s,I_s] = sort(AA,2,'ascend');
+            
+            cl = cmeans_classifier(s_tr);
             
             [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
                 score,conf_matrix,misclassified] = cl.classify(s_ts);
             
             assert(tc.check(labels_idx_hat == s_ts.labels_idx));
-            assert(tc.check(labels_confidence == ones(60,1)));
-            assert(tc.check(labels_idx_hat2 == [repmat([1 2 3],20,1);repmat([2 1 3],20,1);repmat([3 2 1],20,1)]));
-            assert(tc.check(labels_confidence2 == [ones(60,1),zeros(60,2)]));
+            assert(utils.approx(labels_confidence,1 - AA_s(:,1)));
+            assert(tc.check(labels_idx_hat2 == I_s));
+            assert(utils.approx(labels_confidence2,1 - AA_s));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -112,7 +124,13 @@ classdef knn_classifier < classifier
             
             s_tr = samples_set({'1' '2' '3'},A_tr,c_tr);
             s_ts = samples_set({'1' '2' '3'},A_ts,c_ts);
-            cl = knn_classifier(s_tr,3);
+            
+            t_centers = cell2mat(arrayfun(@(i)mean(s_tr.samples(s_tr.labels_idx == i,:))',1:3,'UniformOutput',false))';
+            AA = cell2mat(arrayfun(@(i)sum((s_ts.samples - repmat(t_centers(i,:),60,1)) .^ 2,2),1:3,'UniformOutput',false));
+            AA = bsxfun(@rdivide,AA',sum(AA,2)')';
+            [AA_s,I_s] = sort(AA,2,'ascend');
+            
+            cl = cmeans_classifier(s_tr);
             
             [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
                 score,conf_matrix,misclassified] = cl.classify(s_ts);
@@ -126,17 +144,9 @@ classdef knn_classifier < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.check(labels_confidence == ones(60,1)));
-            assert(tc.check(labels_idx_hat2(1:18,:) == repmat([1 2 3],18,1)));
-            assert(tc.check(labels_idx_hat2(21:38,:) == repmat([2 1 3],18,1)));
-            assert(tc.check(labels_idx_hat2(41:58,:) == repmat([3 2 1],18,1)));
-            assert(tc.check(labels_idx_hat2(19,:) == [2 1 3]));
-            assert(tc.check(labels_idx_hat2(20,:) == [3 2 1]));
-            assert(tc.check(labels_idx_hat2(39,:) == [1 2 3]));
-            assert(tc.check(labels_idx_hat2(40,:) == [3 2 1]));
-            assert(tc.check(labels_idx_hat2(59,:) == [1 2 3]));
-            assert(tc.check(labels_idx_hat2(60,:) == [2 1 3]));
-            assert(tc.check(labels_confidence2 == [ones(60,1),zeros(60,2)]));
+            assert(utils.approx(labels_confidence,1 - AA_s(:,1)));
+            assert(tc.check(labels_idx_hat2 == I_s));
+            assert(utils.approx(labels_confidence2,1 - AA_s));
             assert(score == 90);
             assert(tc.check(conf_matrix == [18 1 1; 1 18 1; 1 1 18]));
             assert(tc.check(misclassified == [19 20 39 40 59 60]'));
@@ -156,7 +166,7 @@ classdef knn_classifier < classifier
             
             clearvars -except display;
             
-            fprintf('    Without clearly separated data (k=3).\n');
+            fprintf('    Without clearly separated data.\n');
             
             A = [mvnrnd([3 1],[0.5 0; 0 0.5],100);
                  mvnrnd([3 3],[0.5 0; 0 0.5],100);
@@ -169,37 +179,7 @@ classdef knn_classifier < classifier
             s_tr = s.subsamples(tr_i);
             s_ts = s.subsamples(ts_i);
             
-            cl = knn_classifier(s_tr,3);
-            
-            if exist('display','var') && (display == true)
-                figure();
-                hold on;
-                gscatter(s_tr.samples(:,1),s_tr.samples(:,2),s_tr.labels_idx,'rgb','o',6);
-                gscatter(s_ts.samples(:,1),s_ts.samples(:,2),s_ts.labels_idx,'rgb','o',6);
-                ptmp = allcomb(-1:0.05:5,-1:0.05:5);
-                l = cl.classify(samples_set({'1' '2' '3'},ptmp,ones(length(ptmp),1)));
-                gscatter(ptmp(:,1),ptmp(:,2),l,'rgb','*',2);
-                axis([-1 5 -1 5]);                
-                pause(5);
-                close(gcf());
-            end
-            
-            clearvars -except display;
-            
-            fprintf('    Without clearly separated data (k=7).\n');
-            
-            A = [mvnrnd([3 1],[0.5 0; 0 0.5],100);
-                 mvnrnd([3 3],[0.5 0; 0 0.5],100);
-                 mvnrnd([1 3],[0.5 0; 0 0.5],100)];
-            c = [1*ones(100,1);2*ones(100,1);3*ones(100,1)];
-            
-            s = samples_set({'1' '2' '3'},A,c);
-            [tr_i,ts_i] = s.partition('holdout',0.2);
-            
-            s_tr = s.subsamples(tr_i);
-            s_ts = s.subsamples(ts_i);
-            
-            cl = knn_classifier(s_tr,7);
+            cl = cmeans_classifier(s_tr);
             
             if exist('display','var') && (display == true)
                 figure();

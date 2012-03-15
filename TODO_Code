@@ -1,4 +1,4 @@
-+ [29] B:14.03.2012 E:??.??.????
++ [29] B:14.03.2012 E:15.03.2012
   Task: Add a "image_resize_transform" which does resizing of
   "gray_images_set".
   Resolved: I've added the transform and some tests for it.
@@ -17,10 +17,11 @@
     with the highest probability. This is the simplest probabilistic
     classifier.
 
-- [25] B:14.03.2012 E:??.??.????
++ [25] B:14.03.2012 E:15.03.2012
   Task: Add a "means_classifier" which does classification based on the
     distances from a sample to the mean of a class. This is the simplest
     geometric classifier.
+  Resolved: I've added the classifier and the usual tests for it.
 
 - [24] B:14.03.2012 E:??.??.????
   Task: Add a whole sleuth of other transforms besides the "dct_transform".
