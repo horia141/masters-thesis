@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = true;
+DISPLAY = false;
 
 %% Tests for basic classes.
 
@@ -30,5 +30,6 @@ sparse_gdmp_transform.test(DISPLAY);
 knn_classifier.test(DISPLAY);
 svm_classifier.test(DISPLAY);
 cmeans_classifier.test(DISPLAY);
+logistic_regression_classifier.test(DISPLAY);
 
 one_vs_one_classifier.test(DISPLAY);
