@@ -161,7 +161,7 @@ classdef pca_transform < reversible_transform
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,2,2);
-                scatter(s_p.samples(:,1),zeros(100,1),'x');
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed samples.');
                 pause(5);
@@ -242,7 +242,7 @@ classdef pca_transform < reversible_transform
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,3,2);
-                scatter(s_p.samples(:,1),zeros(100,1),'x');
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed samples.');
                 subplot(1,3,3);

@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = false;
+DISPLAY = true;
 
 %% Tests for basic classes.
 
@@ -23,10 +23,12 @@ zca_transform.test(DISPLAY);
 patch_extract_transform.test(DISPLAY);
 remove_pinknoise_transform.test(DISPLAY);
 sparse_sgdmp_transform.test(DISPLAY);
+sparse_gdmp_transform.test(DISPLAY);
 
 %% Tests for "classifier" and derived classes.
 
 knn_classifier.test(DISPLAY);
 svm_classifier.test(DISPLAY);
+cmeans_classifier.test(DISPLAY);
 
 one_vs_one_classifier.test(DISPLAY);

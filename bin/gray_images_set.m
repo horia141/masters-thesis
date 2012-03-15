@@ -925,16 +925,16 @@ classdef gray_images_set < samples_set
             clearvars -except display;
             
             % Try loading images saved in the MNIST format. The images are
-            % stored in "$PROJECT_ROOT/data/test/mnist/train-images-idx3-ubyte",
+            % stored in "$PROJECT_ROOT/data/test/mnist/t10k-images-idx3-ubyte",
             % while the labels are stored in
-            % "$PROJECT_ROOT/data/mnist/test/train-labels-idx1-ubyte". These 
+            % "$PROJECT_ROOT/data/mnist/test/t10k-labels-idx1-ubyte". These 
             % two files should exist in all distributions of this project.
             
             fprintf('  Function "load_mnist".\n');
             
             fprintf('    With MNIST training data.\n');
             
-            s = gray_images_set.load_mnist('../data/test/mnist/train-images-idx3-ubyte','../data/test/mnist/train-labels-idx1-ubyte');
+            s = gray_images_set.load_mnist('../data/test/mnist/t10k-images-idx3-ubyte','../data/test/mnist/t10k-labels-idx1-ubyte');
             
             assert(length(s.classes) == 10);
             assert(strcmp(s.classes(1),'0'));
@@ -948,11 +948,11 @@ classdef gray_images_set < samples_set
             assert(strcmp(s.classes(9),'8'));
             assert(strcmp(s.classes(10),'9'));
             assert(s.classes_count == 10);
-            assert(all(size(s.samples) == [60000 28*28]));
+            assert(all(size(s.samples) == [10000 28*28]));
             assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
-            assert(all(size(s.labels_idx) == [60000 1]));
+            assert(all(size(s.labels_idx) == [10000 1]));
             assert(tc.vector(s.labels_idx) && tc.labels_idx(s.labels_idx,s.classes));
-            assert(s.samples_count == 60000);
+            assert(s.samples_count == 10000);
             assert(s.features_count == 28*28);
             assert(tc.tensor(s.images,3) && tc.unitreal(s.images));
             assert(s.row_count == 28);

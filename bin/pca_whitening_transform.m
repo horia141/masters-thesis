@@ -179,7 +179,7 @@ classdef pca_whitening_transform < reversible_transform
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,2,2);
-                scatter(s_p.samples(:,1),zeros(100,1),'x');
+                scatter(s_p.samples(:,1),s_p.samples(:,2),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed and whitened samples.');
                 pause(5);

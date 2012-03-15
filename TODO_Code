@@ -64,10 +64,11 @@
     only online learning. A "batch_size" parameter should control how many
     vectors are selected per update.
 
-- [18] B:13.03.2012 E:??.??.????
++ [18] B:13.03.2012 E:15.03.2012
   Task: Make the testing code for "gray_images_set" which load the MNIST
     training data, load a smaller set instead (either MNIST test data or a
     smaller version alltogether).
+  Resolved: I've made the test use the MNIST test data.
 
 - [17] B:13.03.2012 E:??.??.????
   Task: Transforms which require training should also store one sample of
