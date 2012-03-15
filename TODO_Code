@@ -1,3 +1,46 @@
++ [29] B:14.03.2012 E:??.??.????
+  Task: Add a "image_resize_transform" which does resizing of
+  "gray_images_set".
+  Resolved: I've added the transform and some tests for it.
+
+- [28] B:14.03.2012 E:??.??.????
+  Task: Reorganize the file/module structure a little. For now, all classes
+    live in the top-level. As we continue adding stuff, the top-level will
+    become more crowded.
+
+- [27] B:14.03.2012 E:??.??.????
+  Task: Add a "normal_bayes_classifier" which does classification using Bayes
+    rule and assuming data is distributed normally, given a class. 
+
+- [26] B:14.03.2012 E:??.??.????
+  Task: Add a "probs_classifier" which does classification based on the class
+    with the highest probability. This is the simplest probabilistic
+    classifier.
+
+- [25] B:14.03.2012 E:??.??.????
+  Task: Add a "means_classifier" which does classification based on the
+    distances from a sample to the mean of a class. This is the simplest
+    geometric classifier.
+
+- [24] B:14.03.2012 E:??.??.????
+  Task: Add a whole sleuth of other transforms besides the "dct_transform".
+    Think of "fourier_transform", "random_patches_transform" and
+    "random_weights_transform".
+   
+- [23] B:13.03.2012 E:??.??.????
+  Task: Add "dct_transform".
+
+- [22] B:13.03.2012 E:??.??.????
+  Task: "gray_images_set.load_csvfile" produces a "samples_set" object. This
+    is not quite what a user of "gray_images_set" expects. In fact, a user of
+    this class wouldn't use this methods to begin with. We must either mask it
+    or make it do something useful for images.
+
+- [21] B:13.03.2012 E:??.??.????
+  Task: Make "display" variable passed to all tests a little bit more
+    meaningful. It should have values "none", "slow", "fast", "step" for
+    different levels of control.
+
 - [20] B:13.03.2012 E:??.??.????
   Task: Lots of small tasks for "sparse_sgdmp_transform".
     * Change normalization code to work vectorized. Implement norm by hand

@@ -16,6 +16,7 @@ gray_images_set.test(DISPLAY);
 
 dc_offset_transform.test(DISPLAY);
 mean_substract_transform.test(DISPLAY);
+image_resize_transform.test(DISPLAY);
 pca_transform.test(DISPLAY);
 pca_whitening_transform.test(DISPLAY);
 zca_transform.test(DISPLAY);

@@ -61,9 +61,9 @@ classdef remove_pinknoise_transform < transform
             
             if exist('display','var') && (display == true)
                 figure();
-                subplot(2,1,1);
+                subplot(1,2,1);
                 imshow(utils.format_as_tiles(p_s.images,8,10));
-                subplot(2,1,2);
+                subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_p.images,8,10));
                 pause(5);
                 close(gcf());

@@ -21,7 +21,7 @@ classdef sparse_sgdmp_transform < reversible_transform
                     (final_learning_rate > 0) && (final_learning_rate < initial_learning_rate));
             assert(tc.scalar(max_iter_count) && tc.natural(max_iter_count) && (max_iter_count > 0));
             
-            initial_dict = 2 * rand(samples.features_count,word_count) - 1;
+            initial_dict = rand(samples.features_count,word_count);
             sparse_dict_t = sparse_sgdmp_transform.dict_gradient_descent(initial_dict,samples.samples,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count);
             
             obj.sparse_dict = sparse_dict_t;
@@ -63,17 +63,11 @@ classdef sparse_sgdmp_transform < reversible_transform
     
     methods (Static,Access=public)
         function [norm_dict] = normalize_dict(dict)
-            norm_dict = dict;
-            
-            for i = 1:size(dict,2)
-                norm_dict(:,i) = norm_dict(:,i) / norm(norm_dict(:,i));
-            end
+            norm_dict = dict ./ repmat(sqrt(sum(dict .^ 2,1)),size(dict,1),1);
         end
         
         function [dict] = dict_gradient_descent(initial_dict,samples,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count)
             dict = sparse_sgdmp_transform.normalize_dict(initial_dict);
-            
-%             figure;
             
             for iter = 1:max_iter_count
                 c_sample = samples(randi(size(samples,1)),:);
@@ -85,14 +79,13 @@ classdef sparse_sgdmp_transform < reversible_transform
                 dict = dict + learning_rate * delta_dict;
                 dict = sparse_sgdmp_transform.normalize_dict(dict);
                 
-%                 if mod(iter,10) == 0
-%                     clf;
-%                     hold on;
-%                     scatter(samples(:,1),samples(:,2),10,'b','x');
-%                     scatter(dict(1,:)',dict(2,:)',20,'r','o');
-%                     scatter(c_sample(1),c_sample(2),30,'b','o');
-%                     axis([-3 3 -3 3]);
-%                     pause(0.1);
+%                 if mod(iter,max_iter_count) == 0
+%                     dict_aa = zeros(16,16,256);
+%                     for i = 1:256
+%                         dict_aa(:,:,i) = reshape(dict(:,i),[16 16]);
+%                     end
+%                     imshow(utils.format_as_tiles(utils.remap_images_to_unit(dict_aa,'local')));
+%                     pause(0.2);
 %                 end
             end
         end
