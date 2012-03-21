@@ -59,9 +59,7 @@ classdef stdout < logging.handler
             
             hnd = logging.handlers.stdout(logging.level.Details);
             
-            hnd.send('    Successful send of "Details" level message.\n');
-            hnd.send('    Successful send of "Status" level message.\n');
-            hnd.send('    Successful send of "Error" level message.\n');
+            hnd.send('    Successful send of message.\n');
             hnd.close();
             
             clearvars -except display;

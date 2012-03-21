@@ -10,6 +10,7 @@ logging.level.test(DISPLAY);
 logging.handlers.zero.test(DISPLAY);
 logging.handlers.stdout.test(DISPLAY);
 logging.handlers.file.test(DISPLAY);
+logging.handlers.sendmail.test(DISPLAY);
 logging.logger.test(DISPLAY);
 
 %% Tests for "samples" and derived classes.

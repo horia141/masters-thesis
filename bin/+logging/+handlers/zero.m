@@ -56,18 +56,16 @@ classdef zero < logging.handler
             
             fprintf('  Function "send".\n');
             
-            hnd = logging.handlers.stdout(logging.level.Details);
+            hnd = logging.handlers.zero(logging.level.Details);
             
-            hnd.send('    Successful send of "Details" level message.\n');
-            hnd.send('    Successful send of "Status" level message.\n');
-            hnd.send('    Successful send of "Error" level message.\n');
+            hnd.send('Successful send of message.\n');
             hnd.close();
             
             clearvars -except display;
             
             fprintf('  Function "close".\n');
             
-            hnd = logging.handlers.stdout(logging.level.Status);
+            hnd = logging.handlers.zero(logging.level.Status);
             
             hnd.close();
             

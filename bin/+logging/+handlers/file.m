@@ -113,18 +113,14 @@ classdef file < logging.handler
             
             hnd = logging.handlers.file('../data/log1.log',logging.level.Details);
             
-            hnd.send('Successful send of "Details" level message.\n');
-            hnd.send('Successful send of "Status" level message.\n');
-            hnd.send('Successful send of "Error" level message.\n');
+            hnd.send('Successful send of message.\n');
             hnd.close();
             
             [cat_code,cat_res] = system('cat ../data/log1.log');
             [rm_code,~] = system('rm ../data/log1.log');
             
             assert(cat_code == 0);
-            assert(strcmp(cat_res,sprintf('%s\n%s\n%s\n','Successful send of "Details" level message.',...
-                                                         'Successful send of "Status" level message.',...
-                                                         'Successful send of "Error" level message.')));
+            assert(strcmp(cat_res,sprintf('%s\n','Successful send of message.')));
             assert(rm_code == 0);
             
             clearvars -except display;
