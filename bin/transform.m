@@ -1,5 +1,5 @@
 classdef transform
     methods (Abstract,Access=public)
-        code(samples);
+        code(obj,samples);
     end
 end

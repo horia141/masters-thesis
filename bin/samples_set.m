@@ -447,7 +447,7 @@ classdef samples_set
                 assert(false);
             catch exp
                 !chmod a+r ../data/test/wine/wine.csv
-                if strcmp(exp.message,'Could not load csv file "../data/test/wine/wine.csv": Permission denied!');
+                if strcmp(exp.message,'Could not load csv file "../data/test/wine/wine.csv": Permission denied!')
                     fprintf('      Passes "Permission denied!" test.\n');
                 else
                     assert(false);

@@ -1,6 +1,6 @@
 classdef reversible_transform < transform
     methods (Abstract,Access=public)
-        decode(samples);
+        decode(obj,samples);
     end
 end
     

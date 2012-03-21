@@ -24,6 +24,6 @@ classdef classifier
     end
     
     methods (Abstract,Access=protected)
-        do_classify(samples);
+        do_classify(obj,samples);
     end
 end

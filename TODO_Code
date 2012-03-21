@@ -1,6 +1,48 @@
+- [37] B:21.03.2012 E:??.??.????
+  Task: Replace usage of "!" syntax to call system utilities with calls to the
+    "system" function and do proper testing of return codes.
+
+- [36] B:20.03.2012 E:??.??.????
+  Task: "gray_images_set" maybe should not keep a copy of the original images
+    around. For larger datasets or when many copies need to be made (like for the
+    "random_corr_transform") a lot of memory is wasted.
+
+- [35] B:20.03.2012 E:??.??.????
+  Task: See if there is a way to make "one_vs_one_classifier" safer by using
+    "meta.class" and similar mechanisms in MatLAB. More specifically, pass a
+    metaclass object to the classifier constructor instead of an anonymous
+    function. 
+
+- [34] B:19.03.2012 E:??.??.????
+  Task: "svm_classifier" should signal when it couldn't converge to a
+    solution. Ditto for "logistic_regression_classifier" if we keep the MatLAB
+    version. The proper mechanism should be raising an exception. Calling code
+    should propagate the exception (in "architecture", most often, or
+    "one_vs_one_classifier") until someone can handle it, usually by ignoring
+    it and printing a message to the user.
+
+- [33] B:19.03.2012 E:??.??.????
+  Task: Add a "one_sample" mechanism to "architecture", similar to the one in
+    "classifier".
+
+- [32] B:19.03.2012 E:??.??.????
+  Task: explore the option of keeping a concatenated version of the images in
+    a "gray_images_set" in one large image. See what operations could be
+    hastened by this approach.
+
+- [31] B:16.03.2012 E:??.??.????
+  Task: See what can be done about relaxing the "unitreal" constraint on
+    images. At least some kind of non-image 2d or 3d signals could be
+    represented as images, but for the unitreal constraint.
+
+- [30] B:16.03.2012 E:??.??.????
+  Task: Add a subclass of reversible transform for all dictionary based
+    transform methods (save PCA), if it seems that it makes sense to share
+    code like "corr_code" or "mp_code" or "omp_code" etc. between transforms.
+
 + [29] B:14.03.2012 E:15.03.2012
   Task: Add a "image_resize_transform" which does resizing of
-  "gray_images_set".
+    "gray_images_set".
   Resolved: I've added the transform and some tests for it.
 
 - [28] B:14.03.2012 E:??.??.????

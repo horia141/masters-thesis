@@ -116,7 +116,7 @@ classdef gray_images_set < samples_set
                     
                     if (current_image > 1) && ...
                         (~all(size(image) == size(images_t(:,:,1))))
-                        throw(MException('master:Images:load_from_dir:NoLoad',...
+                        throw(MException('master:gray_images_set:load_from_dir:NoLoad',...
                                          'Images are of different sizes!'));
                     end
 
@@ -124,13 +124,13 @@ classdef gray_images_set < samples_set
                     current_image = current_image + 1;
                 catch exp
                     if isempty(regexp(exp.identifier,'MATLAB:imread:.*','ONCE'))
-                        throw(MException('master:Images:load_from_dir:NoLoad',exp.message));
+                        throw(MException('master:gray_images_set:load_from_dir:NoLoad',exp.message));
                     end
                 end
             end
             
             if isempty(images_t)
-                throw(MException('master:Images:load_from_dir:NoLoad',...
+                throw(MException('master:gray_images_set:load_from_dir:NoLoad',...
                                  'Could not find any acceptable images in the directory.'));
             end
             
@@ -144,7 +144,7 @@ classdef gray_images_set < samples_set
             [images_fid,images_msg] = fopen(images_path,'rb');
             
             if images_fid == -1
-                throw(MException('master:Images:load_mnist:NoLoad',...
+                throw(MException('master:gray_images_set:load_mnist:NoLoad',...
                     sprintf('Could not load images in "%s": %s!',images_path,images_msg)))
             end
             
@@ -152,7 +152,7 @@ classdef gray_images_set < samples_set
             
             if labels_fid == -1
                 fclose(images_fid);
-                throw(MException('master:Images:load_mnist:NoLoad',...
+                throw(MException('master:gray_images_set:load_mnist:NoLoad',...
                     sprintf('Could not load labels in "%s": %s!',labels_path,labels_msg)))
             end
             
@@ -160,14 +160,14 @@ classdef gray_images_set < samples_set
                 images_magic = gray_images_set.high2low(fread(images_fid,4,'uint8=>uint32'));
                 
                 if images_magic ~= 2051
-                    throw(MException('master:Images:load_mnist:NoLoad',...
+                    throw(MException('master:gray_images_set:load_mnist:NoLoad',...
                         sprintf('Images file "%s" not in MNIST format!',images_path)));
                 end
                 
                 labels_magic = gray_images_set.high2low(fread(labels_fid,4,'uint8=>uint32'));
                 
                 if labels_magic ~= 2049
-                    throw(MException('master:Images:load_mnist:NoLoad',...
+                    throw(MException('master:gray_images_set:load_mnist:NoLoad',...
                         sprintf('Labels file "%s" not in MNIST format!',labels_path)));
                 end
                 
@@ -175,7 +175,7 @@ classdef gray_images_set < samples_set
                 labels_count = gray_images_set.high2low(fread(labels_fid,4,'uint8=>uint32'));
                 
                 if images_count ~= labels_count
-                    throw(MException('master:Images:load_mnist:NoLoad',...
+                    throw(MException('master:gray_images_set:load_mnist:NoLoad',...
                         sprintf('Different number of labels in "%s" for images in "%s"!',labels_path,images_path)));
                 end
                 
@@ -195,7 +195,7 @@ classdef gray_images_set < samples_set
             catch exp
                 fclose(images_fid);
                 fclose(labels_fid);
-                throw(MException('master:Images:load_mnist:NoLoad',exp.message));
+                throw(MException('master:gray_images_set:load_mnist:NoLoad',exp.message));
             end
 
             new_gray_images_set = gray_images_set.from_data(images_t,labels_t);
