@@ -134,6 +134,29 @@ classdef utils
                 o = o && tc.check(classes1 == classes2);
             end
         end
+        
+        function [params_list] = gen_all_params(params)
+            assert(tc.scalar(params) && (isstruct(params)) && ...
+                   tc.check(cellfun(@(c)tc.vector(c) && tc.number(c),struct2cell(params))));
+            
+            params_names = fieldnames(params);
+            params_non_expand = cell(length(params_names),1);
+            
+            for i = 1:length(params_names)
+                params_non_expand{i} = [params.(params_names{i})];
+            end
+            
+            params_expand = feval(@allcomb,params_non_expand{:});
+            
+            special = cell(2 * length(params_names),1);
+            
+            for i = 1:length(params_names)
+                special{2*(i - 1) + 1} = params_names{i};
+                special{2*(i - 1) + 2} = num2cell(params_expand(:,i));
+            end
+            
+            params_list = feval(@struct,special{:});
+        end
     end
     
     methods (Static,Access=public)
@@ -360,6 +383,35 @@ classdef utils
             assert(utils.same_classes(1,{'1'}) == false);
             assert(utils.same_classes([1 2],[3 4]) == false);
             assert(utils.same_classes({'1' '2' '3'},{'1' '2' 'none'}) == false);
+            
+            fprintf('  Function "gen_all_params".\n');
+            
+            test_params.a = [1 2 3];
+            test_params.b = [2 3];
+            test_params.c = 4;
+            
+            params_list = utils.gen_all_params(test_params);
+            
+            assert(params_list(1).a == 1);
+            assert(params_list(1).b == 2);
+            assert(params_list(1).c == 4);
+            assert(params_list(2).a == 1);
+            assert(params_list(2).b == 3);
+            assert(params_list(2).c == 4);
+            assert(params_list(3).a == 2);
+            assert(params_list(3).b == 2);
+            assert(params_list(3).c == 4);
+            assert(params_list(4).a == 2);
+            assert(params_list(4).b == 3);
+            assert(params_list(4).c == 4);
+            assert(params_list(5).a == 3);
+            assert(params_list(5).b == 2);
+            assert(params_list(5).c == 4);
+            assert(params_list(6).a == 3);
+            assert(params_list(6).b == 3);
+            assert(params_list(6).c == 4);
+            
+            clearvars -except display;
         end
     end
 end
