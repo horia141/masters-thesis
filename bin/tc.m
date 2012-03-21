@@ -72,6 +72,10 @@ classdef tc
             o = isa(i,'gray_images_set');
         end
         
+        function [o] = architecture(i)
+            o = isa(i,'architecture');
+        end
+        
         function [o] = transform(i)
             o = isa(i,'transform');
         end
@@ -79,7 +83,19 @@ classdef tc
         function [o] = classifier(i)
             o = isa(i,'classifier');
         end
-                
+        
+        function [o] = logging_logger(i)
+            o = isa(i,'logging.logger');
+        end
+        
+        function [o] = logging_handler(i)
+            o = isa(i,'logging.handler');
+        end
+        
+        function [o] = logging_level(i)
+            o = isa(i,'logging.level');
+        end
+        
         function [o] = empty(i)
             o = isempty(i);
         end

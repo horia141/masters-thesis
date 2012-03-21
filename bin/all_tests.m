@@ -6,6 +6,10 @@ DISPLAY = false;
 
 tc.test(DISPLAY);
 utils.test(DISPLAY);
+logging.level.test(DISPLAY);
+logging.handlers.stdout.test(DISPLAY);
+logging.handlers.file.test(DISPLAY);
+logging.logger.test(DISPLAY);
 
 %% Tests for "samples" and derived classes.
 
@@ -33,3 +37,9 @@ cmeans_classifier.test(DISPLAY);
 logistic_regression_classifier.test(DISPLAY);
 
 one_vs_one_classifier.test(DISPLAY);
+
+%% Tests for "architecture" and derived classes.
+
+baseline_1_architecture.test(DISPLAY);
+baseline_2_architecture.test(DISPLAY);
+random_cnn_1layer_architecture.test(DISPLAY);
