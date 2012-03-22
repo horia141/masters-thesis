@@ -41,7 +41,7 @@ classdef tc
         end
         
         function [o] = string(i)
-            o = (isempty(i) || tc.vector(i)) && ischar(i);
+            o = ischar(i);
         end
         
         function [o] = labels(i)
@@ -64,12 +64,24 @@ classdef tc
             o = tc.samples(i) || tc.transform(i) || tc.classifier(i);
         end
         
-        function [o] = samples_set(i)
-            o = isa(i,'samples_set');
+        function [o] = dataset(i)
+            o = isa(i,'dataset');
         end
         
-        function [o] = gray_images_set(i)
-            o = isa(i,'gray_images_set');
+        function [o] = datasets_record(i)
+            o = isa(i,'datasets.record');
+        end
+        
+        function [o] = datasets_image(i)
+            o = isa(i,'datasets.image');
+        end
+        
+        function [o] = datasets_images_color(i)
+            o = isa(i,'datasets.images.color');
+        end
+        
+        function [o] = datasets_images_gray(i)
+            o = isa(i,'datasets.images.gray');
         end
         
         function [o] = architecture(i)
@@ -101,27 +113,47 @@ classdef tc
         end
         
         function [o] = scalar(i)
-            o = (length(size(i)) == 2) && (size(i,1) == 1) && (size(i,2) == 1);
+            if tc.string(i)
+                o = (length(size(i)) == 2) && ((size(i,1) == 1) && (size(i,2) >= 1));
+            else
+                o = (length(size(i)) == 2) && (size(i,1) == 1) && (size(i,2) == 1);
+            end
         end
         
         function [o] = vector(i)
-            o = (length(size(i)) == 2) && (((size(i,1) == 1) && (size(i,2) >= 1)) || ...
-                                           ((size(i,1) >= 1) && (size(i,2) == 1)));
+            if tc.string(i)
+                o = false;
+            else
+                o = (length(size(i)) == 2) && (((size(i,1) == 1) && (size(i,2) >= 1)) || ...
+                                               ((size(i,1) >= 1) && (size(i,2) == 1)));
+            end
         end
         
         function [o] = matrix(i)
-            o = (length(size(i)) == 2) && (size(i,1) >= 1) && (size(i,2) >= 1);
+            if tc.string(i)
+                o = false;
+            else
+                o = (length(size(i)) == 2) && (size(i,1) >= 1) && (size(i,2) >= 1);
+            end
         end
         
         function [o] = tensor(i,d)
-            if d == 0
-                o = tc.scalar(i);
-            elseif d == 1
-                o = tc.vector(i);
-            elseif d == 2
-                o = tc.matrix(i);
+            if tc.string(i)
+                if d == 1
+                    o = true;
+                else
+                    o = false;
+                end
             else
-                o = (length(size(i)) <= d) && (all(size(i) >= 1));
+                if d == 0
+                    o = tc.scalar(i);
+                elseif d == 1
+                    o = tc.vector(i);
+                elseif d == 2
+                    o = tc.matrix(i);
+                else
+                    o = (length(size(i)) <= d) && (all(size(i) >= 1));
+                end
             end
         end
         
@@ -375,6 +407,7 @@ classdef tc
             assert(tc.empty({1;1;1}) == false);
             assert(tc.empty(num2cell(ones(4,3))) == false);
             assert(tc.empty(num2cell(ones(4,3,4))) == false);
+            assert(tc.empty('hello') == false);
             
             fprintf('  Function "scalar".\n');
             
@@ -393,6 +426,7 @@ classdef tc
             assert(tc.scalar({1;1;1}) == false);
             assert(tc.scalar(num2cell(ones(4,3))) == false);
             assert(tc.scalar(num2cell(ones(4,3,4))) == false);
+            assert(tc.scalar('hello') == true);
             
             fprintf('  Function "vector".\n');
             
@@ -411,6 +445,7 @@ classdef tc
             assert(tc.vector({1;1;1}) == true);
             assert(tc.vector(num2cell(ones(4,3))) == false);
             assert(tc.vector(num2cell(ones(4,3,4))) == false);
+            assert(tc.vector('hello') == false);
             
             fprintf('  Function "matrix".\n');
             
@@ -429,6 +464,7 @@ classdef tc
             assert(tc.matrix({1;1;1}) == true);
             assert(tc.matrix(num2cell(ones(4,3))) == true);
             assert(tc.matrix(num2cell(ones(4,3,4))) == false);
+            assert(tc.matrix('hello') == false);
             
             fprintf('  Function "tensor".\n');
             
@@ -447,6 +483,10 @@ classdef tc
             assert(tc.tensor({1;1;1},3) == true);
             assert(tc.tensor(num2cell(ones(4,3)),3) == true);
             assert(tc.tensor(num2cell(ones(4,3,4)),3) == true);
+            assert(tc.tensor('hello',0) == false);
+            assert(tc.tensor('hello',1) == true);
+            assert(tc.tensor('hello',2) == false);
+            assert(tc.tensor('hello',3) == false);
             
             fprintf('  Function "match_dims".\n');
             

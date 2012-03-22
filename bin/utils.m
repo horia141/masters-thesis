@@ -36,7 +36,7 @@ classdef utils
         end
         
         function [tiles_image] = format_as_tiles(images,tiles_row_count,tiles_col_count,bypass_unitreal)
-            assert(tc.tensor(images,3) && ...
+            assert(tc.tensor(images,4) && ...
                    (tc.unitreal(images) || (exist('bypass_unitreal','var') && tc.number(images))));
             assert(~exist('tiles_row_count','var') || ...
                    (tc.scalar(tiles_row_count) && tc.natural(tiles_row_count) && (tiles_row_count > 1)));
@@ -48,7 +48,8 @@ classdef utils
                      (tiles_row_count * tiles_row_count >= size(images,3)));
             assert(~exist('bypas_unitreal','var') || (tc.scalar(bypass_unitreal) && bypass_unitreal));
             
-            images_count = size(images,3);
+            images_count = size(images,4);
+            layers_count = size(images,3);
             row_count = size(images,1);
             col_count = size(images,2);
             
@@ -64,31 +65,33 @@ classdef utils
             end
     
             tiles_image = ones((row_count + 1) * tiles_row_count_t + 1,...
-                               (col_count + 1) * tiles_col_count_t + 1);
+                               (col_count + 1) * tiles_col_count_t + 1,layers_count);
     
-            for i = 1:tiles_row_count_t
-                for j = 1:tiles_col_count_t
-                    if (i - 1) * tiles_col_count_t + j <= images_count
-                        image = images(:,:,(i - 1) * tiles_col_count_t + j);
-                        tiles_image(((i - 1)*(row_count + 1) + 2):(i*(row_count + 1)),...
-                                    ((j - 1)*(col_count + 1) + 2):(j*(col_count + 1))) = image;
-                    else
-                        tiles_image(((i - 1)*(row_count + 1) + 2):(i*(row_count + 1)),...
-                                    ((j - 1)*(col_count + 1) + 2):(j*(col_count + 1))) = 0.25 * ones(row_count,col_count);
+            for layer = 1:layers_count
+                for i = 1:tiles_row_count_t
+                    for j = 1:tiles_col_count_t
+                        if (i - 1) * tiles_col_count_t + j <= images_count
+                            image = images(:,:,(i - 1) * tiles_col_count_t + j);
+                            tiles_image(((i - 1)*(row_count + 1) + 2):(i*(row_count + 1)),...
+                                        ((j - 1)*(col_count + 1) + 2):(j*(col_count + 1)),layer) = image;
+                        else
+                            tiles_image(((i - 1)*(row_count + 1) + 2):(i*(row_count + 1)),...
+                                        ((j - 1)*(col_count + 1) + 2):(j*(col_count + 1)),layer) = 0.25 * ones(row_count,col_count);
+                        end
                     end
                 end
             end
         end
         
         function [new_images] = clamp_images_to_unit(images)
-            assert(tc.tensor(images,3) && tc.number(images));
+            assert(tc.tensor(images,4) && tc.number(images));
             
             new_images = max(min(images,1),0);
         end
         
         function [new_images] = remap_images_to_unit(images,mode)
-            assert(tc.tensor(images,3) && tc.number(images));
-            assert(~exist('mode','var') || (tc.string(mode) && ...
+            assert(tc.tensor(images,4) && tc.number(images));
+            assert(~exist('mode','var') || (tc.scalar(mode) && tc.string(mode) && ...
                      (strcmp(mode,'local') || strcmp(mode,'global'))));
                  
             if exist('mode','var')
@@ -97,18 +100,21 @@ classdef utils
                 mode_t = 'local';
             end
             
-            images_count = size(images,3);
+            images_count = size(images,4);
+            layers_count = size(images,3);
             row_count = size(images,1);
             col_count = size(images,2);
             
-            new_images = zeros(row_count,col_count,images_count);
+            new_images = zeros(row_count,col_count,layers_count,images_count);
             
             if strcmp(mode_t,'local')
                 for i = 1:images_count
-                    im_min = min(min(images(:,:,i)));
-                    im_max = max(max(images(:,:,i)));
+                    for j = 1:layers_count
+                        im_min = min(min(images(:,:,j,i)));
+                        im_max = max(max(images(:,:,j,i)));
                     
-                    new_images(:,:,i) = (images(:,:,i) - im_min) / (im_max - im_min);
+                        new_images(:,:,j,i) = (images(:,:,j,i) - im_min) / (im_max - im_min);
+                    end
                 end
             else
                 im_min = min(images(:));

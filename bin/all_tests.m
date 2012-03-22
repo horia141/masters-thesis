@@ -15,8 +15,10 @@ logging.logger.test(DISPLAY);
 
 %% Tests for "samples" and derived classes.
 
-samples_set.test(DISPLAY);
-gray_images_set.test(DISPLAY);
+datasets.record.test(DISPLAY);
+datasets.image.test(DISPLAY);
+datasets.images.gray.test(DISPLAY);
+datasets.images.color.test(DISPLAY);
 
 %% Tests for "transform" and derived classes.
 
