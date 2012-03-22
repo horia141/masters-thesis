@@ -45,11 +45,11 @@ classdef tc
         end
         
         function [o] = labels(i)
-            o = tc.logical(i) || tc.natural(i) || (tc.cell(i) && all(cellfun(@tc.string,i)));
+            o = tc.logical(i) || tc.natural(i) || (tc.cell(i) && all(cellfun(@(c)tc.scalar(c) && tc.string(c),i)));
         end
         
         function [o] = labels_idx(i,classes)
-            o = tc.natural(i) && tc.check(i > 0 & i <= length(classes));
+            o = tc.natural(i) && tc.check(i >= 1 & i <= length(classes));
         end
         
         function [o] = cell(i)
@@ -61,7 +61,9 @@ classdef tc
         end
         
         function [o] = object(i)
-            o = tc.samples(i) || tc.transform(i) || tc.classifier(i);
+            o = tc.dataset(i) || ...
+                tc.experiment(i) || tc.architecture(i) || tc.transform(i) || tc.classifier(i) || ...
+                tc.logging_logger(i) || tc.logging_handler(i) || tc.logging_level(i);
         end
         
         function [o] = dataset(i)
@@ -82,6 +84,10 @@ classdef tc
         
         function [o] = datasets_images_gray(i)
             o = isa(i,'datasets.images.gray');
+        end
+        
+        function [o] = experiment(i)
+            o = isa(i,'experiment');
         end
         
         function [o] = architecture(i)

@@ -23,7 +23,7 @@ classdef utils
         function [o] = approx(v1,v2,epsilon)
             assert(tc.number(v1));
             assert(tc.number(v2));
-            assert(~exist('epsilon','var') || tc.unitreal(epsilon));
+            assert(~exist('epsilon','var') || (tc.scalar(epsilon) && tc.unitreal(epsilon)));
             
             if exist('epsilon','var')
                 epsilon_t = epsilon;
@@ -43,10 +43,10 @@ classdef utils
             assert(~exist('tiles_col_count','var') || ...
                    (tc.scalar(tiles_col_count) && tc.natural(tiles_col_count) && (tiles_col_count > 1)));
             assert(~(exist('tiles_row_count','var') && exist('tiles_col_count','var')) || ...
-                     (tiles_row_count * tiles_col_count >= size(images,3)));
+                     (tiles_row_count * tiles_col_count >= size(images,4)));
             assert(~(exist('tiles_row_count','var') && ~exist('tiles_col_count','var')) || ...
-                     (tiles_row_count * tiles_row_count >= size(images,3)));
-            assert(~exist('bypas_unitreal','var') || (tc.scalar(bypass_unitreal) && bypass_unitreal));
+                     (tiles_row_count * tiles_row_count >= size(images,4)));
+            assert(~exist('bypas_unitreal','var') || (tc.scalar(bypass_unitreal) && tc.logical(bypass_unitreal) && bypass_unitreal));
             
             images_count = size(images,4);
             layers_count = size(images,3);
@@ -65,13 +65,14 @@ classdef utils
             end
     
             tiles_image = ones((row_count + 1) * tiles_row_count_t + 1,...
-                               (col_count + 1) * tiles_col_count_t + 1,layers_count);
+                               (col_count + 1) * tiles_col_count_t + 1,...
+                               layers_count);
     
             for layer = 1:layers_count
                 for i = 1:tiles_row_count_t
                     for j = 1:tiles_col_count_t
                         if (i - 1) * tiles_col_count_t + j <= images_count
-                            image = images(:,:,(i - 1) * tiles_col_count_t + j);
+                            image = images(:,:,layer,(i - 1) * tiles_col_count_t + j);
                             tiles_image(((i - 1)*(row_count + 1) + 2):(i*(row_count + 1)),...
                                         ((j - 1)*(col_count + 1) + 2):(j*(col_count + 1)),layer) = image;
                         else
@@ -91,7 +92,8 @@ classdef utils
         
         function [new_images] = remap_images_to_unit(images,mode)
             assert(tc.tensor(images,4) && tc.number(images));
-            assert(~exist('mode','var') || (tc.scalar(mode) && tc.string(mode) && ...
+            assert(~exist('mode','var') || ...
+                   (tc.scalar(mode) && tc.string(mode) && ...
                      (strcmp(mode,'local') || strcmp(mode,'global'))));
                  
             if exist('mode','var')
@@ -108,12 +110,12 @@ classdef utils
             new_images = zeros(row_count,col_count,layers_count,images_count);
             
             if strcmp(mode_t,'local')
-                for i = 1:images_count
-                    for j = 1:layers_count
-                        im_min = min(min(images(:,:,j,i)));
-                        im_max = max(max(images(:,:,j,i)));
+                for layer = 1:layers_count
+                    for i = 1:images_count
+                        im_min = min(min(images(:,:,layer,i)));
+                        im_max = max(max(images(:,:,layer,i)));
                     
-                        new_images(:,:,j,i) = (images(:,:,j,i) - im_min) / (im_max - im_min);
+                        new_images(:,:,layer,i) = (images(:,:,layer,i) - im_min) / (im_max - im_min);
                     end
                 end
             else
@@ -135,7 +137,7 @@ classdef utils
                       (tc.cell(classes1) && tc.cell(classes2)));
             
             if tc.cell(classes1)
-                o = o && tc.check(arrayfun(@(i) tc.check(classes1{i} == classes2{i}),1:length(classes1)));
+                o = o && tc.check(arrayfun(@(i)tc.check(classes1{i} == classes2{i}),1:length(classes1)));
             else
                 o = o && tc.check(classes1 == classes2);
             end
@@ -201,7 +203,7 @@ classdef utils
             
             fprintf('    With unspecified "tiles_row_count" and "tiles_col_count".\n');
             
-            t = rand(20,20,36);
+            t = rand(20,20,1,36);
             tt = utils.format_as_tiles(t);
             
             if exist('display','var') && (display == true)
@@ -215,7 +217,7 @@ classdef utils
             
             fprintf('    With unspecified "tiles_col_count".\n');
             
-            t = rand(20,20,36);
+            t = rand(20,20,1,36);
             tt = utils.format_as_tiles(t,7);
             
             if exist('display','var') && (display == true)
@@ -229,7 +231,7 @@ classdef utils
             
             fprintf('    With both "tiles_row_count" and "tiles_col_count" specified.\n');
             
-            t = rand(20,20,36);
+            t = rand(20,20,1,36);
             tt = utils.format_as_tiles(t,5,8);
             
             if exist('display','var') && (display == true)
@@ -243,8 +245,22 @@ classdef utils
             
             fprintf('    With relaxed input ("images" does not have to be "unitreal").\n');
             
-            t = 3*rand(20,20,36) - 1.5;
+            t = 3*rand(20,20,1,36) - 1.5;
             tt = utils.format_as_tiles(t,6,6,true);
+            
+            if exist('display','var') && (display == true)
+                figure();
+                imshow(tt);
+                pause(5);
+                close(gcf());
+            end
+            
+            clearvars -except display;
+            
+            fprintf('    With color images.\n');
+            
+            t = rand(20,20,3,36);
+            tt = utils.format_as_tiles(t);
             
             if exist('display','var') && (display == true)
                 figure();
@@ -259,7 +275,7 @@ classdef utils
             
             fprintf('    With small excursions below 0 and above 1.\n');
             
-            t = rand(20,20,36) + 0.2;
+            t = rand(20,20,1,36) + 0.2;
             tp = utils.clamp_images_to_unit(t);
             
             assert(min(tp(:)) >= 0);
@@ -282,7 +298,30 @@ classdef utils
             
             fprintf('    With large excursions below 0 and above 1.\n');
             
-            t = 4 * rand(20,20,36) - 2;
+            t = 4 * rand(20,20,1,36) - 2;
+            tp = utils.clamp_images_to_unit(t);
+            
+            assert(min(tp(:)) >= 0);
+            assert(max(tp(:)) <= 1);
+            assert(tc.unitreal(tp));
+            
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Clamped images.');
+                pause(5);
+                close(gcf());
+            end
+            
+            clearvars -except display;
+            
+            fprintf('    With color images.\n');
+            
+            t = rand(20,20,3,36) + 0.2;
             tp = utils.clamp_images_to_unit(t);
             
             assert(min(tp(:)) >= 0);
@@ -307,7 +346,7 @@ classdef utils
             
             fprintf('    With mode "local" (default).\n');
             
-            t = 4 * rand(20,20,36) - 2;
+            t = 4 * rand(20,20,1,36) - 2;
             t(:,:,12:18) = 4 * t(:,:,12:18);
             tp = utils.remap_images_to_unit(t);
             
@@ -331,7 +370,7 @@ classdef utils
             
             fprintf('    With mode "local".\n');
             
-            t = 4 * rand(20,20,36) - 2;
+            t = 4 * rand(20,20,1,36) - 2;
             t(:,:,12:18) = 4 * t(:,:,12:18);
             tp = utils.remap_images_to_unit(t,'local');
             
@@ -355,9 +394,33 @@ classdef utils
             
             fprintf('    With mode "global".\n');
             
-            t = 4 * rand(20,20,36) - 2;
+            t = 4 * rand(20,20,1,36) - 2;
             t(:,:,12:18) = 4 * t(:,:,12:18);
             tp = utils.remap_images_to_unit(t,'global');
+            
+            assert(min(tp(:)) == 0);
+            assert(max(tp(:)) == 1);
+            assert(tc.unitreal(tp));
+            
+            if exist('display','var') && (display == true)
+                figure();
+                subplot(1,2,1);
+                imshow(utils.format_as_tiles(t,6,6,true));
+                title('Problem images.');
+                subplot(1,2,2);
+                imshow(utils.format_as_tiles(tp));
+                title('Remaped images.');
+                pause(5);
+                close(gcf());
+            end
+            
+            clearvars -except display;
+            
+            fprintf('    With color images.\n');
+            
+            t = 4 * rand(20,20,3,36) - 2;
+            t(:,:,12:18) = 4 * t(:,:,12:18);
+            tp = utils.remap_images_to_unit(t);
             
             assert(min(tp(:)) == 0);
             assert(max(tp(:)) == 1);

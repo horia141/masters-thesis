@@ -20,6 +20,7 @@ classdef level
     
     methods (Access=public)
         function [o] = ge(obj,other_obj)
+            assert(tc.scalar(obj) && tc.logging_level(obj));
             assert(tc.scalar(other_obj) && tc.logging_level(other_obj));
             
             persistent p_level_ge;

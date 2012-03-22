@@ -5,7 +5,7 @@ classdef file < logging.handler
     
     methods (Access=public)
         function [obj] = file(logging_file_path,min_level)
-            assert(tc.string(logging_file_path));
+            assert(tc.scalar(logging_file_path) && tc.string(logging_file_path));
             assert(tc.scalar(min_level) && tc.logging_level(min_level));
             
             [file_id_t,file_msg] = fopen(logging_file_path,'wt');

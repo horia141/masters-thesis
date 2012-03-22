@@ -25,11 +25,12 @@ classdef logger < handle
         end
         
         function [] = beg_node(obj,message_fmt,varargin)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
-            assert(tc.string(message_fmt));
+            assert(tc.scalar(message_fmt) && tc.string(message_fmt));
             assert(tc.empty(varargin) || ...
                     (tc.vector(varargin) && tc.cell(varargin) && ...
-                     tc.check(cellfun(@(c)tc.string(c) || (tc.scalar(c) && tc.value(c)),varargin))));
+                     tc.check(cellfun(@(c)tc.scalar(c) && tc.value(c),varargin))));
                
             message = sprintf(message_fmt,varargin{:});
             
@@ -44,6 +45,7 @@ classdef logger < handle
         end
         
         function [] = end_node(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
             
             for i = 1:obj.handlers_count
@@ -57,11 +59,12 @@ classdef logger < handle
         end
         
         function [] = message(obj,message_fmt,varargin)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
-            assert(tc.string(message_fmt));
+            assert(tc.scalar(message_fmt) && tc.string(message_fmt));
             assert(tc.empty(varargin) || ...
                     (tc.vector(varargin) && tc.cell(varargin) && ...
-                     tc.check(cellfun(@(c)tc.string(c) || (tc.scalar(c) && tc.value(c)),varargin))));
+                     tc.check(cellfun(@(c)tc.scalar(c) && tc.value(c),varargin))));
                
             message = sprintf(message_fmt,varargin{:});
             
@@ -74,6 +77,7 @@ classdef logger < handle
         end
         
         function [] = beg_details(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
             assert(obj.curr_level == logging.level.Status);
             
@@ -81,6 +85,7 @@ classdef logger < handle
         end
         
         function [] = end_details(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
             assert(obj.curr_level == logging.level.Details);
             
@@ -88,6 +93,7 @@ classdef logger < handle
         end
         
         function [] = beg_error(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
             assert(obj.curr_level == logging.level.Status);
             
@@ -95,6 +101,7 @@ classdef logger < handle
         end
         
         function [] = end_error(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.active == true);
             assert(obj.curr_level == logging.level.Error);
             
@@ -102,6 +109,7 @@ classdef logger < handle
         end
         
         function [] = close(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
             assert(obj.curr_level == logging.level.Status);
             assert(tc.check(cellfun(@(c)tc.scalar(c) && (c{1} == logging.level.Status),obj.node_indent_level)));
 
@@ -111,6 +119,8 @@ classdef logger < handle
         end
         
         function [] = delete(obj)
+            assert(tc.scalar(obj) && tc.logging_logger(obj));
+
             if (obj.curr_level == logging.level.Status) && ...
                (tc.check(cellfun(@(c)tc.scalar(c) && (c{1} == logging.level.Status),obj.node_indent_level)))
                 obj.close();

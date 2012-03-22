@@ -9,17 +9,17 @@ classdef sendmail < logging.handler
     methods (Access=public)
         function [obj] = sendmail(email_addrs,min_level,sender,smtp_server)
             assert(tc.vector(email_addrs) && tc.cell(email_addrs) && ...
-                   tc.check(cellfun(@(c)tc.string(c),email_addrs)));
+                   tc.check(cellfun(@(c)tc.scalar(c) && tc.string(c),email_addrs)));
             assert(tc.scalar(min_level) && tc.logging_level(min_level));
-            assert(~exist('sender','var') || (tc.string(sender)));
-            assert(~exist('smtp_server','var') || (tc.string(smtp_server)));
-            
+            assert(~exist('sender','var') || (tc.scalar(sender) && tc.string(sender)));
+            assert(~exist('smtp_server','var') || (tc.scalar(sender) && tc.string(smtp_server)));
+
             if exist('sender','var')
                 sender_t = sender;
             else
                 sender_t = 'coman@inb.uni-luebeck.de';
             end
-            
+
             if exist('smtp_server','var')
                 smtp_server_t = smtp_server;
             else
@@ -27,7 +27,6 @@ classdef sendmail < logging.handler
             end
 
             obj = obj@logging.handler(min_level);
-            
             obj.email_addrs = utils.force_col(email_addrs);
             obj.email_addrs_count = length(email_addrs);
             obj.sender = sender_t;
@@ -37,8 +36,6 @@ classdef sendmail < logging.handler
     
     methods (Access=protected)
         function [] = do_send(obj,message)
-            assert(tc.string(message));
-            
             saved_sender = getpref('Internet','E_mail');
             saved_smtp_server = getpref('Internet','SMTP_Server');
             

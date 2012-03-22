@@ -16,13 +16,16 @@ classdef handler < handle
         end
         
         function [] = send(obj,message)
+            assert(tc.scalar(obj) && tc.logging_handler(obj));
             assert(obj.active == true);
-            assert(tc.string(message));
+            assert(tc.scalar(message) && tc.string(message));
             
             obj.do_send(message);
         end
         
         function [] = close(obj)
+            assert(tc.scalar(obj) && tc.logging_handler(obj));
+
             if obj.active
                 obj.do_close();            
                 obj.active = false;
@@ -30,6 +33,8 @@ classdef handler < handle
         end
         
         function [] = delete(obj)
+            assert(tc.scalar(obj) && tc.logging_handler(obj));
+
             obj.close();
         end
     end
