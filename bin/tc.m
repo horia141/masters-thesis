@@ -78,14 +78,6 @@ classdef tc
             o = isa(i,'datasets.image');
         end
         
-        function [o] = datasets_images_color(i)
-            o = isa(i,'datasets.images.color');
-        end
-        
-        function [o] = datasets_images_gray(i)
-            o = isa(i,'datasets.images.gray');
-        end
-        
         function [o] = experiment(i)
             o = isa(i,'experiment');
         end
@@ -96,6 +88,10 @@ classdef tc
         
         function [o] = transform(i)
             o = isa(i,'transform');
+        end
+        
+        function [o] = transforms_reversible(i)
+            o = isa(i,'transforms.reversible');
         end
         
         function [o] = classifier(i)

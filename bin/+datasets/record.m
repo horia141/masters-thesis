@@ -24,19 +24,33 @@ classdef record < dataset
             o = true;
             o = o && obj.compatible@dataset(another_record);
         end
+        
+        function [new_record] = subsamples(obj,index)
+            assert(tc.scalar(obj) && tc.datasets_record(obj));
+            assert(tc.vector(index) && ...
+                   ((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
+                    (tc.natural(index) && tc.check(index > 0 & index <= obj.samples_count))));
+            
+            new_record = datasets.record(obj.classes,obj.samples(index,:),obj.labels_idx(index));
+        end
     end
     
     methods (Static,Access=public)
-        function [new_record] = do_subsamples(obj,index)
-            new_record = datasets.record(obj.classes,obj.samples(index,:),obj.labels_idx(index));
-        end
-        
         function [new_record] = from_data(samples,labels)
             assert(tc.matrix(samples) && tc.number(samples));
             assert(tc.vector(labels) && tc.match_dims(samples,labels,1) && tc.labels(labels));
             
             [labels_idx_t,classes_t] = grp2idx(labels);
             new_record = datasets.record(classes_t,samples,labels_idx_t);
+        end
+        
+        function [new_record] = from_fulldata(classes,samples,labels_idx)
+            assert(tc.vector(classes) && tc.labels(classes));
+            assert(tc.matrix(samples) && tc.number(samples));
+            assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
+                   tc.labels_idx(labels_idx,classes));
+               
+            new_record = datasets.record(classes,samples,labels_idx);
         end
         
         function [new_record] = load_csvfile(csvfile_path,labels_format,data_format,delimiter)
@@ -355,6 +369,37 @@ classdef record < dataset
             
             s = datasets.record.from_data(A,c);
             
+            assert(length(s.classes) == 3);
+            assert(strcmp(s.classes{1},'1'));
+            assert(strcmp(s.classes{2},'2'));
+            assert(strcmp(s.classes{3},'3'));
+            assert(s.classes_count == 3);
+            assert(tc.check(s.samples == A));
+            assert(tc.check(s.labels_idx == c'));
+            assert(s.samples_count == 12);
+            assert(s.features_count == 4);
+            
+            clearvars -except display;
+            
+            fprintf('  Function "from_fulldata".\n');
+            
+            A = [1 2 3 4;
+                 1 2 4 3;
+                 1 3 2 4;
+                 1 3 4 2;
+                 1 4 2 3;
+                 1 4 3 2;
+                 2 1 3 4;
+                 2 1 4 3;
+                 2 3 1 4;
+                 2 3 4 1;
+                 2 4 1 3;
+                 2 4 3 1];             
+            c = [1 2 3 1 2 3 1 2 3 1 2 3];
+             
+            s = datasets.record.from_fulldata({'1' '2' '3'},A,c);
+            
+            assert(tc.datasets_record(s));
             assert(length(s.classes) == 3);
             assert(strcmp(s.classes{1},'1'));
             assert(strcmp(s.classes{2},'2'));

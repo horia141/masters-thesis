@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = true;
+DISPLAY = false;
 
 %% Tests for basic classes.
 
@@ -13,25 +13,26 @@ logging.handlers.file.test(DISPLAY);
 logging.handlers.sendmail.test(DISPLAY);
 logging.logger.test(DISPLAY);
 
-%% Tests for "samples" and derived classes.
+%% Tests for "dataset" and derived classes.
 
+dataset.test(DISPLAY);
 datasets.record.test(DISPLAY);
 datasets.image.test(DISPLAY);
-datasets.images.gray.test(DISPLAY);
-datasets.images.color.test(DISPLAY);
 
 %% Tests for "transform" and derived classes.
 
-dc_offset_transform.test(DISPLAY);
-mean_substract_transform.test(DISPLAY);
-image_resize_transform.test(DISPLAY);
-pca_transform.test(DISPLAY);
-pca_whitening_transform.test(DISPLAY);
-zca_transform.test(DISPLAY);
-patch_extract_transform.test(DISPLAY);
-remove_pinknoise_transform.test(DISPLAY);
-%sparse_sgdmp_transform.test(DISPLAY);
-%sparse_gdmp_transform.test(DISPLAY);
+transforms.dc_offset.test(DISPLAY);
+transforms.mean_substract.test(DISPLAY);
+transforms.pca.test(DISPLAY);
+transforms.pca_whitening.test(DISPLAY);
+transforms.zca.test(DISPLAY);
+transforms.image.resize.test(DISPLAY);
+transforms.image.window.test(DISPLAY);
+transforms.image.patch_extract.test(DISPLAY);
+transforms.image.remove_pinknoise.test(DISPLAY);
+transforms.image.random_corr.test(DISPLAY);
+transforms.sparse.gdmp.test(DISPLAY);
+transforms.sparse.sgdmp.test(DISPLAY);
 
 %% Tests for "classifier" and derived classes.
 
