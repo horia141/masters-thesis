@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = false;
+DISPLAY = true;
 
 %% Tests for basic classes.
 
@@ -36,12 +36,11 @@ transforms.sparse.sgdmp.test(DISPLAY);
 
 %% Tests for "classifier" and derived classes.
 
-knn_classifier.test(DISPLAY);
-svm_classifier.test(DISPLAY);
-cmeans_classifier.test(DISPLAY);
-logistic_regression_classifier.test(DISPLAY);
-
-one_vs_one_classifier.test(DISPLAY);
+classifiers.cmeans.test(DISPLAY);
+classifiers.knn.test(DISPLAY);
+classifiers.logistic_regression.test(DISPLAY);
+classifiers.svm.test(DISPLAY);
+classifiers.one_vs_one.test(DISPLAY);
 
 %% Tests for "architecture" and derived classes.
 

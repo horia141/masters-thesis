@@ -1,3 +1,11 @@
+- [40] B:26.03.2012 E:??.??.????
+  Task: Add a function "utils.string_in" or "tc.string_in" which checks that a
+   string is equal to one from a cell array of other strings.
+
+- [39] B:26.03.2012 E:??.??.????
+  Task: Add tests after calls to abstract methods to make sure the results are
+    compatible.
+
 - [38] B:22.03.2012 E:??.??.????
   Task: There are a lot of places in the code, where functions use optional
     parameters. We should define a function in "utils" which, by accessing the
