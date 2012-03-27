@@ -5,6 +5,11 @@ classdef patch_extract < transform
         patch_col_count;
         required_variance;
     end
+        
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
     
     methods (Access=public)
         function [obj] = patch_extract(train_image_plain,patches_count,patch_row_count,patch_col_count,required_variance)
@@ -15,11 +20,14 @@ classdef patch_extract < transform
             assert(tc.scalar(patch_col_count) && tc.natural(patch_col_count) && (patch_col_count >= 1));
             assert(tc.scalar(required_variance) && tc.number(required_variance) && (required_variance >= 0));
             
-            obj = obj@transform(train_image_plain.subsamples(1));
-            obj.patches_count = patches_count;
+            obj = obj@transform();
+            obj.patches_count = 1;
             obj.patch_row_count = patch_row_count;
             obj.patch_col_count = patch_col_count;
             obj.required_variance = required_variance;
+            obj.one_sample_plain = train_image_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
+            obj.patches_count = patches_count; % HACK DI HACK HACK %
         end
     end
     
@@ -52,12 +60,16 @@ classdef patch_extract < transform
         function test(display)
             fprintf('Testing "transforms.image.patch_extract".\n');
             
-            fprintf('  Pproper construction.\n');
+            fprintf('  Proper construction.\n');
             
             s = datasets.image.load_from_dir('../data/test/scenes_small');
             
-            t = transforms.image.patch_extract(s,10,5,5,0.3);
+            t = transforms.image.patch_extract(s,10,5,5,0.01);
             
+            assert(t.patches_count == 10);
+            assert(t.patch_row_count == 5);
+            assert(t.patch_col_count == 5);
+            assert(t.required_variance == 0.01);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -70,10 +82,20 @@ classdef patch_extract < transform
             assert(t.one_sample_plain.row_count == 192);
             assert(t.one_sample_plain.col_count == 256);
             assert(t.one_sample_plain.compatible(s));
-            assert(t.patches_count == 10);
-            assert(t.patch_row_count == 5);
-            assert(t.patch_col_count == 5);
-            assert(t.required_variance == 0.3);
+            assert(length(t.one_sample_coded.classes) == 1);
+            assert(strcmp(t.one_sample_coded.classes{1},'none'));
+            assert(t.one_sample_coded.classes_count == 1);
+            assert(tc.check(size(t.one_sample_coded.samples) == [1 25]));
+            assert(tc.matrix(t.one_sample_coded.samples) && tc.unitreal(t.one_sample_coded.samples));
+            assert(tc.check(t.one_sample_coded.labels_idx == s.labels_idx(1)));
+            assert(t.one_sample_coded.samples_count == 1);
+            assert(t.one_sample_coded.features_count == 5*5);
+            assert(tc.check(size(t.one_sample_coded.images) == [5 5]));
+            assert(tc.tensor(t.one_sample_coded.images,4) && tc.unitreal(t.one_sample_coded.images));
+            assert(var(t.one_sample_coded.images(:)) >= 0.01);
+            assert(t.one_sample_coded.layers_count == 1);
+            assert(t.one_sample_coded.row_count == 5);
+            assert(t.one_sample_coded.col_count == 5);
             
             fprintf('  Function "code".\n');
             
@@ -81,7 +103,7 @@ classdef patch_extract < transform
             
             s = datasets.image.load_from_dir('../data/test/scenes_small');
             
-            t = transforms.image.patch_extract(s,50,40,40,0.0001);
+            t = transforms.image.patch_extract(s,50,40,40,0.01);
             s_p = t.code(s);
             
             assert(length(s_p.classes) == 1);
@@ -94,6 +116,7 @@ classdef patch_extract < transform
             assert(s_p.features_count == 40*40);
             assert(tc.check(size(s_p.images) == [40 40 1 50]));
             assert(tc.tensor(s_p.images,4) && tc.unitreal(s_p.images));
+            assert(tc.check(arrayfun(@(i)var(reshape(s_p.images(:,:,:,i),[1 40*40])) >= 0.01,1:50)));
             assert(s_p.layers_count == 1);
             assert(s_p.row_count == 40);
             assert(s_p.col_count == 40);            
@@ -111,7 +134,7 @@ classdef patch_extract < transform
             
             s = datasets.image.load_from_dir('../data/test/scenes_small','color');
             
-            t = transforms.image.patch_extract(s,50,40,40,0.0001);
+            t = transforms.image.patch_extract(s,50,40,40,0.01);
             s_p = t.code(s);
             
             assert(length(s_p.classes) == 1);
@@ -124,6 +147,7 @@ classdef patch_extract < transform
             assert(s_p.features_count == 3*40*40);
             assert(tc.check(size(s_p.images) == [40 40 3 50]));
             assert(tc.tensor(s_p.images,4) && tc.unitreal(s_p.images));
+            assert(tc.check(arrayfun(@(i)var(reshape(s_p.images(:,:,:,i),[1 3*40*40])) >= 0.01,1:50)));
             assert(s_p.layers_count == 3);
             assert(s_p.row_count == 40);
             assert(s_p.col_count == 40);            

@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = true;
+DISPLAY = false;
 
 %% Tests for basic classes.
 
@@ -44,6 +44,5 @@ classifiers.one_vs_one.test(DISPLAY);
 
 %% Tests for "architecture" and derived classes.
 
-%baseline_1_architecture.test(DISPLAY);
-%baseline_2_architecture.test(DISPLAY);
-%random_cnn_1layer_architecture.test(DISPLAY);
+architectures.a1v1_pca_cmeans.test(DISPLAY);
+architectures.a1v2_pca_svm.test(DISPLAY);

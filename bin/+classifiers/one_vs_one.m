@@ -44,24 +44,28 @@ classdef one_vs_one < classifier
     
     methods (Access=protected)
         function [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2] = do_classify(obj,dataset_d)
-            partial_labels_idx = zeros(dataset_d.samples_count,obj.classifiers_count);
-            
-            for i = 1:obj.classifiers_count
-                partial_labels_idx(:,i) = obj.classifiers(i).classify(dataset_d);
-            end
-
-            votes = hist(partial_labels_idx',dataset_d.classes_count);
-            [~,labels_idx_hat] = max(votes,[],1);
-
-            labels_idx_hat = labels_idx_hat';
-            labels_confidence = ones(size(labels_idx_hat));
-            labels_idx_hat2 = repmat(1:dataset_d.classes_count,dataset_d.samples_count,1);
-            labels_confidence2 = zeros(dataset_d.samples_count,dataset_d.classes_count);
-
-            for i = 1:dataset_d.samples_count
-                labels_idx_hat2(i,labels_idx_hat(i)) = 1;
-                labels_idx_hat2(i,1) = labels_idx_hat(i);
-                labels_confidence2(i,1) = 1;
+            if obj.classifiers_count == 1
+                [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2] = obj.classifiers(1).classify(dataset_d);
+            else
+                partial_labels_idx = zeros(dataset_d.samples_count,obj.classifiers_count);
+                
+                for i = 1:obj.classifiers_count
+                    partial_labels_idx(:,i) = obj.classifiers(i).classify(dataset_d);
+                end
+                
+                votes = hist(partial_labels_idx',dataset_d.classes_count);
+                [~,labels_idx_hat] = max(votes,[],1);
+                
+                labels_idx_hat = labels_idx_hat';
+                labels_confidence = ones(size(labels_idx_hat));
+                labels_idx_hat2 = repmat(1:dataset_d.classes_count,dataset_d.samples_count,1);
+                labels_confidence2 = zeros(dataset_d.samples_count,dataset_d.classes_count);
+                
+                for i = 1:dataset_d.samples_count
+                    labels_idx_hat2(i,labels_idx_hat(i)) = 1;
+                    labels_idx_hat2(i,1) = labels_idx_hat(i);
+                    labels_confidence2(i,1) = 1;
+                end
             end
         end
     end

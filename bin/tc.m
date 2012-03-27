@@ -181,8 +181,18 @@ classdef tc
             end
         end
                 
-        function [o] = check(i)
-            o = ~tc.empty(i) && all(i(:));
+        function [o] = check(i,empty_good)
+            if exist('empty_good','var')
+                empty_good_t = empty_good;
+            else
+                empty_good_t = false;
+            end
+            
+            if empty_good_t
+                o = tc.empty(i) || all(i(:));
+            else
+                o = ~tc.empty(i) && all(i(:));
+            end
         end
     end
     
@@ -531,6 +541,8 @@ classdef tc
             
             fprintf('  Function "check".\n');
             
+            fprintf('    With empty array not good (default).\n');
+            
             assert(tc.check(true) == true);
             assert(tc.check(false) == false);
             assert(tc.check(7.3) == true);
@@ -548,6 +560,61 @@ classdef tc
             assert(tc.check([1 2 3]) == true);
             assert(tc.check([0 0 0]) == false);
             assert(tc.check(zeros(4,4,4) > -1 & zeros(4,4,4) < 1) == true);
+            assert(tc.check([]) == false);
+            assert(tc.check(zeros(1,0)) == false);
+            assert(tc.check(zeros(0,1)) == false);
+            assert(tc.check('') == false);
+            assert(tc.check({}) == false);
+            
+            fprintf('    With empty array not good.\n');
+            
+            assert(tc.check(true,false) == true);
+            assert(tc.check(false,false) == false);
+            assert(tc.check(7.3,false) == true);
+            assert(tc.check(-5,false) == true);
+            assert(tc.check(4,false) == true);
+            assert(tc.check(0,false) == false);
+            assert(tc.check(10,false) == true);
+            assert(tc.check('hello',false) == true);
+            assert(tc.check(true(4,2),false) == true);
+            assert(tc.check(false(5,3),false) == false);
+            assert(tc.check(7.3*ones(4,9),false) == true);
+            assert(tc.check(-5*ones(3,2),false) == true);
+            assert(tc.check(4*ones(4,4),false) == true);
+            assert(tc.check(['hello';'world'],false) == true);
+            assert(tc.check([1 2 3],false) == true);
+            assert(tc.check([0 0 0],false) == false);
+            assert(tc.check(zeros(4,4,4) > -1 & zeros(4,4,4) < 1,false) == true);
+            assert(tc.check([],false) == false);
+            assert(tc.check(zeros(1,0),false) == false);
+            assert(tc.check(zeros(0,1),false) == false);
+            assert(tc.check('',false) == false);
+            assert(tc.check({},false) == false);
+            
+            fprintf('    With empty array good.\n');
+            
+            assert(tc.check(true,true) == true);
+            assert(tc.check(false,true) == false);
+            assert(tc.check(7.3,true) == true);
+            assert(tc.check(-5,true) == true);
+            assert(tc.check(4,true) == true);
+            assert(tc.check(0,true) == false);
+            assert(tc.check(10,true) == true);
+            assert(tc.check('hello',true) == true);
+            assert(tc.check(true(4,2),true) == true);
+            assert(tc.check(false(5,3),true) == false);
+            assert(tc.check(7.3*ones(4,9),true) == true);
+            assert(tc.check(-5*ones(3,2),true) == true);
+            assert(tc.check(4*ones(4,4),true) == true);
+            assert(tc.check(['hello';'world'],true) == true);
+            assert(tc.check([1 2 3],true) == true);
+            assert(tc.check([0 0 0],true) == false);
+            assert(tc.check(zeros(4,4,4) > -1 & zeros(4,4,4) < 1,true) == true);
+            assert(tc.check([],true) == true);
+            assert(tc.check(zeros(1,0),true) == true);
+            assert(tc.check(zeros(0,1),true) == true);
+            assert(tc.check('',true) == true);
+            assert(tc.check({},true) == true);
         end
     end
 end

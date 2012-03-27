@@ -1,11 +1,18 @@
-classdef remove_pinknoise < transform
+classdef remove_pinknoise < transform        
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = remove_pinknoise(train_image_plain)
             assert(tc.scalar(train_image_plain) && tc.datasets_image(train_image_plain));
             assert(train_image_plain.samples_count >= 1);
             assert(train_image_plain.row_count == train_image_plain.col_count);
             
-            obj = obj@transform(train_image_plain.subsamples(1));
+            obj = obj@transform();
+            obj.one_sample_plain = train_image_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -54,6 +61,19 @@ classdef remove_pinknoise < transform
             assert(t.one_sample_plain.row_count == 192);
             assert(t.one_sample_plain.col_count == 192);
             assert(t.one_sample_plain.compatible(s));
+            assert(length(t.one_sample_coded.classes) == 1);
+            assert(strcmp(t.one_sample_coded.classes{1},'none'));
+            assert(t.one_sample_coded.classes_count == 1);
+            assert(tc.check(size(t.one_sample_coded.samples) == [1 192*192]));
+            assert(tc.matrix(t.one_sample_coded.samples) && tc.unitreal(t.one_sample_coded.samples));
+            assert(tc.check(t.one_sample_coded.labels_idx == s.labels_idx(1)));
+            assert(t.one_sample_coded.samples_count == 1);
+            assert(t.one_sample_coded.features_count == 192*192);
+            assert(tc.check(size(t.one_sample_coded.images) == [192 192]));
+            assert(tc.tensor(t.one_sample_coded.images,4) && tc.unitreal(t.one_sample_coded.images));
+            assert(t.one_sample_coded.layers_count == 1);
+            assert(t.one_sample_coded.row_count == 192);
+            assert(t.one_sample_coded.col_count == 192);
             
             clearvars -except display;
             

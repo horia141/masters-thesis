@@ -3,6 +3,11 @@ classdef window < transform
         filter;
         sigma;
     end
+        
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
     
     methods (Access=public)
         function [obj] = window(train_image_plain,sigma)
@@ -14,9 +19,11 @@ classdef window < transform
             filter_t = fspecial('gaussian',train_image_plain.row_count,sigma);
             filter_t = filter_t ./ max(max(filter_t));
             
-            obj = obj@transform(train_image_plain.subsamples(1));
+            obj = obj@transform();
             obj.filter = filter_t;
             obj.sigma = sigma;
+            obj.one_sample_plain = train_image_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -44,6 +51,9 @@ classdef window < transform
             
             t = transforms.image.window(s,10);
             
+            assert(tc.check(size(t.filter) == [192 192]));
+            assert(max(max(t.filter)) == 1);
+            assert(t.sigma == 10);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -56,6 +66,19 @@ classdef window < transform
             assert(t.one_sample_plain.row_count == 192);
             assert(t.one_sample_plain.col_count == 192);
             assert(t.one_sample_plain.compatible(s));
+            assert(length(t.one_sample_coded.classes) == 1);
+            assert(strcmp(t.one_sample_coded.classes{1},'none'));
+            assert(t.one_sample_coded.classes_count == 1);
+            assert(tc.check(size(t.one_sample_coded.samples) == [1 192*192]));
+            assert(tc.matrix(t.one_sample_coded.samples) && tc.unitreal(t.one_sample_coded.samples));
+            assert(tc.check(t.one_sample_coded.labels_idx == s.labels_idx(1)));
+            assert(t.one_sample_coded.samples_count == 1);
+            assert(t.one_sample_coded.features_count == 192*192);
+            assert(tc.check(size(t.one_sample_coded.images) == [192 192]));
+            assert(tc.tensor(t.one_sample_coded.images,4) && tc.unitreal(t.one_sample_coded.images));
+            assert(t.one_sample_coded.layers_count == 1);
+            assert(t.one_sample_coded.row_count == 192);
+            assert(t.one_sample_coded.col_count == 192);
             
             clearvars -except display;
             

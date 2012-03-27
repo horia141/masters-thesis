@@ -6,6 +6,11 @@ classdef pca < transforms.reversible
         coded_features_count;
     end
     
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = pca(train_dataset_plain,kept_energy)
             assert(tc.scalar(train_dataset_plain) && tc.dataset(train_dataset_plain));
@@ -19,15 +24,13 @@ classdef pca < transforms.reversible
             kept_energy_rel = kept_energy * energy_per_comp_rel(end);
             coded_features_count_t = find(energy_per_comp_rel >= kept_energy_rel,1);
             
-            one_sample_samples_t = train_dataset_plain.samples(1,:) - samples_mean_t;
-            one_sample_samples_t = one_sample_samples_t * coeffs_t(:,1:coded_features_count_t);
-            one_sample_coded_t = dataset(train_dataset_plain.classes,one_sample_samples_t,train_dataset_plain.labels_idx(1));
-            
-            obj = obj@transforms.reversible(train_dataset_plain.subsamples(1),one_sample_coded_t);
+            obj = obj@transforms.reversible();
             obj.coeffs = coeffs_t;
             obj.samples_mean = samples_mean_t;
             obj.kept_energy = kept_energy;
             obj.coded_features_count = coded_features_count_t;
+            obj.one_sample_plain = train_dataset_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -63,6 +66,11 @@ classdef pca < transforms.reversible
             
             t = transforms.pca(s,0.9);
             
+            assert(utils.approx(t.coeffs,princomp(A)));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.kept_energy == 0.9);
+            assert(t.coded_features_count == 1);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -78,13 +86,6 @@ classdef pca < transforms.reversible
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
             assert(t.one_sample_coded.features_count == 1);
-            assert(all(size(t.coeffs) == [2 2]));
-            assert(utils.approx(t.coeffs,princomp(A)));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(length(t.samples_mean) == 2);
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 0.9);
-            assert(t.coded_features_count == 1);
             
             clearvars -except display;
             
@@ -97,6 +98,11 @@ classdef pca < transforms.reversible
             s = dataset({'none'},A,c);
             t = transforms.pca(s,1);
             
+            assert(utils.approx(t.coeffs,princomp(A)));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.kept_energy == 1);
+            assert(t.coded_features_count == 2);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -111,14 +117,7 @@ classdef pca < transforms.reversible
             assert(utils.approx(t.one_sample_coded.samples,A_s(1,:)));
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
-            assert(t.one_sample_coded.features_count == 2);
-            assert(all(size(t.coeffs) == [2 2]));
-            assert(utils.approx(t.coeffs,princomp(A)));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(length(t.samples_mean) == 2);
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 1);
-            assert(t.coded_features_count == 2);
+            assert(t.one_sample_coded.features_count == 2);            
             
             clearvars -except display;
             
@@ -134,6 +133,7 @@ classdef pca < transforms.reversible
             t = transforms.pca(s,0.9);            
             s_p = t.code(s);
             
+            assert(t.one_sample_coded.compatible(s_p));
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
             assert(s_p.classes_count == 1);
@@ -169,6 +169,7 @@ classdef pca < transforms.reversible
             t = transforms.pca(s,1);            
             s_p = t.code(s);
             
+            assert(t.one_sample_coded.compatible(s_p));
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
             assert(s_p.classes_count == 1);
@@ -208,6 +209,8 @@ classdef pca < transforms.reversible
             s_p = t.code(s);
             s_r = t.decode(s_p);
             
+            assert(t.one_sample_coded.compatible(s_p));
+            assert(s_r.compatible(s));
             assert(length(s_r.classes) == 1);
             assert(strcmp(s_r.classes{1},'none'));
             assert(s_r.classes_count == 1);
@@ -249,6 +252,8 @@ classdef pca < transforms.reversible
             s_p = t.code(s);
             s_r = t.decode(s_p);
             
+            assert(t.one_sample_coded.compatible(s_p));
+            assert(s_r.compatible(s));
             assert(length(s_r.classes) == 1);
             assert(strcmp(s_r.classes{1},'none'));
             assert(s_r.classes_count == 1);
@@ -294,6 +299,8 @@ classdef pca < transforms.reversible
             
             s3 = datasets.image.from_dataset(s2_r,1,10,10,'clamp');
             
+            assert(t2.one_sample_coded.compatible(s2_p));
+            assert(s3.compatible(s2));
             assert(length(s3.classes) == 1);
             assert(strcmp(s3.classes{1},'none'));
             assert(s3.classes_count == 1);
@@ -334,6 +341,8 @@ classdef pca < transforms.reversible
             
             s3 = datasets.image.from_dataset(s2_r,1,10,10,'clamp');
             
+            assert(t2.one_sample_coded.compatible(s2_p));
+            assert(s3.compatible(s2));
             assert(length(s3.classes) == 1);
             assert(strcmp(s3.classes{1},'none'));
             assert(s3.classes_count == 1);
@@ -372,6 +381,8 @@ classdef pca < transforms.reversible
             
             s3 = datasets.image.from_dataset(s2_r,3,10,10,'clamp');
             
+            assert(t2.one_sample_coded.compatible(s2_p));
+            assert(s3.compatible(s2));
             assert(length(s3.classes) == 1);
             assert(strcmp(s3.classes{1},'none'));
             assert(s3.classes_count == 1);

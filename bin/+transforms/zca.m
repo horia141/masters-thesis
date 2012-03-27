@@ -6,6 +6,11 @@ classdef zca < transforms.reversible
         div_epsilon;
     end
     
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = zca(train_dataset_plain,div_epsilon)
             assert(tc.scalar(train_dataset_plain) && tc.dataset(train_dataset_plain));
@@ -22,17 +27,13 @@ classdef zca < transforms.reversible
             samples_mean_t = mean(train_dataset_plain.samples,1);
             [coeffs_t,~,coeffs_eigenvalues_t] = princomp(train_dataset_plain.samples);
             
-            one_sample_samples_t = train_dataset_plain.samples(1,:) - samples_mean_t;
-            one_sample_samples_t = one_sample_samples_t * coeffs_t;
-            one_sample_samples_t = one_sample_samples_t * diag(1 ./ sqrt(coeffs_eigenvalues_t + div_epsilon_t));
-            one_sample_samples_t = one_sample_samples_t * coeffs_t';
-            one_sample_coded_t = dataset(train_dataset_plain.classes,one_sample_samples_t,train_dataset_plain.labels_idx(1));
-            
-            obj = obj@transforms.reversible(train_dataset_plain.subsamples(1),one_sample_coded_t);
+            obj = obj@transforms.reversible();
             obj.coeffs = coeffs_t;
             obj.coeffs_eigenvalues = coeffs_eigenvalues_t;
             obj.samples_mean = samples_mean_t;
             obj.div_epsilon = div_epsilon_t;
+            obj.one_sample_plain = train_dataset_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -71,6 +72,11 @@ classdef zca < transforms.reversible
             
             t = transforms.zca(s);
             
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.div_epsilon == 0);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -86,11 +92,6 @@ classdef zca < transforms.reversible
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
             assert(t.one_sample_coded.features_count == 2);
-            assert(utils.approx(t.coeffs,p_A));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.div_epsilon == 0);
             
             clearvars -except display;
             
@@ -103,6 +104,11 @@ classdef zca < transforms.reversible
             
             t = transforms.zca(s,1e-5);
             
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.div_epsilon == 1e-5);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -117,12 +123,7 @@ classdef zca < transforms.reversible
             assert(utils.approx(t.one_sample_coded.samples,A_s(1,:) * diag(1 ./ sqrt(p_latent + 1e-5)) * p_A'));
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
-            assert(t.one_sample_coded.features_count == 2);
-            assert(utils.approx(t.coeffs,p_A));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.div_epsilon == 1e-5);
+            assert(t.one_sample_coded.features_count == 2);            
             
             clearvars -except display;
             

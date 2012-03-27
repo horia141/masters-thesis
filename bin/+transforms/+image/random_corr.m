@@ -8,6 +8,11 @@ classdef random_corr < transform
         reduce_spread;
     end
     
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = random_corr(train_image_plain,filters_count,filter_row_count,filter_col_count,reduce_function,reduce_spread)
             assert(tc.scalar(train_image_plain) && tc.datasets_image(train_image_plain));
@@ -36,13 +41,15 @@ classdef random_corr < transform
                 filters_t(:,:,filter) = one_filter;
             end
             
-            obj = obj@transform(train_image_plain.subsamples(1));
+            obj = obj@transform();
             obj.filters = filters_t;
             obj.filters_count = filters_count;
             obj.filter_row_count = filter_row_count;
             obj.filter_col_count = filter_col_count;
             obj.reduce_function = reduce_function;
             obj.reduce_spread = reduce_spread;
+            obj.one_sample_plain = train_image_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -93,6 +100,13 @@ classdef random_corr < transform
             
             t2 = transforms.image.random_corr(s2,4,5,5,@transforms.image.random_corr.sqr,4);
             
+            assert(tc.check(size(t2.filters) == [5 5 4]));
+            assert(tc.tensor(t2.filters,3) && tc.check(t2.filters >= -1 & t2.filters <= 1));
+            assert(t2.filters_count == 4);
+            assert(t2.filter_row_count == 5);
+            assert(t2.filter_col_count == 5);
+            assert(strcmp(func2str(t2.reduce_function),'transforms.image.random_corr.sqr'));
+            assert(t2.reduce_spread == 4);
             assert(length(t2.one_sample_plain.classes) == 1);
             assert(strcmp(t2.one_sample_plain.classes{1},'none'));
             assert(t2.one_sample_plain.classes_count == 1);
@@ -105,13 +119,19 @@ classdef random_corr < transform
             assert(t2.one_sample_plain.row_count == 32);
             assert(t2.one_sample_plain.col_count == 32);
             assert(t2.one_sample_plain.compatible(s2));
-            assert(tc.check(size(t2.filters) == [5 5 4]));
-            assert(tc.tensor(t2.filters,3) && tc.check(t2.filters >= -1 & t2.filters <= 1));
-            assert(t2.filters_count == 4);
-            assert(t2.filter_row_count == 5);
-            assert(t2.filter_col_count == 5);
-            assert(strcmp(func2str(t2.reduce_function),'transforms.image.random_corr.sqr'));
-            assert(t2.reduce_spread == 4);
+            assert(length(t2.one_sample_coded.classes) == 1);
+            assert(strcmp(t2.one_sample_coded.classes{1},'none'));
+            assert(t2.one_sample_coded.classes_count == 1);
+            assert(tc.check(size(t2.one_sample_coded.samples) == [1 4*7*7]));
+            assert(tc.matrix(t2.one_sample_coded.samples) && tc.unitreal(t2.one_sample_coded.samples));
+            assert(tc.check(t2.one_sample_coded.labels_idx == s2.labels_idx(1)));
+            assert(t2.one_sample_coded.samples_count == 1);
+            assert(t2.one_sample_coded.features_count == 4*7*7);
+            assert(tc.check(size(t2.one_sample_coded.images) == [7 7 4]));
+            assert(tc.tensor(t2.one_sample_coded.images,4) && tc.unitreal(t2.one_sample_coded.images));
+            assert(t2.one_sample_coded.layers_count == 4);
+            assert(t2.one_sample_coded.row_count == 7);
+            assert(t2.one_sample_coded.col_count == 7);
             
             clearvars -except display;
             

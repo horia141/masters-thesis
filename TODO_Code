@@ -1,3 +1,8 @@
+- [41] B:26.03.2012 E:??.??.????
+  Task: In many places we test that a dataset has at least one element. A
+    dataset cannot be empty, so this test is redundant. See if it is worth it
+    to eliminate it or if it has some documentation purposes.
+
 - [40] B:26.03.2012 E:??.??.????
   Task: Add a function "utils.string_in" or "tc.string_in" which checks that a
    string is equal to one from a cell array of other strings.

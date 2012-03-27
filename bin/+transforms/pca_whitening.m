@@ -8,6 +8,11 @@ classdef pca_whitening < transforms.reversible
         div_epsilon;
     end
     
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = pca_whitening(train_dataset_plain,kept_energy,div_epsilon)
             assert(tc.scalar(train_dataset_plain) && tc.dataset(train_dataset_plain));
@@ -28,19 +33,16 @@ classdef pca_whitening < transforms.reversible
             energy_per_comp_rel = cumsum(coeffs_eigenvalues_t);
             kept_energy_rel = kept_energy * energy_per_comp_rel(end);
             coded_features_count_t = find(energy_per_comp_rel >= kept_energy_rel,1);
-            
-            one_sample_samples_t = train_dataset_plain.samples(1,:) - samples_mean_t;
-            one_sample_samples_t = one_sample_samples_t * coeffs_t(:,1:coded_features_count_t);
-            one_sample_samples_t = one_sample_samples_t * diag(1 ./ sqrt(coeffs_eigenvalues_t(1:coded_features_count_t) + div_epsilon_t));
-            one_sample_coded_t = dataset(train_dataset_plain.classes,one_sample_samples_t,train_dataset_plain.labels_idx(1));
-            
-            obj = obj@transforms.reversible(train_dataset_plain.subsamples(1),one_sample_coded_t);
+
+            obj = obj@transforms.reversible();
             obj.coeffs = coeffs_t;
             obj.coeffs_eigenvalues = coeffs_eigenvalues_t;
             obj.samples_mean = samples_mean_t;
             obj.kept_energy = kept_energy;
             obj.coded_features_count = coded_features_count_t;
             obj.div_epsilon = div_epsilon_t;
+            obj.one_sample_plain = train_dataset_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -78,6 +80,13 @@ classdef pca_whitening < transforms.reversible
             
             t = transforms.pca_whitening(s,0.9);
             
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.kept_energy == 0.9);
+            assert(t.coded_features_count == 1);
+            assert(t.div_epsilon == 0);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -93,14 +102,6 @@ classdef pca_whitening < transforms.reversible
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
             assert(t.one_sample_coded.features_count == 1);
-            assert(utils.approx(t.coeffs,p_A));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(length(t.coeffs_eigenvalues) == 2);
-            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 0.9);
-            assert(t.coded_features_count == 1);
-            assert(t.div_epsilon == 0);
             
             clearvars -except display;
             
@@ -113,6 +114,14 @@ classdef pca_whitening < transforms.reversible
             
             t = transforms.pca_whitening(s,0.9,1e-5);
             
+            
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.kept_energy == 0.9);
+            assert(t.coded_features_count == 1);
+            assert(t.div_epsilon == 1e-5);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -128,13 +137,6 @@ classdef pca_whitening < transforms.reversible
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
             assert(t.one_sample_coded.features_count == 1);
-            assert(utils.approx(t.coeffs,p_A));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 0.9);
-            assert(t.coded_features_count == 1);
-            assert(t.div_epsilon == 1e-5);
             
             clearvars -except display;
             
@@ -147,6 +149,13 @@ classdef pca_whitening < transforms.reversible
             
             t = transforms.pca_whitening(s,1);
             
+            assert(utils.approx(t.coeffs,p_A));
+            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
+            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
+            assert(utils.approx(t.samples_mean,mean(A,1)));
+            assert(t.kept_energy == 1);
+            assert(t.coded_features_count == 2);
+            assert(t.div_epsilon == 0);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -161,15 +170,7 @@ classdef pca_whitening < transforms.reversible
             assert(utils.approx(t.one_sample_coded.samples,A_s(1,:) * diag(1 ./ sqrt(p_latent))));
             assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
             assert(t.one_sample_coded.samples_count == 1);
-            assert(t.one_sample_coded.features_count == 2);
-            assert(utils.approx(t.coeffs,p_A));
-            assert(utils.approx(t.coeffs * t.coeffs',eye(2)));
-            assert(length(t.coeffs_eigenvalues) == 2);
-            assert(utils.approx(t.coeffs_eigenvalues,p_latent));
-            assert(utils.approx(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 1);
-            assert(t.coded_features_count == 2);
-            assert(t.div_epsilon == 0);
+            assert(t.one_sample_coded.features_count == 2);            
             
             clearvars -except display;
             

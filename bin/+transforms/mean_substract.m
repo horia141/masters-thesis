@@ -2,6 +2,11 @@ classdef mean_substract < transforms.reversible
     properties (GetAccess=public,SetAccess=immutable)
         kept_mean;
     end
+        
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
     
     methods (Access=public)
         function [obj] = mean_substract(train_dataset_plain)
@@ -10,11 +15,10 @@ classdef mean_substract < transforms.reversible
             
             kept_mean_t = mean(train_dataset_plain.samples,1);
             
-            one_sample_coded_samples_t = train_dataset_plain.samples(1,:) - kept_mean_t;
-            one_sample_coded_t = dataset(train_dataset_plain.classes,one_sample_coded_samples_t,train_dataset_plain.labels_idx(1));
-            
-            obj = obj@transforms.reversible(train_dataset_plain.subsamples(1),one_sample_coded_t);
-            obj.kept_mean = kept_mean_t;
+            obj = obj@transforms.reversible();
+            obj.kept_mean = kept_mean_t;            
+            obj.one_sample_plain = train_dataset_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);            
         end
     end
     
@@ -42,6 +46,7 @@ classdef mean_substract < transforms.reversible
             
             t = transforms.mean_substract(s);
             
+            assert(utils.approx(t.kept_mean,mean(A,1)));
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -58,7 +63,6 @@ classdef mean_substract < transforms.reversible
             assert(t.one_sample_coded.samples_count == 1);
             assert(t.one_sample_coded.features_count == 2);
             assert(t.one_sample_coded.compatible(s));
-            assert(utils.approx(t.kept_mean,mean(A,1)));
             
             clearvars -except display;
             
@@ -71,6 +75,7 @@ classdef mean_substract < transforms.reversible
             t = transforms.mean_substract(s);
             s_p = t.code(s);
             
+            assert(t.one_sample_coded.compatible(s_p));
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
             assert(s_p.classes_count == 1);
@@ -106,6 +111,7 @@ classdef mean_substract < transforms.reversible
             s_p = t.code(s);            
             s_r = t.decode(s_p);
             
+            assert(t.one_sample_coded.compatible(s_p));
             assert(length(s_r.classes) == 1);
             assert(strcmp(s_r.classes{1},'none'));
             assert(s_r.classes_count == 1);

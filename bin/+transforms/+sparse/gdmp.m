@@ -8,6 +8,11 @@ classdef gdmp < transforms.reversible
         max_iter_count;
     end
     
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = gdmp(train_dataset_plain,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count)
             assert(tc.scalar(train_dataset_plain) && tc.dataset(train_dataset_plain));
@@ -24,16 +29,17 @@ classdef gdmp < transforms.reversible
             sparse_dict_t = transforms.sparse.gdmp.dict_gradient_descent(initial_dict,train_dataset_plain.samples,coeffs_count,...
                                                                          initial_learning_rate,final_learning_rate,max_iter_count);
                                                                      
-            one_sample_samples_t = transforms.sparse.gdmp.matching_pursuit(sparse_dict_t,train_dataset_plain.samples(1,:),coeffs_count)';
-            one_sample_coded_t = dataset(train_dataset_plain.classes,one_sample_samples_t,train_dataset_plain.labels_idx(1));
-            
-            obj = obj@transforms.reversible(train_dataset_plain.subsamples(1),one_sample_coded_t);
+            obj = obj@transforms.reversible();
             obj.sparse_dict = sparse_dict_t;
             obj.word_count = word_count;
             obj.coeffs_count = coeffs_count;
             obj.initial_learning_rate = initial_learning_rate;
             obj.final_learning_rate = final_learning_rate;
             obj.max_iter_count = max_iter_count;
+            obj.one_sample_plain = train_dataset_plain.subsamples(1);
+            obj.one_sample_coded = dataset(obj.one_sample_plain.classes,...
+                                           transforms.sparse.gdmp.matching_pursuit(obj.sparse_dict,obj.one_sample_plain.samples,obj.coeffs_count)',...
+                                           obj.one_sample_plain.labels_idx);
         end
     end
     
@@ -105,22 +111,6 @@ classdef gdmp < transforms.reversible
             
             t = transforms.sparse.gdmp(s,4,1,1e-2,1e-4,20);
             
-            assert(length(t.one_sample_plain.classes) == 1);
-            assert(strcmp(t.one_sample_plain.classes{1},'none'));
-            assert(t.one_sample_plain.classes_count == 1);
-            assert(tc.check(t.one_sample_plain.samples == A(1,:)));
-            assert(tc.check(t.one_sample_plain.labels_idx == c(1)));
-            assert(t.one_sample_plain.samples_count == 1);
-            assert(t.one_sample_plain.features_count == 2);
-            assert(t.one_sample_plain.compatible(s));
-            assert(length(t.one_sample_coded.classes) == 1);
-            assert(strcmp(t.one_sample_coded.classes{1},'none'));
-            assert(t.one_sample_coded.classes_count == 1);
-            assert(tc.check(size(t.one_sample_coded.samples) == [1 4]));
-            assert(tc.matrix(t.one_sample_coded.samples) && tc.number(t.one_sample_coded.samples));
-            assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
-            assert(t.one_sample_coded.samples_count == 1);
-            assert(t.one_sample_coded.features_count == 4);
             assert(tc.check(size(t.sparse_dict) == [2 4]));
             assert(tc.matrix(t.sparse_dict) && tc.unitreal(abs(t.sparse_dict)));
             assert(tc.check(arrayfun(@(i)utils.approx(norm(t.sparse_dict(:,i)),1),1:4)));
@@ -141,6 +131,22 @@ classdef gdmp < transforms.reversible
             assert(t.initial_learning_rate == 1e-2);
             assert(t.final_learning_rate == 1e-4);
             assert(t.max_iter_count == 20);
+            assert(length(t.one_sample_plain.classes) == 1);
+            assert(strcmp(t.one_sample_plain.classes{1},'none'));
+            assert(t.one_sample_plain.classes_count == 1);
+            assert(tc.check(t.one_sample_plain.samples == A(1,:)));
+            assert(tc.check(t.one_sample_plain.labels_idx == c(1)));
+            assert(t.one_sample_plain.samples_count == 1);
+            assert(t.one_sample_plain.features_count == 2);
+            assert(t.one_sample_plain.compatible(s));
+            assert(length(t.one_sample_coded.classes) == 1);
+            assert(strcmp(t.one_sample_coded.classes{1},'none'));
+            assert(t.one_sample_coded.classes_count == 1);
+            assert(tc.check(size(t.one_sample_coded.samples) == [1 4]));
+            assert(tc.matrix(t.one_sample_coded.samples) && tc.number(t.one_sample_coded.samples));
+            assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
+            assert(t.one_sample_coded.samples_count == 1);
+            assert(t.one_sample_coded.features_count == 4);
             
             clearvars -except display;
             

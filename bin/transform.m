@@ -1,14 +1,11 @@
 classdef transform
-    properties (GetAccess=public,SetAccess=immutable)
+    properties (Abstract,GetAccess=public,SetAccess=immutable)
         one_sample_plain;
+        one_sample_coded;
     end
     
     methods (Access=public)
-        function [obj] = transform(one_sample_plain)
-            assert(tc.scalar(one_sample_plain) && tc.dataset(one_sample_plain));
-            assert(one_sample_plain.samples_count == 1);
-            
-            obj.one_sample_plain = one_sample_plain;
+        function [obj] = transform()
         end
         
         function [dataset_coded] = code(obj,dataset_plain)
@@ -21,6 +18,6 @@ classdef transform
     end
     
     methods (Abstract,Access=protected)
-        do_code(obj,dataset_plain);
+        do_code(dataset_plain);
     end
 end

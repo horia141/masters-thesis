@@ -3,6 +3,11 @@ classdef resize < transform
         new_row_count;
         new_col_count;
     end
+        
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
     
     methods (Access=public)
         function [obj] = resize(train_image_plain,new_row_count,new_col_count)
@@ -11,9 +16,11 @@ classdef resize < transform
             assert(tc.scalar(new_row_count) && tc.natural(new_row_count) && (new_row_count > 0));
             assert(tc.scalar(new_col_count) && tc.natural(new_col_count) && (new_col_count > 0));
             
-            obj = obj@transform(train_image_plain.subsamples(1));
+            obj = obj@transform();
             obj.new_row_count = new_row_count;
             obj.new_col_count = new_col_count;
+            obj.one_sample_plain = train_image_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -40,6 +47,8 @@ classdef resize < transform
             
             t = transforms.image.resize(s,20,20);
             
+            assert(t.new_row_count == 20);
+            assert(t.new_col_count == 20);
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);
@@ -52,8 +61,19 @@ classdef resize < transform
             assert(t.one_sample_plain.row_count == 192);
             assert(t.one_sample_plain.col_count == 256);
             assert(t.one_sample_plain.compatible(s));
-            assert(t.new_row_count == 20);
-            assert(t.new_col_count == 20);
+            assert(length(t.one_sample_coded.classes) == 1);
+            assert(strcmp(t.one_sample_coded.classes{1},'none'));
+            assert(t.one_sample_coded.classes_count == 1);
+            assert(tc.check(size(t.one_sample_coded.samples) == [1 20*20]));
+            assert(tc.matrix(t.one_sample_coded.samples) && tc.unitreal(t.one_sample_coded.samples));
+            assert(tc.check(t.one_sample_coded.labels_idx == s.labels_idx(1)));
+            assert(t.one_sample_coded.samples_count == 1);
+            assert(t.one_sample_coded.features_count == 20*20);
+            assert(tc.check(size(t.one_sample_coded.images) == [20 20]));
+            assert(tc.tensor(t.one_sample_coded.images,4) && tc.unitreal(t.one_sample_coded.images));
+            assert(t.one_sample_coded.layers_count == 1);
+            assert(t.one_sample_coded.row_count == 20);
+            assert(t.one_sample_coded.col_count == 20);
             
             clearvars -except display;
             

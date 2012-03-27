@@ -1,10 +1,17 @@
 classdef dc_offset < transform
+    properties (GetAccess=public,SetAccess=immutable)
+        one_sample_plain;
+        one_sample_coded;
+    end
+    
     methods (Access=public)
         function [obj] = dc_offset(train_dataset_plain)
             assert(tc.scalar(train_dataset_plain) && tc.dataset(train_dataset_plain));
             assert(train_dataset_plain.samples_count >= 1);
             
-            obj = obj@transform(train_dataset_plain.subsamples(1));
+            obj = obj@transform();
+            obj.one_sample_plain = train_dataset_plain.subsamples(1);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
         end
     end
     
@@ -14,7 +21,7 @@ classdef dc_offset < transform
             dataset_coded = dataset(dataset_plain.classes,samples_coded,dataset_plain.labels_idx);
         end
     end
-    
+
     methods (Static,Access=public)
         function test(display)
             fprintf('Testing "transforms.dc_offset".\n');
@@ -38,6 +45,13 @@ classdef dc_offset < transform
             assert(t.one_sample_plain.samples_count == 1);
             assert(t.one_sample_plain.features_count == 50);
             assert(t.one_sample_plain.compatible(s));
+            assert(length(t.one_sample_coded.classes) == 1);
+            assert(strcmp(t.one_sample_coded.classes{1},'none'));
+            assert(t.one_sample_coded.classes_count == 1);
+            assert(tc.check(t.one_sample_coded.samples == A(1,:) - mean(A(1,:))));
+            assert(tc.check(t.one_sample_coded.labels_idx == c(1)));
+            assert(t.one_sample_coded.samples_count == 1);
+            assert(t.one_sample_coded.features_count == 50);
             
             clearvars -except display;
             
@@ -53,6 +67,7 @@ classdef dc_offset < transform
             t = transforms.dc_offset(s);
             s_p = t.code(s);
             
+            assert(t.one_sample_coded.compatible(s_p));
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
             assert(s_p.classes_count == 1);
