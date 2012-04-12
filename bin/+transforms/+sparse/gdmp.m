@@ -174,8 +174,8 @@ classdef gdmp < transforms.reversible
                 dict = dict + learning_rate * delta_dict;
                 dict = transforms.sparse.gdmp.normalize_dict(dict);
                 
-                mean_error = sum(mean((samples_transp - dict * coeffs) .^ 2));
-                logger.message('Mean error: %.0f',mean_error);
+%                 mean_error = sum(mean((samples_transp - dict * coeffs) .^ 2));
+%                 logger.message('Mean error: %.0f',mean_error);
 %                 im_dict = zeros(10,10,1,size(initial_dict,2));
 %                 for ii = 1:size(initial_dict,2)
 %                     im_dict(:,:,1,ii) = reshape(dict(:,ii),10,10);

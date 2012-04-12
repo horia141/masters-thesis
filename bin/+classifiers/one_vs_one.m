@@ -48,8 +48,8 @@ classdef one_vs_one < classifier
                         saved_classes_t = [saved_classes_t; ii jj];
                         current_classifier = current_classifier + 1;
                     catch exp
+                        logger.end_node();
                         if strcmp(exp.identifier,'master:NoConvergence')
-                            logger.end_node();
                             throw(MException('master:NoConvergence',exp.message));
                         else
                             rethrow(exp);

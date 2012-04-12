@@ -6,13 +6,20 @@
     point from each class. Or at least one point. See whichone makes more
     sense.
 
-- [48] B:29.03.2012 E:??.??.????
++ [48] B:29.03.2012 E:12.04.2012
   Task: Formalize the types of exceptions we will see in an application. For
     the moment we have:
        master:NoLoad
        master:NoConvergence
     The current model of "master:modules...:class:function:error" is not good
     for bigger handling. This is linked to task 1 as well.
+  Resolved: I've defined several types of errors until now. They are simply:
+      * NoLoad: something could not load a file.
+      * NoOpen: something could not open a file for writing.
+      * InvalidFormat: an loaded file did not have the expected format and there
+          was nothing we could do to recuperate.
+      * NoConvergence: a classifier could not converge on a solution. Usually,
+          raised in response to a MatLAB exception.
 
 + [47] B:29.03.2012 E:12.04.2012
   Task: Formalize the "params" type structure and make it work with all kinds
@@ -363,6 +370,6 @@
     such sets are, of course, still called "s_p", "s_f11" etc.
 
 - [1] B:05.03.2012 E:??.??.????
-  Task: Make use of the "Causes" field in MATLAB exception handling in the
+  Task: Make use of the "Causes" field in MatLAB exception handling in the
     code so far. This seems like an implementation of the "hierarchical"
     exception handling I've been thinking about.

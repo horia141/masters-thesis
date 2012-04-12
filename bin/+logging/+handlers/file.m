@@ -13,7 +13,7 @@ classdef file < logging.handler
             [file_id_t,file_msg] = fopen(logging_file_path,'wt');
             
             if file_id_t == -1
-                throw(MException('master:logging:handler:file:NoOpen',...
+                throw(MException('master:NoOpen',...
                          sprintf('Could not open logging file "%s": %s!',logging_file_path,file_msg)));
             end
             

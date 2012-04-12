@@ -99,7 +99,7 @@ classdef record < dataset
                 [csvfile_fid,csvfile_msg] = fopen(csvfile_path,'rt');
                 
                 if csvfile_fid == -1
-                    throw(MException('master:datasets:record:load_csvfile:NoLoad',...
+                    throw(MException('master:NoLoad',...
                              sprintf('Could not load csv file "%s": %s!',csvfile_path,csvfile_msg)))
                 end
                 
@@ -108,11 +108,11 @@ classdef record < dataset
                 samples_raw = textscan(csvfile_fid,strcat(labels_format,data_format),'delimiter',delimiter_t);
                 fclose(csvfile_fid);
             catch exp
-                throw(MException('master:datasets:record:load_csvfile:NoLoad',exp.message));
+                throw(MException('master:NoLoad',exp.message));
             end
             
             if ~tc.check(cellfun(@tc.number,samples_raw(:,2:end)))
-                throw(MException('master:datasets:record:load_csvfile:InvalidFormat',...
+                throw(MException('master:InvalidFormat',...
                          sprintf('File "%s" has an invalid format!',csvfile_path)));
             end
             

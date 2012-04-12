@@ -126,7 +126,7 @@ classdef image < dataset
             end
             
             if strcmp(remap_type_t,'none')
-                new_images = new_images;
+                % Nothing to do here.
             elseif strcmp(remap_type_t,'clamp')
                 new_images = utils.clamp_images_to_unit(new_images);
             else
@@ -203,7 +203,7 @@ classdef image < dataset
                     
                     if (current_image > 1) && ...
                         (~tc.check(size(image) == size(images_t(:,:,:,1))))
-                        throw(MException('master:datasets:image:load_from_dir:NoLoad',...
+                        throw(MException('master:NoLoad',...
                                          'Images are of different sizes!'));
                     end
 
@@ -217,7 +217,7 @@ classdef image < dataset
                     logger_t.end_node();
                     
                     if isempty(regexp(exp.identifier,'MATLAB:.*:imread:.*','ONCE'))
-                        throw(MException('master:datasets:image:load_from_dir:NoLoad',exp.message));
+                        throw(MException('master:NoLoad',exp.message));
                     end
                 end
             end
@@ -225,7 +225,7 @@ classdef image < dataset
             logger_t.end_node();
             
             if isempty(images_t)
-                throw(MException('master:datasets:image:load_from_dir:NoLoad',...
+                throw(MException('master:NoLoad',...
                                  'Could not find any acceptable images in the directory.'));
             end
             
@@ -255,8 +255,8 @@ classdef image < dataset
             [images_fid,images_msg] = fopen(images_path,'rb');
             
             if images_fid == -1
-                throw(MException('master:datasets:image:load_mnist:NoLoad',...
-                    sprintf('Could not load images in "%s": %s!',images_path,images_msg)))
+                throw(MException('master:NoLoad',...
+                         sprintf('Could not load images in "%s": %s!',images_path,images_msg)))
             end
             
             logger_t.message('Opening labels file "%s".',labels_path);
@@ -265,8 +265,8 @@ classdef image < dataset
             
             if labels_fid == -1
                 fclose(images_fid);
-                throw(MException('master:datasets:image:load_mnist:NoLoad',...
-                    sprintf('Could not load labels in "%s": %s!',labels_path,labels_msg)))
+                throw(MException('master:NoLoad',...
+                         sprintf('Could not load labels in "%s": %s!',labels_path,labels_msg)))
             end
             
             try
@@ -275,8 +275,8 @@ classdef image < dataset
                 images_magic = datasets.image.high2low(fread(images_fid,4,'uint8=>uint32'));
                 
                 if images_magic ~= 2051
-                    throw(MException('master:datasets:image:load_mnist:NoLoad',...
-                        sprintf('Images file "%s" not in MNIST format!',images_path)));
+                    throw(MException('master:NoLoad',...
+                             sprintf('Images file "%s" not in MNIST format!',images_path)));
                 end
                 
                 logger_t.message('Reading labels file magic number.');
@@ -284,8 +284,8 @@ classdef image < dataset
                 labels_magic = datasets.image.high2low(fread(labels_fid,4,'uint8=>uint32'));
                 
                 if labels_magic ~= 2049
-                    throw(MException('master:datasets:image:load_mnist:NoLoad',...
-                        sprintf('Labels file "%s" not in MNIST format!',labels_path)));
+                    throw(MException('master:NoLoad',...
+                             sprintf('Labels file "%s" not in MNIST format!',labels_path)));
                 end
                 
                 logger_t.beg_node('Reading images and labels count (should be equal)');
@@ -294,8 +294,8 @@ classdef image < dataset
                 labels_count = datasets.image.high2low(fread(labels_fid,4,'uint8=>uint32'));
                 
                 if images_count ~= labels_count
-                    throw(MException('master:datasets:image:load_mnist:NoLoad',...
-                        sprintf('Different number of labels in "%s" for images in "%s"!',labels_path,images_path)));
+                    throw(MException('master:NoLoad',...
+                             sprintf('Different number of labels in "%s" for images in "%s"!',labels_path,images_path)));
                 end
                 
                 logger_t.message('Images count: %d',images_count);
@@ -336,7 +336,7 @@ classdef image < dataset
             catch exp
                 fclose(images_fid);
                 fclose(labels_fid);
-                throw(MException('master:datasets:image:load_mnist:NoLoad',exp.message));
+                throw(MException('master:NoLoad',exp.message));
             end
             
             logger_t.message('Building dataset.');
