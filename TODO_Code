@@ -123,16 +123,22 @@
   Resolved: I've replaced usage of "!" with calls to "system" and proper checking
     of return codes.
 
-- [36] B:20.03.2012 E:??.??.????
++ [36] B:20.03.2012 E:12.04.2012
   Task: "gray_images_set" maybe should not keep a copy of the original images
     around. For larger datasets or when many copies need to be made (like for the
     "random_corr_transform") a lot of memory is wasted.
+  Resolved: Not really a problem after all. MatLAB copying is cheap on the one hand
+    and for most processing images are unaffected ("sparse" and co. discard image
+    information and produce a simple "dataset".
 
-- [35] B:20.03.2012 E:??.??.????
++ [35] B:20.03.2012 E:12.04.2012
   Task: See if there is a way to make "one_vs_one_classifier" safer by using
     "meta.class" and similar mechanisms in MatLAB. More specifically, pass a
     metaclass object to the classifier constructor instead of an anonymous
     function. 
+  Resolved: I've added "architectures" after this task was submitted. These have
+    more complex object creation requirements than we can satisfy using just
+    "meta.class". We're going to have to rely on constructor functions for this one.
 
 + [34] B:19.03.2012 E:12.04.2012
   Task: "svm_classifier" should signal when it couldn't converge to a
@@ -150,10 +156,15 @@
   Resolved: I've added the required "one_sample" as well as chains of tests for
     all the transforms we're doing on the data.
 
-- [32] B:19.03.2012 E:??.??.????
++ [32] B:19.03.2012 E:12.04.2012
   Task: explore the option of keeping a concatenated version of the images in
     a "gray_images_set" in one large image. See what operations could be
     hastened by this approach.
+  Resolved: I've tried this approach with "transforms.image.random_corr" with
+    unsatisfactory results. There was no noticeable increase in performance. The
+    transformation was done locally, in the "do_code" function, though, so this
+    might be the cause, but, in any case, it's too much work for too little gain
+    to do such a massive change now.
 
 + [31] B:16.03.2012 E:12.04.2012
   Task: See what can be done about relaxing the "unitreal" constraint on
@@ -384,7 +395,11 @@
     sets are now called "s"  instead of "s1", "s2" etc. Derived versions of
     such sets are, of course, still called "s_p", "s_f11" etc.
 
-- [1] B:05.03.2012 E:??.??.????
++ [1] B:05.03.2012 E:12.04.2012
   Task: Make use of the "Causes" field in MatLAB exception handling in the
     code so far. This seems like an implementation of the "hierarchical"
     exception handling I've been thinking about.
+  Resolved: This was not really needed. Two months of working on this have made
+    this point clear. Exception handling is not used that much. It appears in
+    dataset and logger IO operations and in "classifiers.svm" when it does not
+    converge.
