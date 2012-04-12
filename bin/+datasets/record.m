@@ -1,35 +1,43 @@
 classdef record < dataset
     methods (Access=public)
         function [obj] = record(classes,samples,labels_idx)
-            assert(tc.vector(classes) && tc.labels(classes));
-            assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
-                   tc.labels_idx(labels_idx,classes));
+            assert(tc.vector(classes));
+            assert(tc.labels(classes));
+            assert(tc.matrix(samples));
+            assert(tc.number(samples));
+            assert(tc.vector(labels_idx));
+            assert(tc.match_dims(samples,labels_idx,1));
+            assert(tc.labels_idx(labels_idx,classes));
                
             obj = obj@dataset(classes,samples,labels_idx);
         end
         
         function [o] = eq(obj,another_record)
-            assert(tc.scalar(obj) && tc.datasets_record(obj));
-            assert(tc.scalar(another_record) && tc.datasets_record(another_record));
+            assert(tc.scalar(obj));
+            assert(tc.datasets_record(obj));
+            assert(tc.scalar(another_record));
+            assert(tc.datasets_record(another_record));
             
             o = true;
             o = o && obj.eq@dataset(another_record);
         end
         
         function [o] = compatible(obj,another_record)
-            assert(tc.scalar(obj) && tc.datasets_record(another_record));
-            assert(tc.scalar(another_record) && tc.datasets_record(another_record));
+            assert(tc.scalar(obj));
+            assert(tc.datasets_record(another_record));
+            assert(tc.scalar(another_record));
+            assert(tc.datasets_record(another_record));
             
             o = true;
             o = o && obj.compatible@dataset(another_record);
         end
         
         function [new_record] = subsamples(obj,index)
-            assert(tc.scalar(obj) && tc.datasets_record(obj));
-            assert(tc.vector(index) && ...
-                   ((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
-                    (tc.natural(index) && tc.check(index > 0 & index <= obj.samples_count))));
+            assert(tc.scalar(obj));
+            assert(tc.datasets_record(obj));
+            assert(tc.vector(index));
+            assert((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
+                   (tc.natural(index) && tc.check(index >= 1 & index <= obj.samples_count)));
             
             new_record = datasets.record(obj.classes,obj.samples(index,:),obj.labels_idx(index));
         end
@@ -37,27 +45,40 @@ classdef record < dataset
     
     methods (Static,Access=public)
         function [new_record] = from_data(samples,labels)
-            assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.vector(labels) && tc.match_dims(samples,labels,1) && tc.labels(labels));
+            assert(tc.matrix(samples));
+            assert(tc.number(samples));
+            assert(tc.vector(labels));
+            assert(tc.match_dims(samples,labels,1));
+            assert(tc.labels(labels));
             
             [labels_idx_t,classes_t] = grp2idx(labels);
             new_record = datasets.record(classes_t,samples,labels_idx_t);
         end
         
         function [new_record] = from_fulldata(classes,samples,labels_idx)
-            assert(tc.vector(classes) && tc.labels(classes));
-            assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
-                   tc.labels_idx(labels_idx,classes));
+            assert(tc.vector(classes));
+            assert(tc.labels(classes));
+            assert(tc.matrix(samples));
+            assert(tc.number(samples));
+            assert(tc.vector(labels_idx));
+            assert(tc.match_dims(samples,labels_idx,1));
+            assert(tc.labels_idx(labels_idx,classes));
                
             new_record = datasets.record(classes,samples,labels_idx);
         end
         
-        function [new_record] = load_csvfile(csvfile_path,labels_format,data_format,delimiter)
-            assert(tc.scalar(csvfile_path) && tc.string(csvfile_path));
-            assert(tc.scalar(labels_format) && tc.string(labels_format));
-            assert(tc.scalar(data_format) && tc.string(data_format));
-            assert(~exist('delimiter','var') || (tc.scalar(delimiter) && tc.string(delimiter)));
+        function [new_record] = load_csvfile(csvfile_path,labels_format,data_format,delimiter,logger)
+            assert(tc.scalar(csvfile_path));
+            assert(tc.string(csvfile_path));
+            assert(tc.scalar(labels_format));
+            assert(tc.string(labels_format));
+            assert(tc.scalar(data_format));
+            assert(tc.string(data_format));
+            assert(~exist('delimiter','var') || tc.scalar(delimiter));
+            assert(~exist('delimiter','var') || tc.string(delimiter));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
             
             if exist('delimiter','var')
                 delimiter_t = delimiter;
@@ -65,13 +86,24 @@ classdef record < dataset
                 delimiter_t = ',';
             end
             
+            if exist('logger','var')
+                logger_t = logger;
+            else
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger_t = logging.logger({hnd_zero});
+            end
+            
             try
+                logger_t.message('Opening csv file "%s".',csvfile_path);
+                
                 [csvfile_fid,csvfile_msg] = fopen(csvfile_path,'rt');
                 
                 if csvfile_fid == -1
                     throw(MException('master:datasets:record:load_csvfile:NoLoad',...
                              sprintf('Could not load csv file "%s": %s!',csvfile_path,csvfile_msg)))
                 end
+                
+                logger_t.message('Bulk reading of CSV data.');
                 
                 samples_raw = textscan(csvfile_fid,strcat(labels_format,data_format),'delimiter',delimiter_t);
                 fclose(csvfile_fid);
@@ -84,8 +116,14 @@ classdef record < dataset
                          sprintf('File "%s" has an invalid format!',csvfile_path)));
             end
             
+            logger_t.message('Building dataset.');
+            
             samples_t = cell2mat(samples_raw(:,2:end));
-            labels_t = samples_raw{:,1};
+            if tc.cell(samples_raw{1}) && tc.string(samples_raw{1}{1})
+                labels_t = samples_raw{:,1};
+            else
+                labels_t = arrayfun(@utils.value_to_string,samples_raw{:,1},'UniformOutput',false);
+            end
             
             new_record = datasets.record.from_data(samples_t,labels_t);
         end
@@ -131,12 +169,10 @@ classdef record < dataset
             s2 = datasets.record({'1' '2'},[1 2 3; 1 3 2],[1 2]);
             s3 = datasets.record({'1' '2' '3'},[1 2 3; 1 3 2],[1 2]);
             s4 = datasets.record({'hello' 'world'},[1 2 3; 1 3 2],[1 2]);
-            s5 = datasets.record([1 2],[1 2 3; 1 3 2],[1 2]);
-            s6 = datasets.record([true false],[1 2 3; 1 3 2],[1 2]);
-            s7 = datasets.record({'1' '2'},[1 2 3 4; 1 3 2 4],[1 2]);
-            s8 = datasets.record({'1' '2'},[1 2 3; 1 3 2; 2 1 3],[1 2 2]);
-            s9 = datasets.record({'1' '2'},[1 2 3; 1 3 3],[1 2]);
-            s10 = datasets.record({'1' '2'},[1 2 3; 1 3 2],[1 1]);
+            s5 = datasets.record({'1' '2'},[1 2 3 4; 1 3 2 4],[1 2]);
+            s6 = datasets.record({'1' '2'},[1 2 3; 1 3 2; 2 1 3],[1 2 2]);
+            s7 = datasets.record({'1' '2'},[1 2 3; 1 3 3],[1 2]);
+            s8 = datasets.record({'1' '2'},[1 2 3; 1 3 2],[1 1]);
             
             assert(s1 == s2);
             assert(s1 ~= s3);
@@ -145,8 +181,6 @@ classdef record < dataset
             assert(s1 ~= s6);
             assert(s1 ~= s7);
             assert(s1 ~= s8);
-            assert(s1 ~= s9);
-            assert(s1 ~= s10);
                         
             clearvars -except display;
             
@@ -156,16 +190,12 @@ classdef record < dataset
             s2 = datasets.record({'1' '2'},rand(150,10),randi(2,150,1));
             s3 = datasets.record({'1' '2' '3'},rand(50,10),randi(2,50,1));
             s4 = datasets.record({'hello' 'world'},rand(50,10),randi(2,50,1));
-            s5 = datasets.record([1 2],rand(50,10),randi(2,50,1));
-            s6 = datasets.record([true false],rand(50,10),randi(2,50,1));
-            s7 = datasets.record({'1' '2'},rand(50,15),randi(2,50,1));
+            s5 = datasets.record({'1' '2'},rand(50,15),randi(2,50,1));
             
             assert(s1.compatible(s2) == true);
             assert(s1.compatible(s3) == false);
             assert(s1.compatible(s4) == false);
             assert(s1.compatible(s5) == false);
-            assert(s1.compatible(s6) == false);
-            assert(s1.compatible(s7) == false);
             
             clearvars -except display;
             
@@ -365,7 +395,7 @@ classdef record < dataset
                  2 3 4 1;
                  2 4 1 3;
                  2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
+            c = {'1';'2';'3';'1';'2';'3';'1';'2';'3';'1';'2';'3'};
             
             s = datasets.record.from_data(A,c);
             
@@ -375,7 +405,7 @@ classdef record < dataset
             assert(strcmp(s.classes{3},'3'));
             assert(s.classes_count == 3);
             assert(tc.check(s.samples == A));
-            assert(tc.check(s.labels_idx == c'));
+            assert(tc.same(s.labels_idx,[1;2;3;1;2;3;1;2;3;1;2;3]));
             assert(s.samples_count == 12);
             assert(s.features_count == 4);
             
@@ -414,7 +444,24 @@ classdef record < dataset
             
             fprintf('  Function "load_csvfile".\n');
             
-            fprintf('    With iris data.\n');
+            fprintf('    With Wine data and "," delimiter (default).\n');
+            
+            s = datasets.record.load_csvfile('../data/test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+            
+            assert(length(s.classes) == 3);
+            assert(strcmp(s.classes{1},'1'));
+            assert(strcmp(s.classes{2},'2'));
+            assert(strcmp(s.classes{3},'3'));
+            assert(s.classes_count == 3);
+            assert(all(size(s.samples) == [178 13]));
+            assert(tc.matrix(s.samples) && tc.number(s.samples));
+            assert(tc.check(s.labels_idx == [1*ones(59,1);2*ones(71,1);3*ones(48,1)]));
+            assert(s.samples_count == 178);
+            assert(s.features_count == 13);
+            
+            clearvars -except display;
+            
+            fprintf('    With iris data and "," delimiter.\n');
             
             s = datasets.record.load_csvfile('../data/test/iris/iris.csv','%s','%f%f%f%f',',');
             
@@ -431,20 +478,30 @@ classdef record < dataset
             
             clearvars -except display;
             
-            fprintf('    With Wine data.\n');
+            fprintf('    With iris data and "," delimiter and valid logger.\n');
             
-            s = datasets.record.load_csvfile('../data/test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = datasets.record.load_csvfile('../data/test/iris/iris.csv','%s','%f%f%f%f',',',log);
             
             assert(length(s.classes) == 3);
-            assert(strcmp(s.classes{1},'1'));
-            assert(strcmp(s.classes{2},'2'));
-            assert(strcmp(s.classes{3},'3'));
+            assert(strcmp(s.classes{1},'Iris-setosa'));
+            assert(strcmp(s.classes{2},'Iris-versicolor'));
+            assert(strcmp(s.classes{3},'Iris-virginica'));
             assert(s.classes_count == 3);
-            assert(all(size(s.samples) == [178 13]));
+            assert(all(size(s.samples) == [150 4]));
             assert(tc.matrix(s.samples) && tc.number(s.samples));
-            assert(tc.check(s.labels_idx == [1*ones(59,1);2*ones(71,1);3*ones(48,1)]));
-            assert(s.samples_count == 178);
-            assert(s.features_count == 13);
+            assert(tc.check(s.labels_idx == [1*ones(50,1);2*ones(50,1);3*ones(50,1)]));
+            assert(s.samples_count == 150);
+            assert(s.features_count == 4);
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Opening csv file "../data/test/iris/iris.csv".\n',...
+                                                         'Bulk reading of CSV data.\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
             

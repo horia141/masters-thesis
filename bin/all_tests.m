@@ -6,11 +6,13 @@ DISPLAY = false;
 
 tc.test(DISPLAY);
 utils.test(DISPLAY);
+params.test(DISPLAY);
 logging.level.test(DISPLAY);
 logging.handlers.zero.test(DISPLAY);
 logging.handlers.stdout.test(DISPLAY);
 logging.handlers.file.test(DISPLAY);
 logging.handlers.sendmail.test(DISPLAY);
+logging.handlers.testing.test(DISPLAY);
 logging.logger.test(DISPLAY);
 
 %% Tests for "dataset" and derived classes.
@@ -41,8 +43,3 @@ classifiers.knn.test(DISPLAY);
 classifiers.logistic_regression.test(DISPLAY);
 classifiers.svm.test(DISPLAY);
 classifiers.one_vs_one.test(DISPLAY);
-
-%% Tests for "architecture" and derived classes.
-
-architectures.a1v1_pca_cmeans.test(DISPLAY);
-architectures.a1v2_pca_svm.test(DISPLAY);

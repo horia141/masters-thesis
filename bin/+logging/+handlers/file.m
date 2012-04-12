@@ -5,8 +5,10 @@ classdef file < logging.handler
     
     methods (Access=public)
         function [obj] = file(logging_file_path,min_level)
-            assert(tc.scalar(logging_file_path) && tc.string(logging_file_path));
-            assert(tc.scalar(min_level) && tc.logging_level(min_level));
+            assert(tc.scalar(logging_file_path));
+            assert(tc.string(logging_file_path));
+            assert(tc.scalar(min_level));
+            assert(tc.logging_level(min_level));
             
             [file_id_t,file_msg] = fopen(logging_file_path,'wt');
             
@@ -36,12 +38,12 @@ classdef file < logging.handler
             
             fprintf('  Proper construction.\n');
             
-            fprintf('    With good logging path and minimum level "Details".\n');
+            fprintf('    With good logging path and minimum level "Architecture".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Details);
+            hnd = logging.handlers.file('../data/log1.log',logging.level.Architecture);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Details);
+            assert(hnd.min_level == logging.level.Architecture);
             
             hnd.close();
             
@@ -53,12 +55,12 @@ classdef file < logging.handler
             
             clearvars -except display;
             
-            fprintf('    With good logging path and minimum level "Status".\n');
+            fprintf('    With good logging path and minimum level "Results".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Status);
+            hnd = logging.handlers.file('../data/log1.log',logging.level.Results);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Status);
+            assert(hnd.min_level == logging.level.Results);
             
             hnd.close();
             
@@ -70,12 +72,12 @@ classdef file < logging.handler
             
             clearvars -except display;
             
-            fprintf('    With good logging path and minimum level "Details".\n');
+            fprintf('    With good logging path and minimum level "Dataset_IO".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Details);
+            hnd = logging.handlers.file('../data/log1.log',logging.level.Dataset_IO);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Details);
+            assert(hnd.min_level == logging.level.Dataset_IO);
             
             hnd.close();
             
@@ -92,7 +94,7 @@ classdef file < logging.handler
             try
                 !touch ../data/log1.log
                 !chmod a-w ../data/log1.log
-                hnd = logging.handlers.file('../data/log1.log',logging.level.Status);
+                hnd = logging.handlers.file('../data/log1.log',logging.level.TopLevel);
                 !chmod a+w ../data/log1.log
                 !rm ../data/log1.log
                 assert(false);
@@ -111,7 +113,7 @@ classdef file < logging.handler
             
             fprintf('  Function "send".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Details);
+            hnd = logging.handlers.file('../data/log1.log',logging.level.TopLevel);
             
             hnd.send('Successful send of message.\n');
             hnd.close();
@@ -127,7 +129,7 @@ classdef file < logging.handler
             
             fprintf('  Function "close".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Status);
+            hnd = logging.handlers.file('../data/log1.log',logging.level.TopLevel);
             
             hnd.close();
             

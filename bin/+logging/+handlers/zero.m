@@ -1,7 +1,8 @@
 classdef zero < logging.handler
     methods (Access=public)
         function [obj] = zero(min_level)
-            assert(tc.scalar(min_level) && tc.logging_level(min_level));
+            assert(tc.scalar(min_level));
+            assert(tc.logging_level(min_level));
 
             obj = obj@logging.handler(min_level);
         end
@@ -21,34 +22,34 @@ classdef zero < logging.handler
             
             fprintf('  Proper construction.\n');
             
-            fprintf('    With minimum level "Details".\n');
+            fprintf('    With minimum level "Architecture".\n');
             
-            hnd = logging.handlers.zero(logging.level.Details);
+            hnd = logging.handlers.zero(logging.level.Architecture);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Details);
+            assert(hnd.min_level == logging.level.Architecture);
             
             hnd.close();
             
             clearvars -except display;
             
-            fprintf('    With minimum level "Status".\n');
+            fprintf('    With minimum level "Results".\n');
             
-            hnd = logging.handlers.zero(logging.level.Status);
+            hnd = logging.handlers.zero(logging.level.Results);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Status);
+            assert(hnd.min_level == logging.level.Results);
             
             hnd.close();
             
             clearvars -except display;
             
-            fprintf('    With minimum level "Error".\n');
+            fprintf('    With minimum level "Dataset_IO".\n');
             
-            hnd = logging.handlers.zero(logging.level.Error);
+            hnd = logging.handlers.zero(logging.level.Dataset_IO);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Error);
+            assert(hnd.min_level == logging.level.Dataset_IO);
             
             hnd.close();
             
@@ -56,7 +57,7 @@ classdef zero < logging.handler
             
             fprintf('  Function "send".\n');
             
-            hnd = logging.handlers.zero(logging.level.Details);
+            hnd = logging.handlers.zero(logging.level.TopLevel);
             
             hnd.send('Successful send of message.\n');
             hnd.close();
@@ -65,7 +66,7 @@ classdef zero < logging.handler
             
             fprintf('  Function "close".\n');
             
-            hnd = logging.handlers.zero(logging.level.Status);
+            hnd = logging.handlers.zero(logging.level.TopLevel);
             
             hnd.close();
             

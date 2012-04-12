@@ -10,10 +10,13 @@ classdef dataset
     
     methods (Access=public)
         function [obj] = dataset(classes,samples,labels_idx)
-            assert(tc.vector(classes) && tc.labels(classes));
-            assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
-                   tc.labels_idx(labels_idx,classes));
+            assert(tc.vector(classes));
+            assert(tc.labels(classes));
+            assert(tc.matrix(samples));
+            assert(tc.number(samples));
+            assert(tc.vector(labels_idx));
+            assert(tc.match_dims(samples,labels_idx,1));
+            assert(tc.labels_idx(labels_idx,classes));
 
             obj.classes = utils.force_col(classes);
             obj.classes_count = length(classes);
@@ -24,11 +27,13 @@ classdef dataset
         end
         
         function [o] = eq(obj,another_dataset)
-            assert(tc.scalar(obj) && tc.dataset(obj));
-            assert(tc.scalar(another_dataset) && tc.dataset(another_dataset));
+            assert(tc.scalar(obj));
+            assert(tc.dataset(obj));
+            assert(tc.scalar(another_dataset));
+            assert(tc.dataset(another_dataset));
             
             o = true;
-            o = o && utils.same_classes(obj.classes,another_dataset.classes);
+            o = o && tc.same(obj.classes,another_dataset.classes);
             o = o && obj.compatible(another_dataset);
             o = o && tc.check(size(obj.samples) == size(another_dataset.samples));
             o = o && tc.check(obj.samples == another_dataset.samples);
@@ -39,44 +44,53 @@ classdef dataset
         end
         
         function [o] = ne(obj,another_dataset)
-            assert(tc.scalar(obj) && tc.dataset(obj));
-            assert(tc.scalar(another_dataset) && tc.dataset(another_dataset));
+            assert(tc.scalar(obj));
+            assert(tc.dataset(obj));
+            assert(tc.scalar(another_dataset));
+            assert(tc.dataset(another_dataset));
             
             o = ~obj.eq(another_dataset);
         end
         
         function [o] = compatible(obj,another_dataset)
-            assert(tc.scalar(obj) && tc.dataset(another_dataset));
-            assert(tc.scalar(another_dataset) && tc.dataset(another_dataset));
+            assert(tc.scalar(obj));
+            assert(tc.dataset(another_dataset));
+            assert(tc.scalar(another_dataset));
+            assert(tc.dataset(another_dataset));
             
             o = true;
-            o = o && utils.same_classes(obj.classes,another_dataset.classes);
+            o = o && tc.same(obj.classes,another_dataset.classes);
             o = o && (obj.features_count == another_dataset.features_count);
         end
 
         function [tr_index,ts_index] = partition(obj,type,param)
-            assert(tc.scalar(obj) && tc.dataset(obj));
-            assert(tc.scalar(type) && tc.string(type) && (strcmp(type,'kfold') || strcmp(type,'holdout')));
-            assert(tc.scalar(param) && tc.number(param) && ...
-                   ((strcmp(type,'kfold') && tc.natural(param) && (param >= 2)) || ...
-                    (strcmp(type,'holdout') && tc.unitreal(param))));
-            
+            assert(tc.scalar(obj));
+            assert(tc.dataset(obj));
+            assert(tc.scalar(type));
+            assert(tc.string(type));
+            assert(tc.one_of(type,'kfold','holdout'));
+            assert(tc.scalar(param));
+            assert(tc.number(param));
+            assert((strcmp(type,'kfold') && tc.natural(param) && (param >= 2)) || ...
+                   (strcmp(type,'holdout') && tc.unitreal(param)));
+
             partition = cvpartition(obj.labels_idx,type,param);
             
             tr_index = false(obj.samples_count,partition.NumTestSets);
             ts_index = false(obj.samples_count,partition.NumTestSets);
             
-            for i = 1:partition.NumTestSets
-                tr_index(:,i) = training(partition,i)';
-                ts_index(:,i) = test(partition,i)';
+            for ii = 1:partition.NumTestSets
+                tr_index(:,ii) = training(partition,ii)';
+                ts_index(:,ii) = test(partition,ii)';
             end
         end
         
         function [new_dataset] = subsamples(obj,index)
-            assert(tc.scalar(obj) && tc.dataset(obj));
-            assert(tc.vector(index) && ...
-                   ((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
-                    (tc.natural(index) && tc.check(index > 0 & index <= obj.samples_count))));
+            assert(tc.scalar(obj));
+            assert(tc.dataset(obj));
+            assert(tc.vector(index));
+            assert((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
+                   (tc.natural(index) && tc.check(index >= 1 & index <= obj.samples_count)));
             
             new_dataset = dataset(obj.classes,obj.samples(index,:),obj.labels_idx(index));
         end
@@ -84,18 +98,24 @@ classdef dataset
     
     methods (Static,Access=public)
         function [new_dataset] = from_data(samples,labels)
-            assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.vector(labels) && tc.match_dims(samples,labels,1) && tc.labels(labels));
+            assert(tc.matrix(samples));
+            assert(tc.number(samples));
+            assert(tc.vector(labels));
+            assert(tc.match_dims(samples,labels,1));
+            assert(tc.labels(labels));
             
             [labels_idx_t,classes_t] = grp2idx(labels);
             new_dataset = dataset(classes_t,samples,labels_idx_t);
         end
         
         function [new_dataset] = from_fulldata(classes,samples,labels_idx)
-            assert(tc.vector(classes) && tc.labels(classes));
-            assert(tc.matrix(samples) && tc.number(samples));
-            assert(tc.vector(labels_idx) && tc.match_dims(samples,labels_idx,1) && ...
-                   tc.labels_idx(labels_idx,classes));
+            assert(tc.vector(classes));
+            assert(tc.labels(classes));
+            assert(tc.matrix(samples));
+            assert(tc.number(samples));
+            assert(tc.vector(labels_idx));
+            assert(tc.match_dims(samples,labels_idx,1));
+            assert(tc.labels_idx(labels_idx,classes));
                
             new_dataset = dataset(classes,samples,labels_idx);
         end
@@ -141,12 +161,10 @@ classdef dataset
             s2 = dataset({'1' '2'},[1 2 3; 1 3 2],[1 2]);
             s3 = dataset({'1' '2' '3'},[1 2 3; 1 3 2],[1 2]);
             s4 = dataset({'hello' 'world'},[1 2 3; 1 3 2],[1 2]);
-            s5 = dataset([1 2],[1 2 3; 1 3 2],[1 2]);
-            s6 = dataset([true false],[1 2 3; 1 3 2],[1 2]);
-            s7 = dataset({'1' '2'},[1 2 3 4; 1 3 2 4],[1 2]);
-            s8 = dataset({'1' '2'},[1 2 3; 1 3 2; 2 1 3],[1 2 2]);
-            s9 = dataset({'1' '2'},[1 2 3; 1 3 3],[1 2]);
-            s10 = dataset({'1' '2'},[1 2 3; 1 3 2],[1 1]);
+            s5 = dataset({'1' '2'},[1 2 3 4; 1 3 2 4],[1 2]);
+            s6 = dataset({'1' '2'},[1 2 3; 1 3 2; 2 1 3],[1 2 2]);
+            s7 = dataset({'1' '2'},[1 2 3; 1 3 3],[1 2]);
+            s8 = dataset({'1' '2'},[1 2 3; 1 3 2],[1 1]);
             
             assert(s1 == s2);
             assert(s1 ~= s3);
@@ -155,8 +173,6 @@ classdef dataset
             assert(s1 ~= s6);
             assert(s1 ~= s7);
             assert(s1 ~= s8);
-            assert(s1 ~= s9);
-            assert(s1 ~= s10);
                         
             clearvars -except display;
             
@@ -166,16 +182,12 @@ classdef dataset
             s2 = dataset({'1' '2'},rand(150,10),randi(2,150,1));
             s3 = dataset({'1' '2' '3'},rand(50,10),randi(2,50,1));
             s4 = dataset({'hello' 'world'},rand(50,10),randi(2,50,1));
-            s5 = dataset([1 2],rand(50,10),randi(2,50,1));
-            s6 = dataset([true false],rand(50,10),randi(2,50,1));
-            s7 = dataset({'1' '2'},rand(50,15),randi(2,50,1));
+            s5 = dataset({'1' '2'},rand(50,15),randi(2,50,1));
             
             assert(s1.compatible(s2) == true);
             assert(s1.compatible(s3) == false);
             assert(s1.compatible(s4) == false);
             assert(s1.compatible(s5) == false);
-            assert(s1.compatible(s6) == false);
-            assert(s1.compatible(s7) == false);
             
             clearvars -except display;
             
@@ -375,7 +387,7 @@ classdef dataset
                  2 3 4 1;
                  2 4 1 3;
                  2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
+            c = {'1';'2';'3';'1';'2';'3';'1';'2';'3';'1';'2';'3'};
             
             s = dataset.from_data(A,c);
             
@@ -385,7 +397,7 @@ classdef dataset
             assert(strcmp(s.classes{3},'3'));
             assert(s.classes_count == 3);
             assert(tc.check(s.samples == A));
-            assert(tc.check(s.labels_idx == c'));
+            assert(tc.same(s.labels_idx,[1;2;3;1;2;3;1;2;3;1;2;3]));
             assert(s.samples_count == 12);
             assert(s.features_count == 4);
             

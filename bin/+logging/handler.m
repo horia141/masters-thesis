@@ -9,22 +9,26 @@ classdef handler < handle
 
     methods (Access=public)
         function [obj] = handler(min_level)
-            assert(tc.scalar(min_level) && tc.logging_level(min_level));
+            assert(tc.scalar(min_level));
+            assert(tc.logging_level(min_level));
 
             obj.min_level = min_level;
             obj.active = true;
         end
         
         function [] = send(obj,message)
-            assert(tc.scalar(obj) && tc.logging_handler(obj));
-            assert(obj.active == true);
-            assert(tc.scalar(message) && tc.string(message));
+            assert(tc.scalar(obj));
+            assert(tc.logging_handler(obj));
+            assert(obj.active);
+            assert(tc.scalar(message))
+            assert(tc.string(message));
             
             obj.do_send(message);
         end
         
         function [] = close(obj)
-            assert(tc.scalar(obj) && tc.logging_handler(obj));
+            assert(tc.scalar(obj));
+            assert(tc.logging_handler(obj));
 
             if obj.active
                 obj.do_close();            
@@ -33,7 +37,8 @@ classdef handler < handle
         end
         
         function [] = delete(obj)
-            assert(tc.scalar(obj) && tc.logging_handler(obj));
+            assert(tc.scalar(obj));
+            assert(tc.logging_handler(obj));
 
             obj.close();
         end

@@ -1,11 +1,99 @@
+- [50] B:11.04.2012 E:??.??.????
+  Task: Add progress reports for long experiments. Delivered by mail, ofcourse.
+
+- [49] B:04.04.2012 E:??.??.????
+  Task: Add stricter constraints to a dataset. It must contain at least one
+    point from each class. Or at least one point. See whichone makes more
+    sense.
+
+- [48] B:29.03.2012 E:??.??.????
+  Task: Formalize the types of exceptions we will see in an application. For
+    the moment we have:
+       master:NoLoad
+       master:NoConvergence
+    The current model of "master:modules...:class:function:error" is not good
+    for bigger handling. This is linked to task 1 as well.
+
++ [47] B:29.03.2012 E:12.04.2012
+  Task: Formalize the "params" type structure and make it work with all kinds
+    of datatypes, like it did in the "RecognizeThis" implementation. We'll
+    also drop the usage of "allcomb" from the project.
+  Resolved: I've added the "prams" "module" and it works with all kinds of values
+    and even has dependencies in the form of "params.depend" and "params.condition"
+    fields.
+
++ [46] B:28.03.2012 E:12.04.2012
+  Task: Setup a guideline for the order of properties and methods in a
+    class. We now have, first properties, then methods, which start with
+    constructors, then "basic" functions like "eq", "ne" etc. Then we have
+    static methods, and finally we have a static method "test".
+  Resolved: I've added an order and made all classes follow it. The order is:
+      * Immutable properties.
+      * Mutable properties for handle classes.
+      * Public methods:
+          * Constructor.
+          * Basic methods: eq,ne,gt etc.
+          * Other methods.
+      * Protected methods.
+      * Private methods.
+      * Public static methods.
+      * Protected static methods.
+      * Private static methods.
+      * The "test" function.    
+
++ [45] B:28.03.2012 E:12.04.2012
+  Task: Setup a guideline for placement of assert pre-conditions in the bodies
+    of functions. For the moment we have:
+      * first, assertions relating to individual parameters.
+      * second, assertions relating to groups of parameters.
+    For the first kind, in the assertion conjunction, we first have conditions
+    on the shape of the object, then other shape related constraints, then on
+    the type of the object, then any other extra type constraint. Move all
+    classes to follow this guideline.
+    Also, an assert should check just one condition, not conjunctions of
+    conditions, except in special cases.
+  Resolved: I've made all classes and functions follow these guidelines: first
+    structure and structure properties, then type and domain properties then extra
+    object properties. This is for all arguments, in the order in which they appear
+    in the argument list. After these there are asserts for more than one object.
+    These appear in argument list order of the first objects that appear in the
+    assert body, then the second if first are equal etc. One exception is structure
+    properties, like the length of a vector, which might depend on another object.
+    These appear at structure properties and not in combined asserts.
+
+- [44] B:28.03.2012 E:??.??.????
+  Task: Move the "data/test" directory to "test". All IO stuff done by tests
+    should be from this directory, and this no longer includes just reading
+    some data, but also writing some log files.
+
+- [43] B:28.03.2012 E:??.??.????
+  Task: Make all logging paths used in tests be in "../data/test" instead of
+    just in "../data".
+
++ [42] B:28.03.2012 E:12.04.2012
+  Task: There is a problem with logging and exception handling. All our
+    exceptions should be fatal, so maybe it won't materialize. There is a way
+    to solve this though. I need to visit each logging and exception throwing
+    function (which are basically functions wich log and do IO) and take care
+    that all "beg_*" are appropriately matched in exception handlers.
+  Resolved: There are few places where logging is in effect and exceptions can
+    be thrown ("classifiers.svm" and "classifiers.one_vs_one" are two examples).
+    Others are either in IO functions, where logging is controlled and in the
+    creation of handlers ("logging.handlers.file"), where logging doesn't yet
+    exist in most applications (you create handlers before loggers). Therefore,
+    the effects are easily controlled. Also, the fact that we use "new_*" mitigates
+    some of these problems.
+
 - [41] B:26.03.2012 E:??.??.????
   Task: In many places we test that a dataset has at least one element. A
     dataset cannot be empty, so this test is redundant. See if it is worth it
     to eliminate it or if it has some documentation purposes.
 
-- [40] B:26.03.2012 E:??.??.????
++ [40] B:26.03.2012 E:12.04.2012
   Task: Add a function "utils.string_in" or "tc.string_in" which checks that a
-   string is equal to one from a cell array of other strings.
+    string is equal to one from a cell array of other strings.
+  Resolved: Added "tc.one_of" which tests if an object belongs to a collection.
+    This is not limited to strings though.
 
 - [39] B:26.03.2012 E:??.??.????
   Task: Add tests after calls to abstract methods to make sure the results are
@@ -34,27 +122,35 @@
     metaclass object to the classifier constructor instead of an anonymous
     function. 
 
-- [34] B:19.03.2012 E:??.??.????
++ [34] B:19.03.2012 E:12.04.2012
   Task: "svm_classifier" should signal when it couldn't converge to a
     solution. Ditto for "logistic_regression_classifier" if we keep the MatLAB
     version. The proper mechanism should be raising an exception. Calling code
     should propagate the exception (in "architecture", most often, or
     "one_vs_one_classifier") until someone can handle it, usually by ignoring
     it and printing a message to the user.
+  Resolved: I've added exception handling code to "classifiers.svm" and 
+    "classifiers.one_vs_one" to handle this problem.
 
-- [33] B:19.03.2012 E:??.??.????
++ [33] B:19.03.2012 E:12.04.2012
   Task: Add a "one_sample" mechanism to "architecture", similar to the one in
     "classifier".
+  Resolved: I've added the required "one_sample" as well as chains of tests for
+    all the transforms we're doing on the data.
 
 - [32] B:19.03.2012 E:??.??.????
   Task: explore the option of keeping a concatenated version of the images in
     a "gray_images_set" in one large image. See what operations could be
     hastened by this approach.
 
-- [31] B:16.03.2012 E:??.??.????
++ [31] B:16.03.2012 E:12.04.2012
   Task: See what can be done about relaxing the "unitreal" constraint on
     images. At least some kind of non-image 2d or 3d signals could be
     represented as images, but for the unitreal constraint.
+  Resolved: Images are no longer forced to be "unitreal". Just after loading,
+    they indeed are, but with further processing it becomes increasinly unsafe
+    to rescale images. Thefore we let them be and do rescaling just for
+    visualization.
 
 - [30] B:16.03.2012 E:??.??.????
   Task: Add a subclass of reversible transform for all dictionary based
@@ -66,10 +162,17 @@
     "gray_images_set".
   Resolved: I've added the transform and some tests for it.
 
-- [28] B:14.03.2012 E:??.??.????
++ [28] B:14.03.2012 E:12.04.2012
   Task: Reorganize the file/module structure a little. For now, all classes
     live in the top-level. As we continue adding stuff, the top-level will
     become more crowded.
+  Resolved: I've solved this. We have the following directory structure:
+      * experiments.
+      * architectures.
+      * classifiers.
+      * transforms.
+          * image.
+          * sparse.
 
 - [27] B:14.03.2012 E:??.??.????
   Task: Add a "normal_bayes_classifier" which does classification using Bayes
@@ -105,7 +208,7 @@
     meaningful. It should have values "none", "slow", "fast", "step" for
     different levels of control.
 
-- [20] B:13.03.2012 E:??.??.????
++ [20] B:13.03.2012 E:12.04.2012
   Task: Lots of small tasks for "sparse_sgdmp_transform".
     * Change normalization code to work vectorized. Implement norm by hand
       and do fast matrix math on whole dict.
@@ -121,6 +224,11 @@
       continue the training from a previous session). It could also accept a
       schedule parameter directly, instead of several schedule defining
       parameters.
+  Resolved: I've vectorized the normalization code and made "matching_pursuit"
+    as well as "do_code" and "do_decode" work vectorized. I've also added the
+    "correlation", "matching_pursuit_alpha" and "ortho_matching_pursuit" ways
+    to do coding, and added an extra parameter to the constructor to allow
+    user selection. The other things will be added if needed.
 
 - [19] B:13.03.2012 E:??.??.????
   Task: Add batch mode options for learning the dictionary. Currently it does
@@ -133,10 +241,16 @@
     smaller version alltogether).
   Resolved: I've made the test use the MNIST test data.
 
-- [17] B:13.03.2012 E:??.??.????
++ [17] B:13.03.2012 E:12.04.2012
   Task: Transforms which require training should also store one sample of
     their training data. This should be used later in calls to "code" and
     "decode" for compatibility testing.
+  Resolved: I've added two extra properties, "one_sample_plain" and "one_sample_coded",
+    which each derived class must fill in (sadly the base class constructor can't
+    do this, without adding a lot of complexity and even more contracts that
+    must be implicitly satisfied). These are used for compatibility testing
+    mostly, though some transforms also use them to retrieve extra information
+    during coding or decoding.
 
 - [16] B:13.03.2012 E:??.??.????
   Task: We currently have no support for data of an unknown class. These

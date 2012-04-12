@@ -10,32 +10,58 @@ classdef window < transform
     end
     
     methods (Access=public)
-        function [obj] = window(train_image_plain,sigma)
-            assert(tc.scalar(train_image_plain) && tc.datasets_image(train_image_plain));
+        function [obj] = window(train_image_plain,sigma,logger)
+            assert(tc.scalar(train_image_plain));
+            assert(tc.datasets_image(train_image_plain));
             assert(train_image_plain.samples_count >= 1);
             assert(train_image_plain.row_count == train_image_plain.col_count);
-            assert(tc.scalar(sigma) && tc.number(sigma) && (sigma > 0));
+            assert(tc.scalar(sigma));
+            assert(tc.number(sigma));
+            assert(sigma > 0);
+            assert(tc.scalar(logger));
+            assert(tc.logging_logger(logger));
+            assert(logger.active);
             
             filter_t = fspecial('gaussian',train_image_plain.row_count,sigma);
             filter_t = filter_t ./ max(max(filter_t));
             
-            obj = obj@transform();
+            obj = obj@transform(logger);
             obj.filter = filter_t;
             obj.sigma = sigma;
+            
+            logger.beg_node('Extracting plain/coded samples');
+            
             obj.one_sample_plain = train_image_plain.subsamples(1);
-            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain,logger);
+            
+            logger.end_node();
         end
     end
     
     methods (Access=protected)
-        function [image_coded] = do_code(obj,image_plain)
+        function [image_coded] = do_code(obj,image_plain,logger)
+            log_batch_size = ceil(image_plain.samples_count / 10);
             images_coded = zeros(image_plain.row_count,image_plain.col_count,image_plain.layers_count,image_plain.samples_count);
             
+            logger.beg_node('Building windowed images');
+            
             for layer = 1:image_plain.layers_count
-                for i = 1:image_plain.samples_count
-                    images_coded(:,:,layer,i) = image_plain.images(:,:,layer,i) .* obj.filter;
+                logger.beg_node('Layer %d',layer);
+
+                for ii = 1:image_plain.samples_count
+                    if mod(ii-1,log_batch_size) == 0
+                        logger.message('Processing images %d to %d.',ii,min(ii+log_batch_size-1,image_plain.samples_count));
+                    end
+
+                    images_coded(:,:,layer,ii) = image_plain.images(:,:,layer,ii) .* obj.filter;
                 end
+                
+                logger.end_node();
             end
+            
+            logger.end_node();
+            
+            logger.message('Building dataset.');
             
             image_coded = datasets.image(image_plain.classes,images_coded,image_plain.labels_idx);
         end
@@ -47,9 +73,11 @@ classdef window < transform
             
             fprintf('  Proper construction.\n');
             
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[192 192]);
             
-            t = transforms.image.window(s,10);
+            t = transforms.image.window(s,10,log);
             
             assert(tc.check(size(t.filter) == [192 192]));
             assert(max(max(t.filter)) == 1);
@@ -80,16 +108,27 @@ classdef window < transform
             assert(t.one_sample_coded.row_count == 192);
             assert(t.one_sample_coded.col_count == 192);
             
+            assert(tc.same(hnd.logged_data,sprintf(strcat('Extracting plain/coded samples:\n',...
+                                                          '  Building windowed images:\n',...
+                                                          '    Layer 1:\n',...
+                                                          '      Processing images 1 to 1.\n',...
+                                                          '  Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
             clearvars -except display;
             
             fprintf('  Function "code".\n');
             
             fprintf('    With grayscale images.\n');
             
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[192 192]);
             
-            t = transforms.image.window(s,60);
-            s_p = t.code(s);
+            t = transforms.image.window(s,60,log);
+            s_p = t.code(s,log);
             
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
@@ -107,6 +146,22 @@ classdef window < transform
             assert(s_p.row_count == 192);
             assert(s_p.col_count == 192);
             
+            assert(tc.same(hnd.logged_data,sprintf(strcat('Extracting plain/coded samples:\n',...
+                                                          '  Building windowed images:\n',...
+                                                          '    Layer 1:\n',...
+                                                          '      Processing images 1 to 1.\n',...
+                                                          '  Building dataset.\n',...
+                                                          'Building windowed images:\n',...
+                                                          '  Layer 1:\n',...
+                                                          '    Processing images 1 to 1.\n',...
+                                                          '    Processing images 2 to 2.\n',...
+                                                          '    Processing images 3 to 3.\n',...
+                                                          '    Processing images 4 to 4.\n',...
+                                                          '    Processing images 5 to 5.\n',...
+                                                          '    Processing images 6 to 6.\n',...
+                                                          '    Processing images 7 to 7.\n',...
+                                                          'Building dataset.\n'))));
+            
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
@@ -117,14 +172,19 @@ classdef window < transform
                 close(gcf());
             end
             
+            log.close();
+            hnd.close();
+            
             clearvars -except display;
             
             fprintf('    With color images.\n');
             
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             s = datasets.image.load_from_dir('../data/test/scenes_small','color',[192 192]);
             
-            t = transforms.image.window(s,60);
-            s_p = t.code(s);
+            t = transforms.image.window(s,60,log);
+            s_p = t.code(s,log);
             
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
@@ -142,6 +202,42 @@ classdef window < transform
             assert(s_p.row_count == 192);
             assert(s_p.col_count == 192);
             
+            assert(tc.same(hnd.logged_data,sprintf(strcat('Extracting plain/coded samples:\n',...
+                                                          '  Building windowed images:\n',...
+                                                          '    Layer 1:\n',...
+                                                          '      Processing images 1 to 1.\n',...
+                                                          '    Layer 2:\n',...
+                                                          '      Processing images 1 to 1.\n',...
+                                                          '    Layer 3:\n',...
+                                                          '      Processing images 1 to 1.\n',...
+                                                          '  Building dataset.\n',...
+                                                          'Building windowed images:\n',...
+                                                          '  Layer 1:\n',...
+                                                          '    Processing images 1 to 1.\n',...
+                                                          '    Processing images 2 to 2.\n',...
+                                                          '    Processing images 3 to 3.\n',...
+                                                          '    Processing images 4 to 4.\n',...
+                                                          '    Processing images 5 to 5.\n',...
+                                                          '    Processing images 6 to 6.\n',...
+                                                          '    Processing images 7 to 7.\n',...
+                                                          '  Layer 2:\n',...
+                                                          '    Processing images 1 to 1.\n',...
+                                                          '    Processing images 2 to 2.\n',...
+                                                          '    Processing images 3 to 3.\n',...
+                                                          '    Processing images 4 to 4.\n',...
+                                                          '    Processing images 5 to 5.\n',...
+                                                          '    Processing images 6 to 6.\n',...
+                                                          '    Processing images 7 to 7.\n',...
+                                                          '  Layer 3:\n',...
+                                                          '    Processing images 1 to 1.\n',...
+                                                          '    Processing images 2 to 2.\n',...
+                                                          '    Processing images 3 to 3.\n',...
+                                                          '    Processing images 4 to 4.\n',...
+                                                          '    Processing images 5 to 5.\n',...
+                                                          '    Processing images 6 to 6.\n',...
+                                                          '    Processing images 7 to 7.\n',...
+                                                          'Building dataset.\n'))));
+            
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
@@ -151,6 +247,9 @@ classdef window < transform
                 pause(5);
                 close(gcf());
             end
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
         end

@@ -8,10 +8,13 @@ classdef image < dataset
     
     methods (Access=public)
         function [obj] = image(classes,images,labels_idx)
-            assert(tc.vector(classes) && tc.labels(classes));
-            assert(tc.tensor(images,4) && tc.unitreal(images));
-            assert(tc.vector(labels_idx) && tc.match_dims(images,labels_idx,4) && ...
-                   tc.labels_idx(labels_idx,classes));
+            assert(tc.vector(classes));
+            assert(tc.labels(classes));
+            assert(tc.tensor(images,4));
+            assert(tc.number(images));
+            assert(tc.vector(labels_idx));
+            assert(tc.match_dims(images,labels_idx,4));
+            assert(tc.labels_idx(labels_idx,classes));
                
             obj = obj@dataset(classes,datasets.image.to_samples(images),labels_idx);
             obj.images = images;
@@ -21,8 +24,10 @@ classdef image < dataset
         end
         
         function [o] = eq(obj,another_image)
-            assert(tc.scalar(obj) && tc.datasets_image(obj));
-            assert(tc.scalar(another_image) && tc.datasets_image(another_image));
+            assert(tc.scalar(obj));
+            assert(tc.datasets_image(obj));
+            assert(tc.scalar(another_image));
+            assert(tc.datasets_image(another_image));
             
             o = true;
             o = o && obj.eq@dataset(another_image);
@@ -34,8 +39,10 @@ classdef image < dataset
         end
         
         function [o] = compatible(obj,another_image)
-            assert(tc.scalar(obj) && tc.datasets_image(obj));
-            assert(tc.scalar(another_image) && tc.datasets_image(another_image));
+            assert(tc.scalar(obj));
+            assert(tc.datasets_image(obj));
+            assert(tc.scalar(another_image));
+            assert(tc.datasets_image(another_image));
             
             o = true;
             o = o && obj.compatible@dataset(another_image);
@@ -45,10 +52,11 @@ classdef image < dataset
         end
         
         function [new_image] = subsamples(obj,index)
-            assert(tc.scalar(obj) && tc.datasets_image(obj));
-            assert(tc.vector(index) && ...
-                   ((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
-                    (tc.natural(index) && tc.check(index > 0 & index <= obj.samples_count))));
+            assert(tc.scalar(obj));
+            assert(tc.datasets_image(obj));
+            assert(tc.vector(index));
+            assert((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
+                   (tc.natural(index) && tc.check(index >= 1 & index <= obj.samples_count)));
             
             new_image = datasets.image(obj.classes,obj.images(:,:,:,index),obj.labels_idx(index));
         end
@@ -56,32 +64,48 @@ classdef image < dataset
     
     methods (Static,Access=public)        
         function [new_image] = from_data(images,labels)
-            assert(tc.tensor(images,4) && tc.unitreal(images));
-            assert(tc.vector(labels) && tc.match_dims(images,labels,4) && tc.labels(labels));
+            assert(tc.tensor(images,4));
+            assert(tc.number(images));
+            assert(tc.vector(labels));
+            assert(tc.match_dims(images,labels,4));
+            assert(tc.labels(labels));
             
             [labels_idx_t,classes_t] = grp2idx(labels);
             new_image = datasets.image(classes_t,images,labels_idx_t);
         end
         
         function [new_image] = from_fulldata(classes,images,labels_idx)
-            assert(tc.vector(classes) && tc.labels(classes));
-            assert(tc.tensor(images,4) && tc.unitreal(images));
-            assert(tc.vector(labels_idx) && tc.match_dims(images,labels_idx,4) && ...
-                   tc.labels_idx(labels_idx,classes));
+            assert(tc.vector(classes));
+            assert(tc.labels(classes));
+            assert(tc.tensor(images,4));
+            assert(tc.number(images));
+            assert(tc.vector(labels_idx));
+            assert(tc.match_dims(images,labels_idx,4));
+            assert(tc.labels_idx(labels_idx,classes));
                
             new_image = datasets.image(classes,images,labels_idx);
         end
         
         function [new_image] = from_dataset(dataset_d,layers_count,row_count,col_count,remap_type,remap_mode)
-            assert(tc.scalar(dataset_d) && tc.dataset(dataset_d));
-            assert(tc.scalar(layers_count) && tc.natural(layers_count) && (layers_count > 0));
-            assert(tc.scalar(row_count) && tc.natural(row_count) && (row_count > 0));
-            assert(tc.scalar(col_count) && tc.natural(col_count) && (col_count > 0));
-            assert(~exist('remap_type','var') || (tc.scalar(remap_type) && tc.string(remap_type) && ...
-                    (strcmp(remap_type,'none') || strcmp(remap_type,'clamp') || strcmp(remap_type,'remap'))));
-            assert(~(exist('remap_type','var') && exist('remap_mode','var')) || ...
-                    (strcmp(remap_type,'remap') && (tc.scalar(remap_mode) && tc.string(remap_mode) && ...
-                                                     (strcmp(remap_mode,'local') || strcmp(remap_mode,'global')))));
+            assert(tc.scalar(dataset_d));
+            assert(tc.dataset(dataset_d));
+            assert(tc.scalar(layers_count));
+            assert(tc.natural(layers_count));
+            assert(layers_count >= 1);
+            assert(tc.scalar(row_count));
+            assert(tc.natural(row_count));
+            assert(row_count >= 1);
+            assert(tc.scalar(col_count));
+            assert(tc.natural(col_count));
+            assert(col_count >= 1);
+            assert(~exist('remap_type','var') || tc.scalar(remap_type));
+            assert(~exist('remap_type','var') || tc.string(remap_type));
+            assert(~exist('remap_type','var') || tc.one_of(remap_type,'none','clamp','remap'));
+            assert(~exist('remap_mode','var') || exist('remap_type','var'));
+            assert(~exist('remap_mode','var') || strcmp(remap_type,'remap'));
+            assert(~exist('remap_mode','var') || tc.scalar(remap_mode));
+            assert(~exist('remap_mode','var') || tc.string(remap_mode));
+            assert(~exist('remap_mode','var') || tc.one_of(remap_mode,'local','global'));
                 
             if exist('remap_type','var')
                 remap_type_t = remap_type;
@@ -97,8 +121,8 @@ classdef image < dataset
             
             new_images = zeros(row_count,col_count,layers_count,dataset_d.samples_count);
             
-            for i = 1:dataset_d.samples_count
-                new_images(:,:,:,i) = reshape(dataset_d.samples(i,:),[row_count col_count layers_count]);
+            for ii = 1:dataset_d.samples_count
+                new_images(:,:,:,ii) = reshape(dataset_d.samples(ii,:),[row_count col_count layers_count]);
             end
             
             if strcmp(remap_type_t,'none')
@@ -112,28 +136,52 @@ classdef image < dataset
             new_image = datasets.image(dataset_d.classes,new_images,dataset_d.labels_idx);
         end
         
-        function [new_image] = load_from_dir(images_dir_path,mode,force_size)
-            assert(tc.scalar(images_dir_path) && tc.string(images_dir_path));
-            assert(~exist('mode','var') || ...
-                    (tc.scalar(mode) && tc.string(mode) && ...
-                      (strcmp(mode,'gray') || strcmp(mode,'color'))));
-            assert(~exist('force_size','var') || ...
-                    (tc.vector(force_size) && (length(force_size) == 2) && ...
-                      tc.natural(force_size) && tc.check(force_size > 1)));
-                  
+        function [new_image] = load_from_dir(images_dir_path,mode,force_size,logger)
+            assert(tc.scalar(images_dir_path));
+            assert(tc.string(images_dir_path));
+            assert(~exist('mode','var') || tc.scalar(mode));
+            assert(~exist('mode','var') || tc.string(mode));
+            assert(~exist('mode','var') || tc.one_of(mode,'gray','color'));
+            assert(~exist('force_size','var') || tc.vector(force_size));
+            assert(~exist('force_size','var') || (length(force_size) == 2));
+            assert(~exist('force_size','var') || tc.integer(force_size));
+            assert(~exist('force_size','var') || (tc.check(force_size >= 1) || tc.check(force_size == -1)));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
+
             if exist('mode','var')
                 mode_t = mode;
             else
                 mode_t = 'gray';
-            end               
+            end
+            
+            if exist('force_size','var')
+                force_size_t = force_size;
+            else
+                force_size_t = [-1 -1];
+            end
+            
+            if exist('logger','var')
+                logger_t = logger;
+            else
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger_t = logging.logger({hnd_zero});
+            end
+            
+            logger_t.message('Listing images directory "%s".',images_dir_path);
                
             paths = dir(images_dir_path);
             images_t = [];
             current_image = 1;
             
-            for i = 1:length(paths)
+            logger_t.beg_node('Starting reading of images');
+            
+            for ii = 1:length(paths)
                 try
-                    image = imread(fullfile(images_dir_path,paths(i).name));
+                    logger_t.beg_node('Reading image in "%s"',fullfile(images_dir_path,paths(ii).name));
+                    
+                    image = imread(fullfile(images_dir_path,paths(ii).name));
                     
                     if strcmp(mode_t,'gray')
                         image = double(rgb2gray(image)) ./ 255;
@@ -141,7 +189,12 @@ classdef image < dataset
                         image = double(image) ./ 255;
                     end
                     
-                    if exist('force_size','var')
+                    logger_t.message('Row count: %d',size(image,1));
+                    logger_t.message('Col count: %d',size(image,2));
+                    
+                    if tc.check(force_size_t ~= [-1 -1])
+                        logger_t.message('Resizing to %dx%d.',force_size_t(1),force_size_t(2));
+                        
                         image = imresize(image,force_size);
                         
                         % Correct small domain overflows caused by resizing.
@@ -156,24 +209,48 @@ classdef image < dataset
 
                     images_t(:,:,:,current_image) = image;
                     current_image = current_image + 1;
+                    
+                    logger_t.end_node();
                 catch exp
-                    if isempty(regexp(exp.identifier,'MATLAB:imread:.*','ONCE'))
+                    logger_t.message('Not an image or corrupted.');
+
+                    logger_t.end_node();
+                    
+                    if isempty(regexp(exp.identifier,'MATLAB:.*:imread:.*','ONCE'))
                         throw(MException('master:datasets:image:load_from_dir:NoLoad',exp.message));
                     end
                 end
             end
+            
+            logger_t.end_node();
             
             if isempty(images_t)
                 throw(MException('master:datasets:image:load_from_dir:NoLoad',...
                                  'Could not find any acceptable images in the directory.'));
             end
             
+            logger_t.message('Building dataset.');
+            
             new_image = datasets.image({'none'},images_t,ones(current_image - 1,1));
         end
         
-        function [new_image] = load_mnist(images_path,labels_path)
-            assert(tc.scalar(images_path) && tc.string(images_path));
-            assert(tc.scalar(labels_path) && tc.string(labels_path));
+        function [new_image] = load_mnist(images_path,labels_path,logger)
+            assert(tc.scalar(images_path));
+            assert(tc.string(images_path));
+            assert(tc.scalar(labels_path));
+            assert(tc.string(labels_path));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
+               
+            if exist('logger','var')
+                logger_t = logger;
+            else
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger_t = logging.logger({hnd_zero});
+            end
+            
+            logger_t.message('Opening images file "%s".',images_path);
             
             [images_fid,images_msg] = fopen(images_path,'rb');
             
@@ -181,6 +258,8 @@ classdef image < dataset
                 throw(MException('master:datasets:image:load_mnist:NoLoad',...
                     sprintf('Could not load images in "%s": %s!',images_path,images_msg)))
             end
+            
+            logger_t.message('Opening labels file "%s".',labels_path);
             
             [labels_fid,labels_msg] = fopen(labels_path,'rb');
             
@@ -191,6 +270,8 @@ classdef image < dataset
             end
             
             try
+                logger_t.message('Reading images file magic number.');
+
                 images_magic = datasets.image.high2low(fread(images_fid,4,'uint8=>uint32'));
                 
                 if images_magic ~= 2051
@@ -198,12 +279,16 @@ classdef image < dataset
                         sprintf('Images file "%s" not in MNIST format!',images_path)));
                 end
                 
+                logger_t.message('Reading labels file magic number.');
+                
                 labels_magic = datasets.image.high2low(fread(labels_fid,4,'uint8=>uint32'));
                 
                 if labels_magic ~= 2049
                     throw(MException('master:datasets:image:load_mnist:NoLoad',...
                         sprintf('Labels file "%s" not in MNIST format!',labels_path)));
                 end
+                
+                logger_t.beg_node('Reading images and labels count (should be equal)');
                 
                 images_count = datasets.image.high2low(fread(images_fid,4,'uint8=>uint32'));
                 labels_count = datasets.image.high2low(fread(labels_fid,4,'uint8=>uint32'));
@@ -213,14 +298,36 @@ classdef image < dataset
                         sprintf('Different number of labels in "%s" for images in "%s"!',labels_path,images_path)));
                 end
                 
+                logger_t.message('Images count: %d',images_count);
+                logger_t.message('Labels count: %d',labels_count);
+                
+                logger_t.end_node();
+                
+                logger_t.beg_node('Reading images row and col count');
+                
                 row_count_t = datasets.image.high2low(fread(images_fid,4,'uint8=>uint32'));
                 col_count_t = datasets.image.high2low(fread(images_fid,4,'uint8=>uint32'));
                 
+                logger_t.message('Row count: %d',row_count_t);
+                logger_t.message('Col count: %d',col_count_t);
+                
+                logger_t.end_node();
+                
                 images_t = zeros(row_count_t,col_count_t,1,images_count);
                 
-                for i = 1:images_count
-                    images_t(:,:,1,i) = fread(images_fid,[row_count_t col_count_t],'uint8=>double')' ./ 255;
+                logger_t.beg_node('Starting reading of images');
+                
+                for ii = 1:images_count
+                    if mod(ii-1,5000) == 0
+                        logger_t.message('Images %d to %d',ii,min(ii+4999,images_count));
+                    end
+                    
+                    images_t(:,:,1,ii) = fread(images_fid,[row_count_t col_count_t],'uint8=>double')' ./ 255;
                 end
+                
+                logger_t.end_node();
+                
+                logger_t.message('Starting reading of labels');
                 
                 labels_t = fread(labels_fid,[images_count 1],'uint8');
                 
@@ -231,8 +338,10 @@ classdef image < dataset
                 fclose(labels_fid);
                 throw(MException('master:datasets:image:load_mnist:NoLoad',exp.message));
             end
+            
+            logger_t.message('Building dataset.');
 
-            new_image = datasets.image.from_data(images_t,labels_t);
+            new_image = datasets.image({'0';'1';'2';'3';'4';'5';'6';'7';'8';'9'},images_t,labels_t + 1);
         end
     end
     
@@ -241,8 +350,8 @@ classdef image < dataset
             features_count = size(images,1) * size(images,2) * size(images,3);
             samples = zeros(size(images,4),features_count);
             
-            for i = 1:size(images,4)
-                samples(i,:) = reshape(images(:,:,:,i),[1 features_count]);
+            for ii = 1:size(images,4)
+                samples(ii,:) = reshape(images(:,:,:,ii),[1 features_count]);
             end
         end
         
@@ -262,8 +371,8 @@ classdef image < dataset
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
             
             s = datasets.image({'1' '2' '3'},A,c);
@@ -295,18 +404,14 @@ classdef image < dataset
                                                     cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1])),[1 2]);
             s4 = datasets.image({'true' 'false'},cat(4,cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),...
                                                        cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1])),[1 2]);
-            s5 = datasets.image([1 2],cat(4,cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),...
-                                            cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1])),[1 2]);
-            s6 = datasets.image([true false],cat(4,cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),...
-                                                   cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1])),[1 2]);
-            s7 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2 0.3; 0.1 0.3 0.2],[0.1 0.2 0.4; 0.1 0.4 0.2]),...
+            s5 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2 0.3; 0.1 0.3 0.2],[0.1 0.2 0.4; 0.1 0.4 0.2]),...
                                                 cat(3,[0.1 0.2 0.3; 0.1 0.3 0.2],[0.1 0.2 0.4; 0.1 0.4 0.2])),[1 2]);
-            s8 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2 0.2 0.1],[0.1 0.3 0.3 0.1]),...
+            s6 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2 0.2 0.1],[0.1 0.3 0.3 0.1]),...
                                                 cat(3,[0.1 0.2 0.2 0.1],[0.1 0.3 0.3 0.1])),[1 2]);
-            s9 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2; 0.2 0.2],[0.1 0.3; 0.3 0.1]),...
+            s7 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2; 0.2 0.2],[0.1 0.3; 0.3 0.1]),...
                                                 cat(3,[0.1 0.2; 0.2 0.2],[0.1 0.3; 0.3 0.1])),[1 2]);
-            s10 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),...
-                                                 cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1])),[1 1]);
+            s8 = datasets.image({'1' '2'},cat(4,cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1]),...
+                                                cat(3,[0.1 0.2; 0.2 0.1],[0.1 0.3; 0.3 0.1])),[1 1]);
             
             assert(s1 == s2);
             assert(s1 ~= s3);
@@ -315,8 +420,6 @@ classdef image < dataset
             assert(s1 ~= s6);
             assert(s1 ~= s7);
             assert(s1 ~= s8);
-            assert(s1 ~= s9);
-            assert(s1 ~= s10);
             
             clearvars -except display;
             
@@ -326,12 +429,10 @@ classdef image < dataset
             s2 = datasets.image({'1' '2'},rand(10,10,3,4),randi(2,4,1));
             s3 = datasets.image({'1' '2' '3'},rand(10,10,3,3),randi(2,3,1));
             s4 = datasets.image({'hello' 'world'},rand(10,10,3,3),randi(2,3,1));
-            s5 = datasets.image([1 2],rand(10,10,3,3),randi(2,3,1));
-            s6 = datasets.image([true false],rand(10,10,3,3),randi(2,3,1));
-            s7 = datasets.image({'1' '2'},rand(12,10,3,3),randi(2,3,1));
-            s8 = datasets.image({'1' '2'},rand(10,12,3,3),randi(2,3,1));
-            s9 = datasets.image({'1' '2'},rand(10,10,4,3),randi(2,3,1));
-            s10 = datasets.image({'1' '2'},rand(4,25,3,4),randi(2,4,1));
+            s5 = datasets.image({'1' '2'},rand(12,10,3,3),randi(2,3,1));
+            s6 = datasets.image({'1' '2'},rand(10,12,3,3),randi(2,3,1));
+            s7 = datasets.image({'1' '2'},rand(10,10,4,3),randi(2,3,1));
+            s8 = datasets.image({'1' '2'},rand(4,25,3,4),randi(2,4,1));
             
             assert(s1.compatible(s2) == true);
             assert(s1.compatible(s3) == false);
@@ -340,8 +441,6 @@ classdef image < dataset
             assert(s1.compatible(s6) == false);
             assert(s1.compatible(s7) == false);
             assert(s1.compatible(s8) == false);
-            assert(s1.compatible(s9) == false);
-            assert(s1.compatible(s10) == false);
             
             clearvars -except display;
             
@@ -353,8 +452,8 @@ classdef image < dataset
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
                         
             s = datasets.image({'1' '2' '3'},A,c);
@@ -438,8 +537,8 @@ classdef image < dataset
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
                         
             s = datasets.image({'1' '2' '3'},A,c);
@@ -488,8 +587,8 @@ classdef image < dataset
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
                         
             s = datasets.image({'1' '2' '3'},A,c);
@@ -519,8 +618,8 @@ classdef image < dataset
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
                         
             s = datasets.image({'1' '2' '3'},A,c);
@@ -547,11 +646,11 @@ classdef image < dataset
             fprintf('  Function "from_data".\n');
             
             A = rand(10,10,3,12);
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
+            c = {'1';'2';'3';'1';'2';'3';'1';'2';'3';'1';'2';'3'};
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
             
             s = datasets.image.from_data(A,c);
@@ -562,7 +661,7 @@ classdef image < dataset
             assert(strcmp(s.classes{3},'3'));
             assert(s.classes_count == 3);
             assert(tc.check(s.samples == A_s));
-            assert(tc.check(s.labels_idx == c'));
+            assert(tc.same(s.labels_idx,[1;2;3;1;2;3;1;2;3;1;2;3]));
             assert(s.samples_count == 12);
             assert(s.features_count == 300);
             assert(tc.check(s.images == A));
@@ -579,8 +678,8 @@ classdef image < dataset
             c = [1 2 3 1 2 3 1 2 3 1 2 3];
             
             A_s = zeros(12,300);
-            for i = 1:12
-                A_s(i,:) = reshape(A(:,:,:,i),[1 300]);
+            for ii = 1:12
+                A_s(ii,:) = reshape(A(:,:,:,ii),[1 300]);
             end
             
             s = datasets.image.from_fulldata({'1' '2' '3'},A,c);
@@ -609,8 +708,8 @@ classdef image < dataset
             
             A = rand(20,100);
             A_i = zeros(10,10,1,20);
-            for i = 1:20
-                A_i(:,:,1,i) = reshape(A(i,:),[10 10]);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
             end
             c = ones(20,1);
             
@@ -650,8 +749,8 @@ classdef image < dataset
             
             A = rand(20,100);
             A_i = zeros(10,10,1,20);
-            for i = 1:20
-                A_i(:,:,1,i) = reshape(A(i,:),[10 10]);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
             end
             c = ones(20,1);
             
@@ -691,8 +790,8 @@ classdef image < dataset
             
             A = 3*rand(20,100) - 1.5;
             A_i = zeros(10,10,1,20);
-            for i = 1:20
-                A_i(:,:,1,i) = reshape(A(i,:),[10 10]);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
             end
             c = ones(20,1);
             A_ii = utils.clamp_images_to_unit(A_i);
@@ -718,7 +817,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -733,8 +832,8 @@ classdef image < dataset
             
             A = 3*rand(20,100) - 1.5;
             A_i = zeros(10,10,1,20);
-            for i = 1:20
-                A_i(:,:,1,i) = reshape(A(i,:),[10 10]);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
             end
             c = ones(20,1);
             A_ii = utils.remap_images_to_unit(A_i);
@@ -760,7 +859,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -775,8 +874,8 @@ classdef image < dataset
             
             A = 3*rand(20,100) - 1.5;
             A_i = zeros(10,10,1,20);
-            for i = 1:20
-                A_i(:,:,1,i) = reshape(A(i,:),[10 10]);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
             end
             c = ones(20,1);
             A_ii = utils.remap_images_to_unit(A_i,'local');
@@ -802,7 +901,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -818,8 +917,8 @@ classdef image < dataset
             A = 3*rand(20,100) - 1.5;
             A(5:8,:) = 2*A(5:8,:);
             A_i = zeros(10,10,1,20);
-            for i = 1:20
-                A_i(:,:,1,i) = reshape(A(i,:),[10 10]);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
             end
             c = ones(20,1);
             A_ii = utils.remap_images_to_unit(A_i,'global');
@@ -845,7 +944,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -860,8 +959,8 @@ classdef image < dataset
             
             A = rand(20,300);
             A_i = zeros(10,10,3,20);
-            for i = 1:20
-                A_i(:,:,:,i) = reshape(A(i,:),[10 10 3]);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
             end
             c = ones(20,1);
             
@@ -901,8 +1000,8 @@ classdef image < dataset
             
             A = rand(20,300);
             A_i = zeros(10,10,3,20);
-            for i = 1:20
-                A_i(:,:,:,i) = reshape(A(i,:),[10 10 3]);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
             end
             c = ones(20,1);
             
@@ -942,8 +1041,8 @@ classdef image < dataset
             
             A = 3*rand(20,300) - 1.5;
             A_i = zeros(10,10,3,20);
-            for i = 1:20
-                A_i(:,:,:,i) = reshape(A(i,:),[10 10 3]);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
             end
             c = ones(20,1);
             A_ii = utils.clamp_images_to_unit(A_i);
@@ -969,7 +1068,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -984,8 +1083,8 @@ classdef image < dataset
             
             A = 3*rand(20,300) - 1.5;
             A_i = zeros(10,10,3,20);
-            for i = 1:20
-                A_i(:,:,:,i) = reshape(A(i,:),[10 10 3]);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
             end
             c = ones(20,1);
             A_ii = utils.remap_images_to_unit(A_i);
@@ -1011,7 +1110,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -1026,8 +1125,8 @@ classdef image < dataset
             
             A = 3*rand(20,300) - 1.5;
             A_i = zeros(10,10,3,20);
-            for i = 1:20
-                A_i(:,:,:,i) = reshape(A(i,:),[10 10 3]);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
             end
             c = ones(20,1);
             A_ii = utils.remap_images_to_unit(A_i,'local');
@@ -1053,7 +1152,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -1069,8 +1168,8 @@ classdef image < dataset
             A = 3*rand(20,300) - 1.5;
             A(5:8,:) = 2*A(5:8,:);
             A_i = zeros(10,10,3,20);
-            for i = 1:20
-                A_i(:,:,:,i) = reshape(A(i,:),[10 10 3]);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
             end
             c = ones(20,1);
             A_ii = utils.remap_images_to_unit(A_i,'global');
@@ -1096,7 +1195,7 @@ classdef image < dataset
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(A_i,4,5,true));
+                imshow(utils.format_as_tiles(A_i,4,5));
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s_i.images,4,5));
@@ -1109,7 +1208,7 @@ classdef image < dataset
             
             fprintf('  Function "load_from_dir".\n');
             
-            fprintf('    With mode "gray" (default) and file size.\n');
+            fprintf('    With mode "gray" (default) and file size (default).\n');
             
             s = datasets.image.load_from_dir('../data/test/scenes_small');
             
@@ -1130,7 +1229,7 @@ classdef image < dataset
             
             clearvars -except display;
             
-            fprintf('    With mode "gray" and file size.\n');
+            fprintf('    With mode "gray" and file size (default).\n');
             
             s = datasets.image.load_from_dir('../data/test/scenes_small','gray');
             
@@ -1151,9 +1250,51 @@ classdef image < dataset
             
             clearvars -except display;
             
-            fprintf('    With mode "color" and file size.\n');
+            fprintf('    With mode "color" and file size (default).\n');
             
             s = datasets.image.load_from_dir('../data/test/scenes_small','color');
+            
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes{1},'none'));
+            assert(s.classes_count == 1);
+            assert(all(size(s.samples) == [7 3*192*256]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 3*192*256);
+            assert(tc.check(size(s.images) == [192 256 3 7]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 3);
+            assert(s.row_count == 192);
+            assert(s.col_count == 256);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "gray" and file size.\n');
+            
+            s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[-1 -1]);
+            
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes{1},'none'));
+            assert(s.classes_count == 1);
+            assert(all(size(s.samples) == [7 192*256]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 192*256);
+            assert(tc.check(size(s.images) == [192 256 1 7]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 1);
+            assert(s.row_count == 192);
+            assert(s.col_count == 256);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "color" and file size.\n');
+            
+            s = datasets.image.load_from_dir('../data/test/scenes_small','color',[-1 -1]);
             
             assert(length(s.classes) == 1);
             assert(strcmp(s.classes{1},'none'));
@@ -1211,6 +1352,260 @@ classdef image < dataset
             assert(s.row_count == 96);
             assert(s.col_count == 128);
             assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "gray" and file size and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[-1 -1],log);
+            
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes{1},'none'));
+            assert(s.classes_count == 1);
+            assert(all(size(s.samples) == [7 192*256]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 192*256);
+            assert(tc.check(size(s.images) == [192 256 1 7]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 1);
+            assert(s.row_count == 192);
+            assert(s.col_count == 256);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../data/test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../data/test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "color" and file size and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = datasets.image.load_from_dir('../data/test/scenes_small','color',[-1 -1],log);
+            
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes{1},'none'));
+            assert(s.classes_count == 1);
+            assert(all(size(s.samples) == [7 3*192*256]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 3*192*256);
+            assert(tc.check(size(s.images) == [192 256 3 7]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 3);
+            assert(s.row_count == 192);
+            assert(s.col_count == 256);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../data/test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../data/test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "gray" and forced size and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[96 128],log);
+            
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes{1},'none'));
+            assert(s.classes_count == 1);
+            assert(all(size(s.samples) == [7 96*128]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 96*128);
+            assert(tc.check(size(s.images) == [96 128 1 7]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 1);
+            assert(s.row_count == 96);
+            assert(s.col_count == 128);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../data/test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../data/test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "color" and forced size and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = datasets.image.load_from_dir('../data/test/scenes_small','color',[96 128],log);
+            
+            assert(length(s.classes) == 1);
+            assert(strcmp(s.classes{1},'none'));
+            assert(s.classes_count == 1);
+            assert(all(size(s.samples) == [7 3*96*128]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(s.labels_idx == ones(7,1)));
+            assert(s.samples_count == 7);
+            assert(s.features_count == 3*96*128);
+            assert(tc.check(size(s.images) == [96 128 3 7]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 3);
+            assert(s.row_count == 96);
+            assert(s.col_count == 128);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../data/test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../data/test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../data/test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
             
@@ -1305,6 +1700,59 @@ classdef image < dataset
             assert(s.row_count == 28);
             assert(s.col_count == 28);
             assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            clearvars -except display;
+            
+            fprintf('    With MNIST test data and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = datasets.image.load_mnist('../data/test/mnist/t10k-images-idx3-ubyte','../data/test/mnist/t10k-labels-idx1-ubyte',log);
+            
+            assert(length(s.classes) == 10);
+            assert(strcmp(s.classes{1},'0'));
+            assert(strcmp(s.classes{2},'1'));
+            assert(strcmp(s.classes{3},'2'));
+            assert(strcmp(s.classes{4},'3'));
+            assert(strcmp(s.classes{5},'4'));
+            assert(strcmp(s.classes{6},'5'));
+            assert(strcmp(s.classes{7},'6'));
+            assert(strcmp(s.classes{8},'7'));
+            assert(strcmp(s.classes{9},'8'));
+            assert(strcmp(s.classes{10},'9'));
+            assert(s.classes_count == 10);
+            assert(all(size(s.samples) == [10000 28*28]));
+            assert(tc.matrix(s.samples) && tc.unitreal(s.samples));
+            assert(tc.check(size(s.labels_idx) == [10000 1]));
+            assert(tc.vector(s.labels_idx) && tc.labels_idx(s.labels_idx,s.classes));
+            assert(s.samples_count == 10000);
+            assert(s.features_count == 28*28);
+            assert(tc.check(size(s.images) == [28 28 1 10000]));
+            assert(tc.tensor(s.images,4) && tc.unitreal(s.images));
+            assert(s.layers_count == 1);
+            assert(s.row_count == 28);
+            assert(s.col_count == 28);
+            assert(all(all(s.samples == datasets.image.to_samples(s.images))));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Opening images file "../data/test/mnist/t10k-images-idx3-ubyte".\n',...
+                                                         'Opening labels file "../data/test/mnist/t10k-labels-idx1-ubyte".\n',...
+                                                         'Reading images file magic number.\n',...
+                                                         'Reading labels file magic number.\n',...
+                                                         'Reading images and labels count (should be equal):\n',...
+                                                         '  Images count: 10000\n',...
+                                                         '  Labels count: 10000\n',...
+                                                         'Reading images row and col count:\n',...
+                                                         '  Row count: 28\n',...
+                                                         '  Col count: 28\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Images 1 to 5000\n',...
+                                                         '  Images 5001 to 10000\n',...
+                                                         'Starting reading of labels\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
             

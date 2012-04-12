@@ -12,30 +12,50 @@ classdef patch_extract < transform
     end
     
     methods (Access=public)
-        function [obj] = patch_extract(train_image_plain,patches_count,patch_row_count,patch_col_count,required_variance)
-            assert(tc.scalar(train_image_plain) && tc.datasets_image(train_image_plain));
+        function [obj] = patch_extract(train_image_plain,patches_count,patch_row_count,patch_col_count,required_variance,logger)
+            assert(tc.scalar(train_image_plain));
+            assert(tc.datasets_image(train_image_plain));
             assert(train_image_plain.samples_count >= 1);
-            assert(tc.scalar(patches_count) && tc.natural(patches_count) && (patches_count >= 1));
-            assert(tc.scalar(patch_row_count) && tc.natural(patch_row_count) && (patch_row_count >= 1));
-            assert(tc.scalar(patch_col_count) && tc.natural(patch_col_count) && (patch_col_count >= 1));
-            assert(tc.scalar(required_variance) && tc.number(required_variance) && (required_variance >= 0));
+            assert(tc.scalar(patches_count));
+            assert(tc.natural(patches_count));
+            assert(patches_count >= 1);
+            assert(tc.scalar(patch_row_count));
+            assert(tc.natural(patch_row_count));
+            assert(patch_row_count >= 1);
+            assert(tc.scalar(patch_col_count));
+            assert(tc.natural(patch_col_count));
+            assert(patch_col_count >= 1);
+            assert(tc.scalar(required_variance));
+            assert(tc.number(required_variance));
+            assert(required_variance >= 0);
+            assert(tc.scalar(logger));
+            assert(tc.logging_logger(logger));
+            assert(logger.active);
             
-            obj = obj@transform();
+            obj = obj@transform(logger);
             obj.patches_count = 1;
             obj.patch_row_count = patch_row_count;
             obj.patch_col_count = patch_col_count;
             obj.required_variance = required_variance;
+            
+            logger.beg_node('Extracting plain/coded samples');
+            
             obj.one_sample_plain = train_image_plain.subsamples(1);
-            obj.one_sample_coded = obj.do_code(obj.one_sample_plain);
+            obj.one_sample_coded = obj.do_code(obj.one_sample_plain,logger);
             obj.patches_count = patches_count; % HACK DI HACK HACK %
+            
+            logger.end_node();
         end
     end
     
     methods (Access=protected)
-        function [image_coded] = do_code(obj,image_plain)
+        function [image_coded] = do_code(obj,image_plain,logger)
+            log_batch_size = ceil(obj.patches_count / 10);
             images_coded = zeros(obj.patch_row_count,obj.patch_col_count,image_plain.layers_count,obj.patches_count);
             
             curr_patches_count = 1;
+            
+            logger.beg_node('Extracting patches');
             
             while curr_patches_count <= obj.patches_count
                 image_idx = randi(image_plain.samples_count);
@@ -47,10 +67,18 @@ classdef patch_extract < transform
                                            :,image_idx);
                 
                 if var(patch(:)) > obj.required_variance
+                    if mod(curr_patches_count-1,log_batch_size) == 0
+                        logger.message('Patches %d to %d.',curr_patches_count,min(curr_patches_count+log_batch_size-1,obj.patches_count));
+                    end
+
                     images_coded(:,:,:,curr_patches_count) = patch;
                     curr_patches_count = curr_patches_count + 1;
                 end
             end
+            
+            logger.end_node();
+
+            logger.message('Building dataset.');
             
             image_coded = datasets.image({'none'},images_coded,ones(obj.patches_count,1));
         end
@@ -62,9 +90,11 @@ classdef patch_extract < transform
             
             fprintf('  Proper construction.\n');
             
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             s = datasets.image.load_from_dir('../data/test/scenes_small');
             
-            t = transforms.image.patch_extract(s,10,5,5,0.01);
+            t = transforms.image.patch_extract(s,10,5,5,0.01,log);
             
             assert(t.patches_count == 10);
             assert(t.patch_row_count == 5);
@@ -97,14 +127,26 @@ classdef patch_extract < transform
             assert(t.one_sample_coded.row_count == 5);
             assert(t.one_sample_coded.col_count == 5);
             
+            assert(tc.same(hnd.logged_data,sprintf(strcat('Extracting plain/coded samples:\n',...
+                                                          '  Extracting patches:\n',...
+                                                          '    Patches 1 to 1.\n',...
+                                                          '  Building dataset.\n'))));
+                                                      
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
             fprintf('  Function "code".\n');
             
             fprintf('    With grayscale images.\n');
             
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             s = datasets.image.load_from_dir('../data/test/scenes_small');
             
-            t = transforms.image.patch_extract(s,50,40,40,0.01);
-            s_p = t.code(s);
+            t = transforms.image.patch_extract(s,50,40,40,0.01,log);
+            s_p = t.code(s,log);
             
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
@@ -116,10 +158,28 @@ classdef patch_extract < transform
             assert(s_p.features_count == 40*40);
             assert(tc.check(size(s_p.images) == [40 40 1 50]));
             assert(tc.tensor(s_p.images,4) && tc.unitreal(s_p.images));
-            assert(tc.check(arrayfun(@(i)var(reshape(s_p.images(:,:,:,i),[1 40*40])) >= 0.01,1:50)));
+            assert(tc.check(arrayfun(@(ii)var(reshape(s_p.images(:,:,:,ii),[1 40*40])) >= 0.01,1:50)));
             assert(s_p.layers_count == 1);
             assert(s_p.row_count == 40);
-            assert(s_p.col_count == 40);            
+            assert(s_p.col_count == 40);
+            
+            assert(tc.same(hnd.logged_data,sprintf(strcat('Extracting plain/coded samples:\n',...
+                                                          '  Extracting patches:\n',...
+                                                          '    Patches 1 to 1.\n',...
+                                                          '  Building dataset.\n',...
+                                                          'Extracting patches:\n',...
+                                                          '  Patches 1 to 5.\n',...
+                                                          '  Patches 6 to 10.\n',...
+                                                          '  Patches 11 to 15.\n',...
+                                                          '  Patches 16 to 20.\n',...
+                                                          '  Patches 21 to 25.\n',...
+                                                          '  Patches 26 to 30.\n',...
+                                                          '  Patches 31 to 35.\n',...
+                                                          '  Patches 36 to 40.\n',...
+                                                          '  Patches 41 to 45.\n',...
+                                                          '  Patches 46 to 50.\n',...
+                                                          'Building dataset.\n'))));
+                                                          
 
             if exist('display','var') && (display == true)
                 figure();
@@ -128,14 +188,19 @@ classdef patch_extract < transform
                 close(gcf());
             end
             
+            log.close();
+            hnd.close();
+            
             clearvars -except display;
             
             fprintf('    With color images.\n');
             
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             s = datasets.image.load_from_dir('../data/test/scenes_small','color');
             
-            t = transforms.image.patch_extract(s,50,40,40,0.01);
-            s_p = t.code(s);
+            t = transforms.image.patch_extract(s,50,40,40,0.01,log);
+            s_p = t.code(s,log);
             
             assert(length(s_p.classes) == 1);
             assert(strcmp(s_p.classes{1},'none'));
@@ -147,10 +212,27 @@ classdef patch_extract < transform
             assert(s_p.features_count == 3*40*40);
             assert(tc.check(size(s_p.images) == [40 40 3 50]));
             assert(tc.tensor(s_p.images,4) && tc.unitreal(s_p.images));
-            assert(tc.check(arrayfun(@(i)var(reshape(s_p.images(:,:,:,i),[1 3*40*40])) >= 0.01,1:50)));
+            assert(tc.check(arrayfun(@(ii)var(reshape(s_p.images(:,:,:,ii),[1 3*40*40])) >= 0.01,1:50)));
             assert(s_p.layers_count == 3);
             assert(s_p.row_count == 40);
-            assert(s_p.col_count == 40);            
+            assert(s_p.col_count == 40);
+            
+            assert(tc.same(hnd.logged_data,sprintf(strcat('Extracting plain/coded samples:\n',...
+                                                          '  Extracting patches:\n',...
+                                                          '    Patches 1 to 1.\n',...
+                                                          '  Building dataset.\n',...
+                                                          'Extracting patches:\n',...
+                                                          '  Patches 1 to 5.\n',...
+                                                          '  Patches 6 to 10.\n',...
+                                                          '  Patches 11 to 15.\n',...
+                                                          '  Patches 16 to 20.\n',...
+                                                          '  Patches 21 to 25.\n',...
+                                                          '  Patches 26 to 30.\n',...
+                                                          '  Patches 31 to 35.\n',...
+                                                          '  Patches 36 to 40.\n',...
+                                                          '  Patches 41 to 45.\n',...
+                                                          '  Patches 46 to 50.\n',...
+                                                          'Building dataset.\n'))));
 
             if exist('display','var') && (display == true)
                 figure();
@@ -158,6 +240,9 @@ classdef patch_extract < transform
                 pause(5);
                 close(gcf());
             end
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
         end
