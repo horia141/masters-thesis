@@ -75,7 +75,7 @@ classdef window < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[192 192]);
+            s = datasets.image.load_from_dir('../test/scenes_small','gray',[192 192]);
             
             t = transforms.image.window(s,10,log);
             
@@ -125,7 +125,7 @@ classdef window < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[192 192]);
+            s = datasets.image.load_from_dir('../test/scenes_small','gray',[192 192]);
             
             t = transforms.image.window(s,60,log);
             s_p = t.code(s,log);
@@ -181,7 +181,7 @@ classdef window < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','color',[192 192]);
+            s = datasets.image.load_from_dir('../test/scenes_small','color',[192 192]);
             
             t = transforms.image.window(s,60,log);
             s_p = t.code(s,log);

@@ -459,7 +459,7 @@ classdef pca_whitening < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s1 = datasets.image.load_from_dir('../data/test/scenes_small');
+            s1 = datasets.image.load_from_dir('../test/scenes_small');
             t1 = transforms.image.patch_extract(s1,200,10,10,0.0001,log);
             s2 = t1.code(s1,log);
             
@@ -531,7 +531,7 @@ classdef pca_whitening < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s1 = datasets.image.load_from_dir('../data/test/scenes_small');
+            s1 = datasets.image.load_from_dir('../test/scenes_small');
             t1 = transforms.image.patch_extract(s1,200,10,10,0.0001,log);
             s2 = t1.code(s1,log);
             
@@ -601,7 +601,7 @@ classdef pca_whitening < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s1 = datasets.image.load_from_dir('../data/test/scenes_small','color');
+            s1 = datasets.image.load_from_dir('../test/scenes_small','color');
             t1 = transforms.image.patch_extract(s1,200,10,10,0.0001,log);
             s2 = t1.code(s1,log);
             

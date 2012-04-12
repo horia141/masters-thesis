@@ -446,7 +446,7 @@ classdef record < dataset
             
             fprintf('    With Wine data and "," delimiter (default).\n');
             
-            s = datasets.record.load_csvfile('../data/test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+            s = datasets.record.load_csvfile('../test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
             
             assert(length(s.classes) == 3);
             assert(strcmp(s.classes{1},'1'));
@@ -463,7 +463,7 @@ classdef record < dataset
             
             fprintf('    With iris data and "," delimiter.\n');
             
-            s = datasets.record.load_csvfile('../data/test/iris/iris.csv','%s','%f%f%f%f',',');
+            s = datasets.record.load_csvfile('../test/iris/iris.csv','%s','%f%f%f%f',',');
             
             assert(length(s.classes) == 3);
             assert(strcmp(s.classes{1},'Iris-setosa'));
@@ -483,7 +483,7 @@ classdef record < dataset
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
-            s = datasets.record.load_csvfile('../data/test/iris/iris.csv','%s','%f%f%f%f',',',log);
+            s = datasets.record.load_csvfile('../test/iris/iris.csv','%s','%f%f%f%f',',',log);
             
             assert(length(s.classes) == 3);
             assert(strcmp(s.classes{1},'Iris-setosa'));
@@ -496,7 +496,7 @@ classdef record < dataset
             assert(s.samples_count == 150);
             assert(s.features_count == 4);
             
-            assert(strcmp(hnd.logged_data,sprintf(strcat('Opening csv file "../data/test/iris/iris.csv".\n',...
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Opening csv file "../test/iris/iris.csv".\n',...
                                                          'Bulk reading of CSV data.\n',...
                                                          'Building dataset.\n'))));
             
@@ -508,10 +508,10 @@ classdef record < dataset
             fprintf('    With invalid external inputs.\n');
             
             try
-                s = datasets.record.load_csvfile('../data/test/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                s = datasets.record.load_csvfile('../test/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
-                if strcmp(exp.message,'Could not load csv file "../data/test/wine/wine_aaa.csv": No such file or directory!')
+                if strcmp(exp.message,'Could not load csv file "../test/wine/wine_aaa.csv": No such file or directory!')
                     fprintf('      Passes "No such file or directory!" test.\n');
                 else
                     assert(false);
@@ -519,13 +519,13 @@ classdef record < dataset
             end
             
             try
-                !chmod a-r ../data/test/wine/wine.csv
-                s = datasets.record.load_csvfile('../data/test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
-                !chmod a+r ../data/test/wine/wine.csv
+                !chmod a-r ../test/wine/wine.csv
+                s = datasets.record.load_csvfile('../test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                !chmod a+r ../test/wine/wine.csv
                 assert(false);
             catch exp
-                !chmod a+r ../data/test/wine/wine.csv
-                if strcmp(exp.message,'Could not load csv file "../data/test/wine/wine.csv": Permission denied!')
+                !chmod a+r ../test/wine/wine.csv
+                if strcmp(exp.message,'Could not load csv file "../test/wine/wine.csv": Permission denied!')
                     fprintf('      Passes "Permission denied!" test.\n');
                 else
                     assert(false);
@@ -533,10 +533,10 @@ classdef record < dataset
             end
             
             try
-                s = datasets.record.load_csvfile('../data/test/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
+                s = datasets.record.load_csvfile('../test/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
-                if strcmp(exp.message,'File "../data/test/wine/wine.csv" has an invalid format!')
+                if strcmp(exp.message,'File "../test/wine/wine.csv" has an invalid format!')
                     fprintf('      Passes "Invalid format!" test.\n');
                 else
                     assert(false);

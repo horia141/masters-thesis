@@ -83,7 +83,7 @@ classdef resize < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small');
+            s = datasets.image.load_from_dir('../test/scenes_small');
             
             t = transforms.image.resize(s,20,20,log);
             
@@ -131,7 +131,7 @@ classdef resize < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small');
+            s = datasets.image.load_from_dir('../test/scenes_small');
             
             t = transforms.image.resize(s,100,100,log);
             s_p = t.code(s,log);
@@ -181,7 +181,7 @@ classdef resize < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','color');
+            s = datasets.image.load_from_dir('../test/scenes_small','color');
             
             t = transforms.image.resize(s,100,100,log);
             s_p = t.code(s,log);
@@ -231,7 +231,7 @@ classdef resize < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small');
+            s = datasets.image.load_from_dir('../test/scenes_small');
             
             t = transforms.image.resize(s,96,128,log);
             s_p = t.code(s,log);

@@ -122,7 +122,7 @@ classdef random_corr < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s1 = datasets.image.load_from_dir('../data/test/scenes_small');
+            s1 = datasets.image.load_from_dir('../test/scenes_small');
             t1 = transforms.image.patch_extract(s1,20,32,32,0,log);
             s2 = t1.code(s1,log);
             
@@ -206,7 +206,7 @@ classdef random_corr < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s1 = datasets.image.load_from_dir('../data/test/scenes_small');
+            s1 = datasets.image.load_from_dir('../test/scenes_small');
             t1 = transforms.image.patch_extract(s1,20,32,32,0,log);
             s2 = t1.code(s1,log);
             
@@ -303,7 +303,7 @@ classdef random_corr < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_mnist('../data/test/mnist/t10k-images-idx3-ubyte','../data/test/mnist/t10k-labels-idx1-ubyte');
+            s = datasets.image.load_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
                       
             t = transforms.image.random_corr(s,4,5,5,@transforms.image.random_corr.sqr,4,log);
             s_p = t.code(s,log);

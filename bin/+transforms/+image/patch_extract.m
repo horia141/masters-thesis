@@ -92,7 +92,7 @@ classdef patch_extract < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small');
+            s = datasets.image.load_from_dir('../test/scenes_small');
             
             t = transforms.image.patch_extract(s,10,5,5,0.01,log);
             
@@ -143,7 +143,7 @@ classdef patch_extract < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small');
+            s = datasets.image.load_from_dir('../test/scenes_small');
             
             t = transforms.image.patch_extract(s,50,40,40,0.01,log);
             s_p = t.code(s,log);
@@ -197,7 +197,7 @@ classdef patch_extract < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','color');
+            s = datasets.image.load_from_dir('../test/scenes_small','color');
             
             t = transforms.image.patch_extract(s,50,40,40,0.01,log);
             s_p = t.code(s,log);

@@ -72,7 +72,7 @@ classdef remove_pinknoise < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','gray',[192 192]);
+            s = datasets.image.load_from_dir('../test/scenes_small','gray',[192 192]);
             
             t = transforms.image.remove_pinknoise(s,log);
             
@@ -120,7 +120,7 @@ classdef remove_pinknoise < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small');
+            s = datasets.image.load_from_dir('../test/scenes_small');
             p_t = transforms.image.patch_extract(s,80,40,40,0.0001,log);
             p_s = p_t.code(s,log);
             
@@ -199,7 +199,7 @@ classdef remove_pinknoise < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = datasets.image.load_from_dir('../data/test/scenes_small','color');
+            s = datasets.image.load_from_dir('../test/scenes_small','color');
             p_t = transforms.image.patch_extract(s,80,40,40,0.0001,log);
             p_s = p_t.code(s,log);
             

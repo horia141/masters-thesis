@@ -12,7 +12,7 @@
        master:NoLoad
        master:NoConvergence
     The current model of "master:modules...:class:function:error" is not good
-    for bigger handling. This is linked to task 1 as well.
+    for bigger handling. This is linked to TODO item [1] as well.
   Resolved: I've defined several types of errors until now. They are simply:
       * NoLoad: something could not load a file.
       * NoOpen: something could not open a file for writing.
@@ -68,14 +68,17 @@
     properties, like the length of a vector, which might depend on another object.
     These appear at structure properties and not in combined asserts.
 
-- [44] B:28.03.2012 E:??.??.????
++ [44] B:28.03.2012 E:12.04.2012
   Task: Move the "data/test" directory to "test". All IO stuff done by tests
     should be from this directory, and this no longer includes just reading
     some data, but also writing some log files.
+  Resolved: Added the "test" directory where test data is stored and where logs
+    can be written during tests.
 
-- [43] B:28.03.2012 E:??.??.????
++ [43] B:28.03.2012 E:12.04.2012
   Task: Make all logging paths used in tests be in "../data/test" instead of
     just in "../data".
+  Resolved: See message for TODO item [44].
 
 + [42] B:28.03.2012 E:12.04.2012
   Task: There is a problem with logging and exception handling. All our

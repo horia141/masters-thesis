@@ -40,15 +40,15 @@ classdef file < logging.handler
             
             fprintf('    With good logging path and minimum level "Architecture".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Architecture);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.Architecture);
             
             assert(hnd.active == true);
             assert(hnd.min_level == logging.level.Architecture);
             
             hnd.close();
             
-            [ls_code,~] = system('ls ../data/log1.log');
-            [rm_code,~] = system('rm ../data/log1.log');
+            [ls_code,~] = system('ls ../test/log1.log');
+            [rm_code,~] = system('rm ../test/log1.log');
             
             assert(ls_code == 0);
             assert(rm_code == 0);
@@ -57,15 +57,15 @@ classdef file < logging.handler
             
             fprintf('    With good logging path and minimum level "Results".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Results);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.Results);
             
             assert(hnd.active == true);
             assert(hnd.min_level == logging.level.Results);
             
             hnd.close();
             
-            [ls_code,~] = system('ls ../data/log1.log');
-            [rm_code,~] = system('rm ../data/log1.log');
+            [ls_code,~] = system('ls ../test/log1.log');
+            [rm_code,~] = system('rm ../test/log1.log');
             
             assert(ls_code == 0);
             assert(rm_code == 0);
@@ -74,15 +74,15 @@ classdef file < logging.handler
             
             fprintf('    With good logging path and minimum level "Dataset_IO".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.Dataset_IO);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.Dataset_IO);
             
             assert(hnd.active == true);
             assert(hnd.min_level == logging.level.Dataset_IO);
             
             hnd.close();
             
-            [ls_code,~] = system('ls ../data/log1.log');
-            [rm_code,~] = system('rm ../data/log1.log');
+            [ls_code,~] = system('ls ../test/log1.log');
+            [rm_code,~] = system('rm ../test/log1.log');
             
             assert(ls_code == 0);
             assert(rm_code == 0);
@@ -92,17 +92,17 @@ classdef file < logging.handler
             fprintf('    With invalid external input.\n');
             
             try
-                !touch ../data/log1.log
-                !chmod a-w ../data/log1.log
-                hnd = logging.handlers.file('../data/log1.log',logging.level.TopLevel);
-                !chmod a+w ../data/log1.log
-                !rm ../data/log1.log
+                !touch ../test/log1.log
+                !chmod a-w ../test/log1.log
+                hnd = logging.handlers.file('../test/log1.log',logging.level.TopLevel);
+                !chmod a+w ../test/log1.log
+                !rm ../test/log1.log
                 assert(false);
             catch exp
-                !chmod a+w ../data/log1.log
-                !rm ../data/log1.log
+                !chmod a+w ../test/log1.log
+                !rm ../test/log1.log
                 
-                if strcmp(exp.message,'Could not open logging file "../data/log1.log": Permission denied!')
+                if strcmp(exp.message,'Could not open logging file "../test/log1.log": Permission denied!')
                     fprintf('      Passes "Permission denied!" test.\n');
                 else
                     assert(false);
@@ -113,13 +113,13 @@ classdef file < logging.handler
             
             fprintf('  Function "send".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.TopLevel);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.TopLevel);
             
             hnd.send('Successful send of message.\n');
             hnd.close();
             
-            [cat_code,cat_res] = system('cat ../data/log1.log');
-            [rm_code,~] = system('rm ../data/log1.log');
+            [cat_code,cat_res] = system('cat ../test/log1.log');
+            [rm_code,~] = system('rm ../test/log1.log');
             
             assert(cat_code == 0);
             assert(strcmp(cat_res,sprintf('%s\n','Successful send of message.')));
@@ -129,7 +129,7 @@ classdef file < logging.handler
             
             fprintf('  Function "close".\n');
             
-            hnd = logging.handlers.file('../data/log1.log',logging.level.TopLevel);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.TopLevel);
             
             hnd.close();
             
@@ -139,7 +139,7 @@ classdef file < logging.handler
             
             assert(hnd.active == false);
             
-            [rm_code,~] = system('rm ../data/log1.log');
+            [rm_code,~] = system('rm ../test/log1.log');
             
             assert(rm_code == 0);
             
