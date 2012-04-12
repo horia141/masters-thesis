@@ -209,11 +209,15 @@
 - [23] B:13.03.2012 E:??.??.????
   Task: Add "dct_transform".
 
-- [22] B:13.03.2012 E:??.??.????
++ [22] B:13.03.2012 E:12.04.2012
   Task: "gray_images_set.load_csvfile" produces a "samples_set" object. This
     is not quite what a user of "gray_images_set" expects. In fact, a user of
     this class wouldn't use this methods to begin with. We must either mask it
     or make it do something useful for images.
+  Resolved: This was resolved since the last massive commit, but I've missed it
+    somehow. "datasets.images" is no longer a descendant of "datasets.record" (as
+    it would have been, have we kept the system at the time of this task's
+    introduction). This problem cannot occur anymore.
 
 - [21] B:13.03.2012 E:??.??.????
   Task: Make "display" variable passed to all tests a little bit more
@@ -243,9 +247,10 @@
     user selection. The other things will be added if needed.
 
 - [19] B:13.03.2012 E:??.??.????
-  Task: Add batch mode options for learning the dictionary. Currently it does
-    only online learning. A "batch_size" parameter should control how many
-    vectors are selected per update.
+  Task: Add batch mode options for learning the sparse dictionary
+    "transforms.sparse.sgdmp". Currently it does only online learning.
+    A "batch_size" parameter should control how many vectors are selected per
+    update.
 
 + [18] B:13.03.2012 E:15.03.2012
   Task: Make the testing code for "gray_images_set" which load the MNIST
@@ -283,17 +288,21 @@
     In any case, at first, think about this, then implement it, because it
     seems like a big change for the framework.
 
-- [15] B:09.03.2012 E:??.??.????
++ [15] B:09.03.2012 E:12.04.2012
   Task: Introduce more succint assertions for the objects we work with to use
     in tests. Instead of writing 10-15 assert statements, a function could
     take as parameters the desired form of an object and return true or false
-    and the problem localization. 
+    and the problem localization.
+  Resolved: This is partial actually. I've moved many tests to use "tc.same".
+    Some more complex tests could be replaced by proper use of "tc.same" or
+    something extra, but it's not worth it, for now.
 
-- [14] B:09.03.2012 E:??.??.????
++ [14] B:09.03.2012 E:12.04.2012
   Task: Make tests more to the point. We should test computed values to be of
     a certain value, instead of testing also for form, domain etc. There are
     some cases where, indeed, this cannot be done, but we should try to do it
     for the rest.
+  Resolved: See message for TODO item [14].
 
 + [13] B:08.03.2012 E:08.03.2012
   Task: Add a fast mode for testing where no display of images is done. This
@@ -314,9 +323,10 @@
     scalar.
   Resolved: I've added the required checks.
 
-- [10] B:08.03.2012 E:??.??.????
++ [10] B:08.03.2012 E:??.??.????
   Task: Add timing code to "all_tests" so we know how much time a full test
     suite takes.
+  Resolved: I've added such timing code.
 
 + [9] B:08.03.2012 E:08.03.2012
   Task: Add tests which work on images to "pca_transform",  "pca_whitening_transform"

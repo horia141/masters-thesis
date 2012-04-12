@@ -2,6 +2,8 @@
 
 DISPLAY = false;
 
+tic;
+
 %% Tests for basic classes.
 
 tc.test(DISPLAY);
@@ -43,3 +45,7 @@ classifiers.knn.test(DISPLAY);
 classifiers.logistic_regression.test(DISPLAY);
 classifiers.svm.test(DISPLAY);
 classifiers.one_vs_one.test(DISPLAY);
+
+%% Print timing results.
+
+fprintf('Total test time: %.0fs\n',toc());
