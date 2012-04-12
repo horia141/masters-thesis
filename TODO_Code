@@ -117,9 +117,11 @@
 
       aa = utils.get_with_default('sender','coman@inb.uni-luebeck.de'); 
 
-- [37] B:21.03.2012 E:??.??.????
++ [37] B:21.03.2012 E:12.04.2012
   Task: Replace usage of "!" syntax to call system utilities with calls to the
     "system" function and do proper testing of return codes.
+  Resolved: I've replaced usage of "!" with calls to "system" and proper checking
+    of return codes.
 
 - [36] B:20.03.2012 E:??.??.????
   Task: "gray_images_set" maybe should not keep a copy of the original images

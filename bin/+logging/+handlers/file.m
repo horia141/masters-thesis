@@ -48,7 +48,7 @@ classdef file < logging.handler
             hnd.close();
             
             [ls_code,~] = system('ls ../test/log1.log');
-            [rm_code,~] = system('rm ../test/log1.log');
+            rm_code = system('rm ../test/log1.log');
             
             assert(ls_code == 0);
             assert(rm_code == 0);
@@ -65,7 +65,7 @@ classdef file < logging.handler
             hnd.close();
             
             [ls_code,~] = system('ls ../test/log1.log');
-            [rm_code,~] = system('rm ../test/log1.log');
+            rm_code = system('rm ../test/log1.log');
             
             assert(ls_code == 0);
             assert(rm_code == 0);
@@ -82,7 +82,7 @@ classdef file < logging.handler
             hnd.close();
             
             [ls_code,~] = system('ls ../test/log1.log');
-            [rm_code,~] = system('rm ../test/log1.log');
+            rm_code = system('rm ../test/log1.log');
             
             assert(ls_code == 0);
             assert(rm_code == 0);
@@ -92,15 +92,26 @@ classdef file < logging.handler
             fprintf('    With invalid external input.\n');
             
             try
-                !touch ../test/log1.log
-                !chmod a-w ../test/log1.log
-                hnd = logging.handlers.file('../test/log1.log',logging.level.TopLevel);
-                !chmod a+w ../test/log1.log
-                !rm ../test/log1.log
+                touch_code = system('touch ../test/log1.log');
+                chmod_code = system('chmod a-w ../test/log1.log');
+                
+                assert(touch_code == 0);
+                assert(chmod_code == 0);
+                
+                logging.handlers.file('../test/log1.log',logging.level.TopLevel);
+                
+                chmod2_code = system('chmod a+w ../test/log1.log');
+                rm_code = system('rm ../test/log1.log');
+                
+                assert(chmod2_code == 0);
+                assert(rm_code == 0);
                 assert(false);
             catch exp
-                !chmod a+w ../test/log1.log
-                !rm ../test/log1.log
+                chmod2_code = system('chmod a+w ../test/log1.log');
+                rm_code = system('rm ../test/log1.log');
+                
+                assert(chmod2_code == 0);
+                assert(rm_code == 0);
                 
                 if strcmp(exp.message,'Could not open logging file "../test/log1.log": Permission denied!')
                     fprintf('      Passes "Permission denied!" test.\n');
@@ -119,7 +130,7 @@ classdef file < logging.handler
             hnd.close();
             
             [cat_code,cat_res] = system('cat ../test/log1.log');
-            [rm_code,~] = system('rm ../test/log1.log');
+            rm_code = system('rm ../test/log1.log');
             
             assert(cat_code == 0);
             assert(strcmp(cat_res,sprintf('%s\n','Successful send of message.')));
@@ -139,7 +150,7 @@ classdef file < logging.handler
             
             assert(hnd.active == false);
             
-            [rm_code,~] = system('rm ../test/log1.log');
+            rm_code = system('rm ../test/log1.log');
             
             assert(rm_code == 0);
             

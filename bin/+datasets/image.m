@@ -1644,12 +1644,21 @@ classdef image < dataset
             end
             
             try
-                !chmod a-r ../test/scenes_small
+                chmod_code = system('chmod a-r ../test/scenes_small');
+                
+                assert(chmod_code == 0);
+                
                 datasets.image.load_from_dir('../test/scenes_small');
-                !chmod a+r ../test/scenes_small
+                
+                chmod_code = system('chmod a+r ../test/scenes_small');
+                
+                assert(chmod_code == 0);
                 assert(false);
             catch exp
-                !chmod a+r ../test/scenes_small
+                chmod_code = system('chmod a+r ../test/scenes_small');
+                
+                assert(chmod_code == 0);
+                
                 if strcmp(exp.message,'Could not find any acceptable images in the directory.')
                     fprintf('      Passes "Permission denied!"\n');
                 else
@@ -1781,12 +1790,21 @@ classdef image < dataset
             end
             
             try
-                !chmod a-r ../test/mnist/t10k-images-idx3-ubyte
+                chmod_code = system('chmod a-r ../test/mnist/t10k-images-idx3-ubyte');
+                
+                assert(chmod_code == 0);
+                
                 datasets.image.load_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
-                !chmod a+r ../test/mnist/t10k-images-idx3-ubyte
+                
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-images-idx3-ubyte');
+                
+                assert(chmod2_code == 0);
                 assert(false);
             catch exp
-                !chmod a+r ../test/mnist/t10k-images-idx3-ubyte
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-images-idx3-ubyte');
+                
+                assert(chmod2_code == 0);
+                
                 if strcmp(exp.message,'Could not load images in "../test/mnist/t10k-images-idx3-ubyte": Permission denied!')
                     fprintf('      Passes "Permission denied!" for images file.\n');
                 else
@@ -1795,12 +1813,21 @@ classdef image < dataset
             end
             
             try
-                !chmod a-r ../test/mnist/t10k-labels-idx1-ubyte
+                chmod_code = system('chmod a-r ../test/mnist/t10k-labels-idx1-ubyte');
+                
+                assert(chmod_code == 0);
+                
                 datasets.image.load_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
-                !chmod a+r ../test/mnist/t10k-labels-idx1-ubyte
+                
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-labels-idx1-ubyte');
+                
+                assert(chmod2_code == 0);                
                 assert(false);
             catch exp
-                !chmod a+r ../test/mnist/t10k-labels-idx1-ubyte
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-labels-idx1-ubyte');
+                
+                assert(chmod2_code == 0);                
+                
                 if strcmp(exp.message,'Could not load labels in "../test/mnist/t10k-labels-idx1-ubyte": Permission denied!')
                     fprintf('      Passes "Permission denied!" for labels file.\n');
                 else

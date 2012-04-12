@@ -508,7 +508,7 @@ classdef record < dataset
             fprintf('    With invalid external inputs.\n');
             
             try
-                s = datasets.record.load_csvfile('../test/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                datasets.record.load_csvfile('../test/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'Could not load csv file "../test/wine/wine_aaa.csv": No such file or directory!')
@@ -519,12 +519,21 @@ classdef record < dataset
             end
             
             try
-                !chmod a-r ../test/wine/wine.csv
-                s = datasets.record.load_csvfile('../test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
-                !chmod a+r ../test/wine/wine.csv
+                chmod_code = system('chmod a-r ../test/wine/wine.csv');
+                
+                assert(chmod_code == 0);
+                
+                datasets.record.load_csvfile('../test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                
+                chmod2_code = system('chmod a+r ../test/wine/wine.csv');
+                
+                assert(chmod2_code == 0);
                 assert(false);
             catch exp
-                !chmod a+r ../test/wine/wine.csv
+                chmod2_code = system('chmod a+r ../test/wine/wine.csv');
+                
+                assert(chmod2_code == 0);
+                
                 if strcmp(exp.message,'Could not load csv file "../test/wine/wine.csv": Permission denied!')
                     fprintf('      Passes "Permission denied!" test.\n');
                 else
@@ -533,7 +542,7 @@ classdef record < dataset
             end
             
             try
-                s = datasets.record.load_csvfile('../test/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
+                datasets.record.load_csvfile('../test/wine/wine.csv','%d','%s%s%f%f%f%f%f%f%f%f%f%f%f');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'File "../test/wine/wine.csv" has an invalid format!')
