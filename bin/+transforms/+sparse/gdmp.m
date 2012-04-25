@@ -7,6 +7,7 @@ classdef gdmp < transforms.reversible
         initial_learning_rate;
         final_learning_rate;
         max_iter_count;
+        saved_mse;
     end
     
     properties (GetAccess=public,SetAccess=immutable)
@@ -45,8 +46,8 @@ classdef gdmp < transforms.reversible
             logger.beg_node('Learning sparse dictionary');
             
             initial_dict = rand(train_dataset_plain.features_count,word_count);
-            sparse_dict_t = transforms.sparse.gdmp.dict_gradient_descent(coding_fn,initial_dict,train_dataset_plain.samples,coeffs_count,...
-                                                                         initial_learning_rate,final_learning_rate,max_iter_count,logger);
+            [sparse_dict_t,saved_mse_t] = transforms.sparse.gdmp.dict_gradient_descent(coding_fn,initial_dict,train_dataset_plain.samples,coeffs_count,...
+                                                                                     initial_learning_rate,final_learning_rate,max_iter_count,logger);
                                                                      
             logger.end_node();
                                                                      
@@ -58,6 +59,7 @@ classdef gdmp < transforms.reversible
             obj.initial_learning_rate = initial_learning_rate;
             obj.final_learning_rate = final_learning_rate;
             obj.max_iter_count = max_iter_count;
+            obj.saved_mse = saved_mse_t;
             
             logger.beg_node('Extracting plain/coded samples');
             
@@ -154,10 +156,11 @@ classdef gdmp < transforms.reversible
             norm_dict = dict ./ repmat(sqrt(sum(dict .^ 2,1)),size(dict,1),1);
         end
         
-        function [dict] = dict_gradient_descent(coding_fn,initial_dict,samples,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,logger)
+        function [dict,saved_mse] = dict_gradient_descent(coding_fn,initial_dict,samples,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,logger)
             logger.message('Building initial dictionary.');
             
             dict = transforms.sparse.gdmp.normalize_dict(initial_dict);
+            saved_mse = zeros(max_iter_count,1);
             samples_transp = samples';
             
             logger.beg_node('Tracking progress');
@@ -174,14 +177,15 @@ classdef gdmp < transforms.reversible
                 dict = dict + learning_rate * delta_dict;
                 dict = transforms.sparse.gdmp.normalize_dict(dict);
                 
-%                 mean_error = sum(mean((samples_transp - dict * coeffs) .^ 2));
-%                 logger.message('Mean error: %.0f',mean_error);
-%                 im_dict = zeros(10,10,1,size(initial_dict,2));
+                mean_error = sum(mean((samples_transp - dict * coeffs) .^ 2));
+                saved_mse(iter) = mean_error;
+                logger.message('Mean error: %.0f',mean_error);
+%                 im_dict = zeros(8,8,1,size(initial_dict,2));
 %                 for ii = 1:size(initial_dict,2)
-%                     im_dict(:,:,1,ii) = reshape(dict(:,ii),10,10);
+%                    im_dict(:,:,1,ii) = reshape(dict(:,ii),8,8);
 %                 end
 %                 imshow(utils.format_as_tiles(utils.remap_images_to_unit(im_dict,'global')));
-%                 pause;
+%                 pause(0.1);
             end
             
             logger.end_node();
@@ -223,6 +227,11 @@ classdef gdmp < transforms.reversible
             assert(t.initial_learning_rate == 1e-2);
             assert(t.final_learning_rate == 1e-4);
             assert(t.max_iter_count == 20);
+            assert(tc.vector(t.saved_mse));
+            assert(length(t.saved_mse) == 20);
+            assert(tc.number(t.saved_mse));
+            assert(tc.check(t.saved_mse > 0));
+            assert(tc.checkf(@(ii)t.saved_mse(ii) <= t.saved_mse(ii-1),5:20));
             assert(length(t.one_sample_plain.classes) == 1);
             assert(strcmp(t.one_sample_plain.classes{1},'none'));
             assert(t.one_sample_plain.classes_count == 1);

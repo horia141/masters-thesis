@@ -8,19 +8,15 @@ RESULTS_EMAIL_ADDRS = {'coman@inb.uni-luebeck.de'};
 ERROR_EMAIL_ADDRS = {'coman@inb.uni-luebeck.de'};
 RESULTS_ERROR_SENDER = 'coman@inb.uni-luebeck.de';
 
-svm_classifier = @(s,kt,kp,l)classifiers.one_vs_one(s,@classifiers.svm,{kt kp},l);
-
-params_desc.filters_count = 32:8:128;
+params_desc.filters_count = 32:16:128;
 params_desc.filter_row_count = [3 5 7 9];
 params_desc.filter_col_count = params.depend('filter_row_count',@(v)v);
 params_desc.reduce_function = {@transforms.image.random_corr.sqr @transforms.image.random_corr.max};
 params_desc.reduce_spread = [2 3 4];
-params_desc.classifier_ctor_fn = {@classifiers.cmeans};
-params_desc.kernel_type = params.condition('classifier_ctor_fn',@classifiers.cmeans,{},...
-                                                                svm_classifier,{'linear' 'rbf'});
-params_desc.kernel_param = params.condition('kernel_type',{},{},...
-                                                         'linear',0,...
-                                                         'rbf', logspace(0,1,2));
+params_desc.classifier_ctor_fn = @(s,kt,kp,l)classifiers.one_vs_one(s,@classifiers.svm,{kt kp},l);
+params_desc.kernel_type = {'linear' 'rbf'};
+params_desc.kernel_param = params.condition('kernel_type','linear',0,...
+                                                          'rbf', logspace(0,1,20));
                                                      
 experiments.small_images('MNIST: Filtering using random bases with CMeans and SVM classifiers',...
                          MNIST_FULL_IMAGES_PATH,MNIST_FULL_LABELS_PATH,MNIST_TEST_IMAGES_PATH,MNIST_TEST_LABELS_PATH,...

@@ -1,3 +1,14 @@
+- [52] B:19.04.2012 E:??.??.????
+  Task: Add "RBF" as a coding method. A RBF-like distance is taken to each
+    dictionary element and the catenation of all distances is the feature
+    vector of a sample. This is similar to what is done in SVMs.
+
+- [51] B:18.04.2012 E:??.??.????
+  Task: Separate the "coding" algorithms: correlation, matching pursuit and
+    orthogonal matching pursuit into a separate module etc. Separate the
+    "dictionary learning" algorithms: k-means, gradient descent etc. into a
+    separate module, which accept a coding algorithm as input.
+
 - [50] B:11.04.2012 E:??.??.????
   Task: Add progress reports for long experiments. Delivered by mail, ofcourse.
 

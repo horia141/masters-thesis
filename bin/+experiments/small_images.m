@@ -100,6 +100,10 @@ function [] = small_images(title,...
 
     logger.beg_results('Results');
 
+    logger.beg_node('Best configuration');
+    logger.message(params.to_string(best_params));
+    logger.end_node();
+
     logger.message('Score: %.2f',score);
     logger.message('Confusion_matrix:');
     logger.message(utils.matrix_to_string(confusion_matrix,'%4d '));

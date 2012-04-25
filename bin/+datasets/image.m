@@ -215,8 +215,8 @@ classdef image < dataset
                     logger_t.message('Not an image or corrupted.');
 
                     logger_t.end_node();
-                    
-                    if isempty(regexp(exp.identifier,'MATLAB:.*:imread:.*','ONCE'))
+
+                    if isempty(regexp(exp.identifier,'MATLAB:(.*:)?imread:.*','ONCE'))
                         throw(MException('master:NoLoad',exp.message));
                     end
                 end

@@ -106,13 +106,13 @@ classdef pca_whitening < transforms.reversible
             c = ones(100,1);            
             s = dataset({'none'},A,c);
             
-            t = transforms.pca_whitening(s,0.9,log);
+            t = transforms.pca_whitening(s,0.8,log);
             
             assert(tc.same(t.coeffs,p_A));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
             assert(tc.same(t.coeffs_eigenvalues,p_latent));
             assert(tc.same(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 0.9);
+            assert(t.kept_energy == 0.8);
             assert(t.coded_features_count == 1);
             assert(t.div_epsilon == 0);
             assert(length(t.one_sample_plain.classes) == 1);
@@ -152,14 +152,14 @@ classdef pca_whitening < transforms.reversible
             c = ones(100,1);            
             s = dataset({'none'},A,c);
             
-            t = transforms.pca_whitening(s,0.9,log,1e-5);
+            t = transforms.pca_whitening(s,0.8,log,1e-5);
             
             
             assert(tc.same(t.coeffs,p_A));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
             assert(tc.same(t.coeffs_eigenvalues,p_latent));
             assert(tc.same(t.samples_mean,mean(A,1)));
-            assert(t.kept_energy == 0.9);
+            assert(t.kept_energy == 0.8);
             assert(t.coded_features_count == 1);
             assert(t.div_epsilon == 1e-5);
             assert(length(t.one_sample_plain.classes) == 1);
@@ -247,7 +247,7 @@ classdef pca_whitening < transforms.reversible
             c = ones(100,1);            
             s = dataset({'none'},A,c);
             
-            t = transforms.pca_whitening(s,0.9,log);
+            t = transforms.pca_whitening(s,0.8,log);
             s_p = t.code(s,log);
             
             assert(length(s_p.classes) == 1);
@@ -347,7 +347,7 @@ classdef pca_whitening < transforms.reversible
             c = ones(100,1);
             s = dataset({'none'},A,c);
             
-            t = transforms.pca_whitening(s,0.9,log);
+            t = transforms.pca_whitening(s,0.8,log);
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
             

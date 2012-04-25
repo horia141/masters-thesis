@@ -28,13 +28,13 @@ classdef svm < classifiers.binary
             
             try
                 if strcmp(kernel_type,'linear')
-                    svm_info_t = svmtrain(train_dataset.samples,train_dataset.labels_idx,'kernel_function','linear');
+                    svm_info_t = svmtrain(train_dataset.samples,train_dataset.labels_idx,'kernel_function','linear','kernelcachelimit',train_dataset.samples_count);
                     kernel_param_t = 0;
                 elseif strcmp(kernel_type,'rbf')
-                    svm_info_t = svmtrain(train_dataset.samples,train_dataset.labels_idx,'kernel_function','rbf','rbf_sigma',kernel_param);
+                    svm_info_t = svmtrain(train_dataset.samples,train_dataset.labels_idx,'kernel_function','rbf','rbf_sigma',kernel_param,'kernelcachelimit',train_dataset.samples_count);
                     kernel_param_t = kernel_param;
                 elseif strcmp(kernel_type,'poly')
-                    svm_info_t = svmtrain(train_dataset.samples,train_dataset.labels_idx,'kernel_function','poly','polyorder',kernel_param);
+                    svm_info_t = svmtrain(train_dataset.samples,train_dataset.labels_idx,'kernel_function','poly','polyorder',kernel_param,'kernelcachelimit',train_dataset.samples_count);
                     kernel_param_t = kernel_param;
                 else
                     assert(false);
