@@ -32,8 +32,7 @@ classdef utils
         end
         
         function [tiles_image] = format_as_tiles(images,tiles_row_count,tiles_col_count)
-            assert(tc.tensor(images,4));
-            assert(tc.number(images));
+            assert(tc.dataset_image(images));
             assert(~exist('tiles_row_count','var') || tc.scalar(tiles_row_count));
             assert(~exist('tiles_row_count','var') || tc.natural(tiles_row_count));
             assert(~exist('tiles_row_count','var') || (tiles_row_count > 1));
@@ -82,15 +81,13 @@ classdef utils
         end
         
         function [new_images] = clamp_images_to_unit(images)
-            assert(tc.tensor(images,4));
-            assert(tc.number(images));
+            assert(tc.dataset_image(images));
             
             new_images = max(min(images,1),0);
         end
         
         function [new_images] = remap_images_to_unit(images,mode)
-            assert(tc.tensor(images,4)); 
-            assert(tc.number(images));
+            assert(tc.dataset_image(images));
             assert(~exist('mode','var') || tc.scalar(mode));
             assert(~exist('mode','var') || tc.string(mode));
             assert(~exist('mode','var') || tc.one_of(mode,'local','global'));

@@ -65,21 +65,25 @@ classdef tc
         end
         
         function [o] = object(obj)
-            o = tc.dataset(obj) || ...
+            o = tc.dataset(obj) || tc.classification_info(obj) || ...
                 tc.experiment(obj) || tc.architecture(obj) || tc.transform(obj) || tc.classifier(obj) || ...
                 tc.logging_logger(obj) || tc.logging_handler(obj) || tc.logging_level(obj);
         end
         
         function [o] = dataset(obj)
-            o = isa(obj,'dataset');
+            o = tc.dataset_record(obj) || tc.dataset_image(obj);
         end
         
-        function [o] = datasets_record(obj)
-            o = isa(obj,'datasets.record');
+        function [o] = dataset_record(obj)
+            o = tc.matrix(obj) && tc.number(obj);
         end
         
-        function [o] = datasets_image(obj)
-            o = isa(obj,'datasets.image');
+        function [o] = dataset_image(obj)
+            o = tc.tensor(obj,4) && tc.number(obj);
+        end
+        
+        function [o] = classification_info(obj)
+            o = isa(obj,'classification_info');
         end
         
         function [o] = experiment(obj)

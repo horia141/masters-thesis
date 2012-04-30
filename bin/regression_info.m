@@ -1,0 +1,2 @@
+classdef regression_info
+end

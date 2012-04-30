@@ -1,3 +1,8 @@
+- [53] B:30.04.2012 E:??.??.????
+  Task: Add "confidence" surface test for classifiers. This should be a
+    visualization of the per-class confidence returned for the domain points
+    for each classifier.
+
 - [52] B:19.04.2012 E:??.??.????
   Task: Add "RBF" as a coding method. A RBF-like distance is taken to each
     dictionary element and the catenation of all distances is the feature

@@ -1,123 +1,352 @@
 classdef dataset
-    properties (GetAccess=public,SetAccess=immutable)
-        classes;
-        classes_count;
-        samples;
-        labels_idx;
-        samples_count;
-        features_count;
-    end
-    
-    methods (Access=public)
-        function [obj] = dataset(classes,samples,labels_idx)
-            assert(tc.vector(classes));
-            assert(tc.labels(classes));
-            assert(tc.matrix(samples));
-            assert(tc.number(samples));
-            assert(tc.vector(labels_idx));
-            assert(tc.match_dims(samples,labels_idx,1));
-            assert(tc.labels_idx(labels_idx,classes));
-
-            obj.classes = utils.force_col(classes);
-            obj.classes_count = length(classes);
-            obj.samples = samples;
-            obj.labels_idx = utils.force_col(labels_idx);
-            obj.samples_count = size(samples,1);
-            obj.features_count = size(samples,2);
-        end
-        
-        function [o] = eq(obj,another_dataset)
-            assert(tc.scalar(obj));
-            assert(tc.dataset(obj));
-            assert(tc.scalar(another_dataset));
-            assert(tc.dataset(another_dataset));
+    methods (Static,Access=public)
+        function [sample_count] = count(dataset)
+            assert(tc.dataset(dataset));
             
-            o = true;
-            o = o && tc.same(obj.classes,another_dataset.classes);
-            o = o && obj.compatible(another_dataset);
-            o = o && tc.check(size(obj.samples) == size(another_dataset.samples));
-            o = o && tc.check(obj.samples == another_dataset.samples);
-            o = o && tc.check(size(obj.labels_idx) == size(another_dataset.labels_idx));
-            o = o && tc.check(obj.labels_idx == another_dataset.labels_idx);
-            o = o && (obj.samples_count == another_dataset.samples_count);
-            o = o && (obj.features_count == another_dataset.features_count);
-        end
-        
-        function [o] = ne(obj,another_dataset)
-            assert(tc.scalar(obj));
-            assert(tc.dataset(obj));
-            assert(tc.scalar(another_dataset));
-            assert(tc.dataset(another_dataset));
-            
-            o = ~obj.eq(another_dataset);
-        end
-        
-        function [o] = compatible(obj,another_dataset)
-            assert(tc.scalar(obj));
-            assert(tc.dataset(another_dataset));
-            assert(tc.scalar(another_dataset));
-            assert(tc.dataset(another_dataset));
-            
-            o = true;
-            o = o && tc.same(obj.classes,another_dataset.classes);
-            o = o && (obj.features_count == another_dataset.features_count);
-        end
-
-        function [tr_index,ts_index] = partition(obj,type,param)
-            assert(tc.scalar(obj));
-            assert(tc.dataset(obj));
-            assert(tc.scalar(type));
-            assert(tc.string(type));
-            assert(tc.one_of(type,'kfold','holdout'));
-            assert(tc.scalar(param));
-            assert(tc.number(param));
-            assert((strcmp(type,'kfold') && tc.natural(param) && (param >= 2)) || ...
-                   (strcmp(type,'holdout') && tc.unitreal(param)));
-
-            partition = cvpartition(obj.labels_idx,type,param);
-            
-            tr_index = false(obj.samples_count,partition.NumTestSets);
-            ts_index = false(obj.samples_count,partition.NumTestSets);
-            
-            for ii = 1:partition.NumTestSets
-                tr_index(:,ii) = training(partition,ii)';
-                ts_index(:,ii) = test(partition,ii)';
+            if tc.dataset_record(dataset)
+                sample_count = size(dataset,1);
+            elseif tc.dataset_image(dataset)
+                sample_count = size(dataset,4);
+            else
+                assert(false);
             end
         end
         
-        function [new_dataset] = subsamples(obj,index)
-            assert(tc.scalar(obj));
-            assert(tc.dataset(obj));
-            assert(tc.vector(index));
-            assert((tc.logical(index) && tc.match_dims(obj.samples,index,1)) || ...
-                   (tc.natural(index) && tc.check(index >= 1 & index <= obj.samples_count)));
+        function [varargout] = geometry(dataset)
+            assert(tc.dataset(dataset));
+
+            if tc.dataset_record(dataset)
+                varargout{1} = size(dataset,2);
+            elseif tc.dataset_image(dataset)
+                features_count = size(dataset,1) * size(dataset,2) * size(dataset,3);
+
+                if nargout == 1
+                    varargout{1} = [features_count size(dataset,1) size(dataset,2) size(dataset,3)];
+                elseif nargout >= 2
+                    varargout{1} = features_count;
+                    varargout{2} = size(dataset,1);
+                    varargout{3} = size(dataset,2);
+                    varargout{4} = size(dataset,3);
+                end
+            end
+        end
+        
+        function [o] = geom_compatible(geom_1,geom_2)
+            assert(tc.vector(geom_1));
+            assert((length(geom_1) == 1) || (length(geom_1) == 4));
+            assert(tc.natural(geom_1));
+            assert(tc.check(geom_1 >= 1));
+            assert(tc.vector(geom_2));
+            assert((length(geom_2) == 1) || (length(geom_2) == 4));
+            assert(tc.natural(geom_2));
+            assert(tc.check(geom_2 >= 1));
             
-            new_dataset = dataset(obj.classes,obj.samples(index,:),obj.labels_idx(index));
+            o = tc.same(geom_1,geom_2);
+        end
+
+        function [sample,class_info] = load_record_csvfile(csvfile_path,data_format,delimiter,logger)
+            assert(tc.scalar(csvfile_path));
+            assert(tc.string(csvfile_path));
+            assert(tc.scalar(data_format));
+            assert(tc.string(data_format));
+            assert(~exist('delimiter','var') || tc.scalar(delimiter));
+            assert(~exist('delimiter','var') || tc.string(delimiter));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
+            
+            if ~exist('delimiter','var')
+                delimiter = ',';
+            end
+            
+            if ~exist('logger','var')
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger = logging.logger({hnd_zero});
+            end
+            
+            try
+                logger.message('Opening csv file "%s".',csvfile_path);
+                
+                [csvfile_fid,csvfile_msg] = fopen(csvfile_path,'rt');
+                
+                if csvfile_fid == -1
+                    throw(MException('master:NoLoad',...
+                             sprintf('Could not load csv file "%s": %s!',csvfile_path,csvfile_msg)))
+                end
+                
+                logger.message('Bulk reading of CSV data.');
+
+                sample_raw = textscan(csvfile_fid,strcat('%s',data_format),'delimiter',delimiter);
+
+                fclose(csvfile_fid);
+            catch exp
+                throw(MException('master:NoLoad',exp.message));
+            end
+            
+            if ~tc.check(tc.checkf(@tc.number,sample_raw(:,2:end)))
+                throw(MException('master:InvalidFormat',...
+                         sprintf('File "%s" has an invalid format!',csvfile_path)));
+            end
+            
+            logger.message('Building dataset and labels information.');
+            
+            [labels_idx,labels] = grp2idx(sample_raw{:,1});
+            
+            sample = cell2mat(sample_raw(:,2:end));
+            class_info = classification_info(labels,labels_idx);
+        end
+
+        function [sample] = load_image_from_dir(images_dir_path,mode,force_size,logger)
+            assert(tc.scalar(images_dir_path));
+            assert(tc.string(images_dir_path));
+            assert(~exist('mode','var') || tc.scalar(mode));
+            assert(~exist('mode','var') || tc.string(mode));
+            assert(~exist('mode','var') || tc.one_of(mode,'gray','original'));
+            assert(~exist('force_size','var') || tc.vector(force_size));
+            assert(~exist('force_size','var') || (length(force_size) == 2));
+            assert(~exist('force_size','var') || tc.integer(force_size));
+            assert(~exist('force_size','var') || (tc.check(force_size >= 1) || tc.check(force_size == -1)));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
+
+            if ~exist('mode','var')
+                mode = 'gray';
+            end
+            
+            if ~exist('force_size','var')
+                force_size = [-1 -1];
+            end
+            
+            if ~exist('logger','var')
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger = logging.logger({hnd_zero});
+            end
+            
+            logger.message('Listing images directory "%s".',images_dir_path);
+               
+            paths = dir(images_dir_path);
+            images = [];
+            current_image = 1;
+            
+            logger.beg_node('Starting reading of images');
+            
+            for ii = 1:length(paths)
+                try
+                    logger.beg_node('Reading image in "%s"',fullfile(images_dir_path,paths(ii).name));
+                    
+                    image = imread(fullfile(images_dir_path,paths(ii).name));
+                    
+                    if strcmp(mode,'gray')
+                        image = double(rgb2gray(image)) ./ 255;
+                    else
+                        image = double(image) ./ 255;
+                    end
+                    
+                    logger.message('Row count: %d',size(image,1));
+                    logger.message('Col count: %d',size(image,2));
+                    
+                    if tc.check(force_size ~= [-1 -1])
+                        logger.message('Resizing to %dx%d.',force_size(1),force_size(2));
+                        
+                        image = imresize(image,force_size);
+                        
+                        % Correct small domain overflows caused by resizing.
+                        image = utils.clamp_images_to_unit(image);
+                    end
+                    
+                    if (current_image > 1) && ...
+                        (~tc.check(size(image) == size(images(:,:,:,1))))
+                        throw(MException('master:NoLoad',...
+                                         'Images are of different sizes!'));
+                    end
+
+                    images(:,:,:,current_image) = image;
+                    current_image = current_image + 1;
+                    
+                    logger.end_node();
+                catch exp
+                    logger.message('Not an image or corrupted.');
+
+                    logger.end_node();
+
+                    if isempty(regexp(exp.identifier,'MATLAB:(.*:)?imread:.*','ONCE'))
+                        throw(MException('master:NoLoad',exp.message));
+                    end
+                end
+            end
+            
+            logger.end_node();
+            
+            if isempty(images)
+                throw(MException('master:NoLoad',...
+                                 'Could not find any acceptable images in the directory.'));
+            end
+            
+            logger.message('Building dataset.');
+            
+            sample = images;
+        end
+
+        function [sample,class_info] = load_image_mnist(images_path,labels_path,logger)
+            assert(tc.scalar(images_path));
+            assert(tc.string(images_path));
+            assert(tc.scalar(labels_path));
+            assert(tc.string(labels_path));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
+               
+            if ~exist('logger','var')
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger = logging.logger({hnd_zero});
+            end
+            
+            logger.message('Opening images file "%s".',images_path);
+            
+            [images_fid,images_msg] = fopen(images_path,'rb');
+            
+            if images_fid == -1
+                throw(MException('master:NoLoad',...
+                         sprintf('Could not load images in "%s": %s!',images_path,images_msg)))
+            end
+            
+            logger.message('Opening labels file "%s".',labels_path);
+            
+            [labels_fid,labels_msg] = fopen(labels_path,'rb');
+            
+            if labels_fid == -1
+                fclose(images_fid);
+                throw(MException('master:NoLoad',...
+                         sprintf('Could not load labels in "%s": %s!',labels_path,labels_msg)))
+            end
+            
+            try
+                logger.message('Reading images file magic number.');
+
+                images_magic = dataset.high2low(fread(images_fid,4,'uint8=>uint32'));
+                
+                if images_magic ~= 2051
+                    throw(MException('master:NoLoad',...
+                             sprintf('Images file "%s" not in MNIST format!',images_path)));
+                end
+                
+                logger.message('Reading labels file magic number.');
+                
+                labels_magic = dataset.high2low(fread(labels_fid,4,'uint8=>uint32'));
+                
+                if labels_magic ~= 2049
+                    throw(MException('master:NoLoad',...
+                             sprintf('Labels file "%s" not in MNIST format!',labels_path)));
+                end
+                
+                logger.beg_node('Reading images and labels count (should be equal)');
+                
+                images_count = dataset.high2low(fread(images_fid,4,'uint8=>uint32'));
+                labels_count = dataset.high2low(fread(labels_fid,4,'uint8=>uint32'));
+                
+                if images_count ~= labels_count
+                    throw(MException('master:NoLoad',...
+                             sprintf('Different number of labels in "%s" for images in "%s"!',labels_path,images_path)));
+                end
+                
+                logger.message('Images count: %d',images_count);
+                logger.message('Labels count: %d',labels_count);
+                
+                logger.end_node();
+                
+                logger.beg_node('Reading images row and col count');
+                
+                row_count = dataset.high2low(fread(images_fid,4,'uint8=>uint32'));
+                col_count = dataset.high2low(fread(images_fid,4,'uint8=>uint32'));
+                
+                logger.message('Row count: %d',row_count);
+                logger.message('Col count: %d',col_count);
+                
+                logger.end_node();
+                
+                log_batch_size = ceil(images_count / 10);
+                images = zeros(row_count,col_count,1,images_count);
+                
+                logger.beg_node('Starting reading of images');
+                
+                for ii = 1:images_count
+                    if mod(ii - 1,log_batch_size) == 0
+                        logger.message('Images %d to %d',ii,min(ii + log_batch_size - 1,images_count));
+                    end
+                    
+                    images(:,:,1,ii) = fread(images_fid,[row_count col_count],'uint8=>double')' ./ 255;
+                end
+                
+                logger.end_node();
+                
+                logger.message('Starting reading of labels');
+                
+                labels = fread(labels_fid,[images_count 1],'uint8');
+                
+                fclose(images_fid);
+                fclose(labels_fid);
+            catch exp
+                fclose(images_fid);
+                fclose(labels_fid);
+                throw(MException('master:NoLoad',exp.message));
+            end
+            
+            logger.message('Building dataset and labels information.');
+            
+            sample = images;
+            class_info = classification_info({'d0' 'd1' 'd2' 'd3' 'd4' 'd5' 'd6' 'd7' 'd8' 'd9'},labels + 1);
+        end
+        
+        function [new_sample] = rebuild_image(sample,layers_count,row_count,col_count)
+            assert(tc.dataset_record(sample));
+            assert(tc.scalar(layers_count));
+            assert(tc.natural(layers_count));
+            assert(layers_count >= 1);
+            assert(tc.scalar(row_count));
+            assert(tc.natural(row_count));
+            assert(row_count >= 1);
+            assert(tc.scalar(col_count));
+            assert(tc.natural(col_count));
+            assert(col_count >= 1);
+            assert(size(sample,2) == (layers_count * row_count * col_count));
+            
+            N = dataset.count(sample);
+            new_sample = reshape(sample',row_count,col_count,layers_count,N);
+        end
+
+        function [new_sample] = flatten_image(sample)
+            assert(tc.dataset_image(sample));
+            
+            N = dataset.count(sample);
+            [d,~,~,~] = dataset.geometry(sample);
+            new_sample = reshape(sample,d,N)';
+        end
+
+        function [new_sample] = subsample(sample,index)
+            assert(tc.dataset(sample));
+            assert(tc.vector(index));
+            
+            if tc.dataset_record(sample)
+                assert((tc.logical(index) && tc.match_dims(sample,index,1)) || ...
+                       (tc.natural(index) && tc.check(index >= 1 & index <= size(sample,1))));
+                   
+                new_sample = sample(index,:);
+            elseif tc.dataset_image(sample)
+                assert((tc.logical(index) && tc.match_dims(sample,index,4)) || ...
+                       (tc.natural(index) && tc.check(index >= 1 & index <= size(sample,4))));
+                   
+                new_sample = sample(:,:,:,index);
+            else
+                assert(false);
+            end
         end
     end
     
-    methods (Static,Access=public)
-        function [new_dataset] = from_data(samples,labels)
-            assert(tc.matrix(samples));
-            assert(tc.number(samples));
-            assert(tc.vector(labels));
-            assert(tc.match_dims(samples,labels,1));
-            assert(tc.labels(labels));
-            
-            [labels_idx_t,classes_t] = grp2idx(labels);
-            new_dataset = dataset(classes_t,samples,labels_idx_t);
-        end
-        
-        function [new_dataset] = from_fulldata(classes,samples,labels_idx)
-            assert(tc.vector(classes));
-            assert(tc.labels(classes));
-            assert(tc.matrix(samples));
-            assert(tc.number(samples));
-            assert(tc.vector(labels_idx));
-            assert(tc.match_dims(samples,labels_idx,1));
-            assert(tc.labels_idx(labels_idx,classes));
-               
-            new_dataset = dataset(classes,samples,labels_idx);
+    methods (Static,Access=private)
+        function [out] = high2low(bytes)
+            out = bitshift(bytes(4),0) + bitshift(bytes(3),8) + ...
+                  bitshift(bytes(2),16) + bitshift(bytes(1),24);
         end
     end
     
@@ -125,312 +354,835 @@ classdef dataset
         function test(~)
             fprintf('Testing "dataset".\n');
             
-            fprintf('  Proper construction.\n');
+            fprintf('  Function "count".\n');
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
-             
-            s = dataset({'1' '2' '3'},A,c);
+            s_1 = randi(2,10,4);
+            s_2 = randi(2,8,8,1,10);
             
-            assert(length(s.classes) == 3);
-            assert(strcmp(s.classes{1},'1'));
-            assert(strcmp(s.classes{2},'2'));
-            assert(strcmp(s.classes{3},'3'));
-            assert(s.classes_count == 3);
-            assert(tc.check(s.samples == A));
-            assert(tc.check(s.labels_idx == c'));
-            assert(s.samples_count == 12);
-            assert(s.features_count == 4);
+            assert(dataset.count(s_1) == 10);
+            assert(dataset.count(s_2) == 10);
             
             clearvars -except display;
             
-            fprintf('  Functions "eq" and "ne".\n');
+            fprintf('  Function "geometry".\n');
             
-            s1 = dataset({'1' '2'},[1 2 3; 1 3 2],[1 2]);
-            s2 = dataset({'1' '2'},[1 2 3; 1 3 2],[1 2]);
-            s3 = dataset({'1' '2' '3'},[1 2 3; 1 3 2],[1 2]);
-            s4 = dataset({'hello' 'world'},[1 2 3; 1 3 2],[1 2]);
-            s5 = dataset({'1' '2'},[1 2 3 4; 1 3 2 4],[1 2]);
-            s6 = dataset({'1' '2'},[1 2 3; 1 3 2; 2 1 3],[1 2 2]);
-            s7 = dataset({'1' '2'},[1 2 3; 1 3 3],[1 2]);
-            s8 = dataset({'1' '2'},[1 2 3; 1 3 2],[1 1]);
+            fprintf('    Geometry of records.\n');
             
-            assert(s1 == s2);
-            assert(s1 ~= s3);
-            assert(s1 ~= s4);
-            assert(s1 ~= s5);
-            assert(s1 ~= s6);
-            assert(s1 ~= s7);
-            assert(s1 ~= s8);
-                        
-            clearvars -except display;
+            s = randi(2,10,4);
             
-            fprintf('  Function "compatible".\n');
+            d = dataset.geometry(s);
             
-            s1 = dataset({'1' '2'},rand(100,10),randi(2,100,1));
-            s2 = dataset({'1' '2'},rand(150,10),randi(2,150,1));
-            s3 = dataset({'1' '2' '3'},rand(50,10),randi(2,50,1));
-            s4 = dataset({'hello' 'world'},rand(50,10),randi(2,50,1));
-            s5 = dataset({'1' '2'},rand(50,15),randi(2,50,1));
-            
-            assert(s1.compatible(s2) == true);
-            assert(s1.compatible(s3) == false);
-            assert(s1.compatible(s4) == false);
-            assert(s1.compatible(s5) == false);
+            assert(d == 4);
             
             clearvars -except display;
             
-            fprintf('  Functions "partition" and "subsamples".\n');
+            fprintf('    Geometry of images.\n');
             
-            fprintf('    2-fold partition and call to "subsamples" with boolean indices.\n');
+            s = randi(2,8,4,3,100);
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
-             
-            s = dataset({'1' '2' '3'},A,c);
+            g = dataset.geometry(s);
             
-            [tr_f,ts_f] = s.partition('kfold',2);
+            assert(tc.same(g,[8*4*3 8 4 3]));
             
-            s_f11 = s.subsamples(tr_f(:,1));
+            [d,d_r,d_c,d_l] = dataset.geometry(s);
             
-            assert(length(s_f11.classes) == 3);
-            assert(strcmp(s_f11.classes{1},'1'));
-            assert(strcmp(s_f11.classes{2},'2'));
-            assert(strcmp(s_f11.classes{3},'3'));
-            assert(s_f11.classes_count == 3);
-            assert(tc.check(s_f11.samples == A(tr_f(:,1),:)));
-            assert(tc.check(s_f11.labels_idx == c(tr_f(:,1))'));
-            assert(s_f11.samples_count == 6);
-            assert(s_f11.features_count == 4);
+            assert(d == 8*4*3);
+            assert(d_r == 8);
+            assert(d_c == 4);
+            assert(d_l == 3);
             
-            s_f12 = s.subsamples(ts_f(:,1));
+            clearvars -except display;
             
-            assert(length(s_f12.classes) == 3);
-            assert(strcmp(s_f12.classes{1},'1'));
-            assert(strcmp(s_f12.classes{2},'2'));
-            assert(strcmp(s_f12.classes{3},'3'));
-            assert(s_f12.classes_count == 3);
-            assert(tc.check(s_f12.samples == A(ts_f(:,1),:)));
-            assert(tc.check(s_f12.labels_idx == c(ts_f(:,1))'));
-            assert(s_f12.samples_count == 6);
-            assert(s_f12.features_count == 4);
+            fprintf('  Function "geom_compatible".\n');
             
-            s_f21 = s.subsamples(tr_f(:,2));
+            s_1 = rand(10,2);
+            s_2 = rand(10,2);
+            s_3 = rand(10,4);
+            s_4 = rand(10,1);
+            s_5 = rand(8,8,1,10);
+            s_6 = rand(10,10,1,20);
+            
+            assert(dataset.geom_compatible(dataset.geometry(s_1),dataset.geometry(s_2)) == true);
+            assert(dataset.geom_compatible(dataset.geometry(s_1),dataset.geometry(s_3)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_1),dataset.geometry(s_4)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_1),dataset.geometry(s_5)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_1),dataset.geometry(s_6)) == false);
+            
+            s_7 = rand(8,8,1,10);
+            s_8 = rand(8,8,1,10);
+            s_9 = rand(8,8,3,10);
+            s_10 = rand(9,9,1,10);
+            s_11 = rand(8,9,1,10);
+            s_12 = rand(8,2);
+            s_13 = rand(9,3);
+            
+            assert(dataset.geom_compatible(dataset.geometry(s_7),dataset.geometry(s_8)) == true);
+            assert(dataset.geom_compatible(dataset.geometry(s_7),dataset.geometry(s_9)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_7),dataset.geometry(s_10)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_7),dataset.geometry(s_11)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_7),dataset.geometry(s_12)) == false);
+            assert(dataset.geom_compatible(dataset.geometry(s_7),dataset.geometry(s_13)) == false);
+            
+            clearvars -except display;
+            
+            fprintf('  Function "load_record_csvfile".\n');
+            
+            fprintf('    With Wine data and "," delimiter (default).\n');
+            
+            [s,ci] = dataset.load_record_csvfile('../test/wine/wine.csv','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+            
+            assert(tc.dataset_record(s));
+            assert(tc.same(size(s),[178 13]));
+            assert(length(ci.labels) == 3);
+            assert(strcmp(ci.labels{1},'1'));
+            assert(strcmp(ci.labels{2},'2'));
+            assert(strcmp(ci.labels{3},'3'));
+            assert(ci.labels_count == 3);
+            assert(tc.same(ci.labels_idx,[1*ones(59,1);2*ones(71,1);3*ones(48,1)]));
+            
+            clearvars -except display;
+            
+            fprintf('    With iris data and "," delimiter.\n');
+            
+            [s,ci] = dataset.load_record_csvfile('../test/iris/iris.csv','%f%f%f%f',',');
+            
+            assert(tc.dataset_record(s));
+            assert(tc.same(size(s),[150 4]));
+            assert(length(ci.labels) == 3);
+            assert(strcmp(ci.labels{1},'Iris-setosa'));
+            assert(strcmp(ci.labels{2},'Iris-versicolor'));
+            assert(strcmp(ci.labels{3},'Iris-virginica'));
+            assert(ci.labels_count == 3);
+            assert(tc.same(ci.labels_idx,[1*ones(50,1);2*ones(50,1);3*ones(50,1)]));
+            
+            clearvars -except display;
+            
+            fprintf('    With iris data and "," delimiter and valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = dataset.load_record_csvfile('../test/iris/iris.csv','%f%f%f%f',',',log);
+            
+            assert(tc.dataset_record(s));
+            assert(tc.same(size(s),[150 4]));
+            assert(length(ci.labels) == 3);
+            assert(strcmp(ci.labels{1},'Iris-setosa'));
+            assert(strcmp(ci.labels{2},'Iris-versicolor'));
+            assert(strcmp(ci.labels{3},'Iris-virginica'));
+            assert(ci.labels_count == 3);
+            assert(tc.same(ci.labels_idx,[1*ones(50,1);2*ones(50,1);3*ones(50,1)]));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Opening csv file "../test/iris/iris.csv".\n',...
+                                                         'Bulk reading of CSV data.\n',...
+                                                         'Building dataset and labels information.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With invalid external inputs.\n');
+            
+            try
+                dataset.load_record_csvfile('../test/wine/wine_aaa.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                assert(false);
+            catch exp
+                if strcmp(exp.message,'Could not load csv file "../test/wine/wine_aaa.csv": No such file or directory!')
+                    fprintf('      Passes "No such file or directory!" test.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                chmod_code = system('chmod a-r ../test/wine/wine.csv');
+                
+                assert(chmod_code == 0);
+                
+                dataset.load_record_csvfile('../test/wine/wine.csv','%d','%f%f%f%f%f%f%f%f%f%f%f%f%f');
+                
+                chmod2_code = system('chmod a+r ../test/wine/wine.csv');
+                
+                assert(chmod2_code == 0);
+                assert(false);
+            catch exp
+                chmod2_code = system('chmod a+r ../test/wine/wine.csv');
+                
+                assert(chmod2_code == 0);
+                
+                if strcmp(exp.message,'Could not load csv file "../test/wine/wine.csv": Permission denied!')
+                    fprintf('      Passes "Permission denied!" test.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                dataset.load_record_csvfile('../test/wine/wine.csv','%s%s%f%f%f%f%f%f%f%f%f%f%f');
+                assert(false);
+            catch exp
+                if strcmp(exp.message,'File "../test/wine/wine.csv" has an invalid format!')
+                    fprintf('      Passes "Invalid format!" test.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            clearvars -except display;
+            
+            fprintf('  Function "load_image_from_dir".\n');
+            
+            fprintf('    With mode "gray" (default) and file size (default).\n');
+            
+            s = dataset.load_image_from_dir('../test/scenes_small');
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 1 7]));
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "gray" and file size (default).\n');
+            
+            s = dataset.load_image_from_dir('../test/scenes_small','gray');
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 1 7]));
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "original" and file size (default).\n');
 
-            assert(length(s_f21.classes) == 3);
-            assert(strcmp(s_f21.classes{1},'1'));
-            assert(strcmp(s_f21.classes{2},'2'));
-            assert(strcmp(s_f21.classes{3},'3'));
-            assert(s_f21.classes_count == 3);
-            assert(tc.check(s_f21.samples == A(tr_f(:,2),:)));
-            assert(tc.check(s_f21.labels_idx == c(tr_f(:,2))'));
-            assert(s_f21.samples_count == 6);
-            assert(s_f21.features_count == 4);
+            s = dataset.load_image_from_dir('../test/scenes_small','original');
             
-            s_f22 = s.subsamples(ts_f(:,2));
-            
-            assert(length(s_f22.classes) == 3);
-            assert(strcmp(s_f22.classes{1},'1'));
-            assert(strcmp(s_f22.classes{2},'2'));
-            assert(strcmp(s_f22.classes{3},'3'));
-            assert(s_f22.classes_count == 3);
-            assert(tc.check(s_f22.samples == A(ts_f(:,2),:)));
-            assert(tc.check(s_f22.labels_idx == c(ts_f(:,2))'));
-            assert(s_f22.samples_count == 6);
-            assert(s_f22.features_count == 4);
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 3 7]));
             
             clearvars -except display;
             
-            fprintf('    Holdout partition with p=0.33 and call to "subsamples" with boolean indices.\n');
+            fprintf('    With mode "gray" and file size.\n');
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
-             
-            s = dataset({'1' '2' '3'},A,c);
+            s = dataset.load_image_from_dir('../test/scenes_small','gray',[-1 -1]);
             
-            [tr_h,ts_h] = s.partition('holdout',0.33);
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 1 7]));
+
+            clearvars -except display;
             
-            s_h1 = s.subsamples(tr_h);
+            fprintf('    With mode "original" and file size.\n');
             
-            assert(length(s_h1.classes) == 3);
-            assert(strcmp(s_h1.classes{1},'1'));
-            assert(strcmp(s_h1.classes{2},'2'));
-            assert(strcmp(s_h1.classes{2},'2'));
-            assert(s_h1.classes_count == 3);
-            assert(tc.check(s_h1.samples == A(tr_h,:)));
-            assert(tc.check(s_h1.labels_idx == c(tr_h)'));
-            assert(s_h1.samples_count == 9);
-            assert(s_h1.features_count == 4);
+            s = dataset.load_image_from_dir('../test/scenes_small','original',[-1 -1]);
             
-            s_h2 = s.subsamples(ts_h);
-            
-            assert(length(s_h2.classes) == 3);
-            assert(strcmp(s_h2.classes{1},'1'));
-            assert(strcmp(s_h2.classes{2},'2'));
-            assert(strcmp(s_h2.classes{2},'2'));
-            assert(s_h2.classes_count == 3);
-            assert(tc.check(s_h2.samples == A(ts_h,:)));
-            assert(tc.check(s_h2.labels_idx == c(ts_h)'));
-            assert(s_h2.samples_count == 3);
-            assert(s_h2.features_count == 4);
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 3 7]));
             
             clearvars -except display;
             
-            fprintf('    Call to "subsamples" with natural indices.\n');
+            fprintf('    With mode "gray" and forced size.\n');
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
-             
-            s = dataset({'1' '2' '3'},A,c);
+            s = dataset.load_image_from_dir('../test/scenes_small','gray',[96 128]);
             
-            s_fi = s.subsamples(1:2:12);
-            
-            assert(length(s_fi.classes) == 3);
-            assert(strcmp(s_fi.classes{1},'1'));
-            assert(strcmp(s_fi.classes{2},'2'));
-            assert(strcmp(s_fi.classes{3},'3'));
-            assert(s_fi.classes_count == 3);
-            assert(tc.check(s_fi.samples == A(1:2:12,:)));
-            assert(tc.check(s_fi.labels_idx == c(1:2:12)'));
-            assert(s_fi.samples_count == 6);
-            assert(s_fi.features_count == 4);
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[96 128 1 7]));
             
             clearvars -except display;
             
-            fprintf('    Call to "subsamples" with natural indices and redundant selection.\n');
+            fprintf('    With mode "original" and forced size.\n');
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
-             
-            s = dataset({'1' '2' '3'},A,c);
+            s = dataset.load_image_from_dir('../test/scenes_small','original',[96 128]);
             
-            s_fo = s.subsamples([1:12,1:12]);
-            
-            assert(length(s_fo.classes) == 3);
-            assert(strcmp(s_fo.classes{1},'1'));
-            assert(strcmp(s_fo.classes{2},'2'));
-            assert(strcmp(s_fo.classes{3},'3'));
-            assert(s_fo.classes_count == 3);
-            assert(tc.check(s_fo.samples == [A;A]));
-            assert(tc.check(s_fo.labels_idx == [c c]'));
-            assert(s_fo.samples_count == 24);
-            assert(s_fo.features_count == 4);
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[96 128 3 7]));
             
             clearvars -except display;
             
-            fprintf('  Function "from_data".\n');
+            fprintf('    With mode "gray" and file size and a valid logger.\n');
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = {'1';'2';'3';'1';'2';'3';'1';'2';'3';'1';'2';'3'};
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             
-            s = dataset.from_data(A,c);
+            s = dataset.load_image_from_dir('../test/scenes_small','gray',[-1 -1],log);
             
-            assert(length(s.classes) == 3);
-            assert(strcmp(s.classes{1},'1'));
-            assert(strcmp(s.classes{2},'2'));
-            assert(strcmp(s.classes{3},'3'));
-            assert(s.classes_count == 3);
-            assert(tc.check(s.samples == A));
-            assert(tc.same(s.labels_idx,[1;2;3;1;2;3;1;2;3;1;2;3]));
-            assert(s.samples_count == 12);
-            assert(s.features_count == 4);
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 1 7]));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
             
-            fprintf('  Function "from_fulldata".\n');
+            fprintf('    With mode "original" and file size and a valid logger.\n');
             
-            A = [1 2 3 4;
-                 1 2 4 3;
-                 1 3 2 4;
-                 1 3 4 2;
-                 1 4 2 3;
-                 1 4 3 2;
-                 2 1 3 4;
-                 2 1 4 3;
-                 2 3 1 4;
-                 2 3 4 1;
-                 2 4 1 3;
-                 2 4 3 1];             
-            c = [1 2 3 1 2 3 1 2 3 1 2 3];
-             
-            s = dataset.from_fulldata({'1' '2' '3'},A,c);
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
             
-            assert(tc.dataset(s));
-            assert(length(s.classes) == 3);
-            assert(strcmp(s.classes{1},'1'));
-            assert(strcmp(s.classes{2},'2'));
-            assert(strcmp(s.classes{3},'3'));
-            assert(s.classes_count == 3);
-            assert(tc.check(s.samples == A));
-            assert(tc.check(s.labels_idx == c'));
-            assert(s.samples_count == 12);
-            assert(s.features_count == 4);
+            s = dataset.load_image_from_dir('../test/scenes_small','original',[-1 -1],log);
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 3 7]));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "gray" and forced size and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = dataset.load_image_from_dir('../test/scenes_small','gray',[96 128],log);
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[96 128 1 7]));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With mode "original" and forced size and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            s = dataset.load_image_from_dir('../test/scenes_small','original',[96 128],log);
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[96 128 3 7]));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Listing images directory "../test/scenes_small".\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Reading image in "../test/scenes_small/.":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/..":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/empty_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/heterogeneous_dir":\n',...
+                                                         '    Not an image or corrupted.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small1.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small2.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small3.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small4.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small5.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small6.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         '  Reading image in "../test/scenes_small/scenes_small7.jpg":\n',...
+                                                         '    Row count: 192\n',...
+                                                         '    Col count: 256\n',...
+                                                         '    Resizing to 96x128.\n',...
+                                                         'Building dataset.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With heterogenous directory.\n');
+            
+            s = dataset.load_image_from_dir('../test/scenes_small/heterogeneous_dir');
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[192 256 1 2]));
+            
+            clearvars -except display;
+            
+            fprintf('    With invalid external inputs.\n');
+            
+            try
+                dataset.load_image_from_dir('../test/scenes_small_aaa');
+                assert(false);
+            catch exp
+                if strcmp(exp.message,'Could not find any acceptable images in the directory.')
+                    fprintf('      Passes "No such file or directory!"\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                chmod_code = system('chmod a-r ../test/scenes_small');
+                
+                assert(chmod_code == 0);
+                
+                dataset.load_image_from_dir('../test/scenes_small');
+                
+                chmod_code = system('chmod a+r ../test/scenes_small');
+                
+                assert(chmod_code == 0);
+                assert(false);
+            catch exp
+                chmod_code = system('chmod a+r ../test/scenes_small');
+                
+                assert(chmod_code == 0);
+                
+                if strcmp(exp.message,'Could not find any acceptable images in the directory.')
+                    fprintf('      Passes "Permission denied!"\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                dataset.load_image_from_dir('../test/scenes_small/empty_dir');
+                assert(false);
+            catch exp
+                if strcmp(exp.message,'Could not find any acceptable images in the directory.')
+                    fprintf('      Passes "Empty directory!"\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            clearvars -except display;
+            
+            fprintf('  Function "load_image_mnist".\n');
+            
+            fprintf('    With MNIST test data.\n');
+            
+            [s,ci] = dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[28 28 1 10000]));
+            assert(length(ci.labels) == 10);
+            assert(strcmp(ci.labels{1},'d0'));
+            assert(strcmp(ci.labels{2},'d1'));
+            assert(strcmp(ci.labels{3},'d2'));
+            assert(strcmp(ci.labels{4},'d3'));
+            assert(strcmp(ci.labels{5},'d4'));
+            assert(strcmp(ci.labels{6},'d5'));
+            assert(strcmp(ci.labels{7},'d6'));
+            assert(strcmp(ci.labels{8},'d7'));
+            assert(strcmp(ci.labels{9},'d8'));
+            assert(strcmp(ci.labels{10},'d9'));
+            assert(ci.labels_count == 10);
+            assert(tc.vector(ci.labels_idx));
+            assert(tc.match_dims(s,ci.labels_idx,4));
+            assert(tc.labels_idx(ci.labels_idx,ci.labels));
+            
+            clearvars -except display;
+            
+            fprintf('    With MNIST test data and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte',log);
+            
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[28 28 1 10000]));
+            assert(length(ci.labels) == 10);
+            assert(strcmp(ci.labels{1},'d0'));
+            assert(strcmp(ci.labels{2},'d1'));
+            assert(strcmp(ci.labels{3},'d2'));
+            assert(strcmp(ci.labels{4},'d3'));
+            assert(strcmp(ci.labels{5},'d4'));
+            assert(strcmp(ci.labels{6},'d5'));
+            assert(strcmp(ci.labels{7},'d6'));
+            assert(strcmp(ci.labels{8},'d7'));
+            assert(strcmp(ci.labels{9},'d8'));
+            assert(strcmp(ci.labels{10},'d9'));
+            assert(ci.labels_count == 10);
+            assert(tc.vector(ci.labels_idx));
+            assert(tc.match_dims(s,ci.labels_idx,4));
+            assert(tc.labels_idx(ci.labels_idx,ci.labels));
+            
+            assert(strcmp(hnd.logged_data,sprintf(strcat('Opening images file "../test/mnist/t10k-images-idx3-ubyte".\n',...
+                                                         'Opening labels file "../test/mnist/t10k-labels-idx1-ubyte".\n',...
+                                                         'Reading images file magic number.\n',...
+                                                         'Reading labels file magic number.\n',...
+                                                         'Reading images and labels count (should be equal):\n',...
+                                                         '  Images count: 10000\n',...
+                                                         '  Labels count: 10000\n',...
+                                                         'Reading images row and col count:\n',...
+                                                         '  Row count: 28\n',...
+                                                         '  Col count: 28\n',...
+                                                         'Starting reading of images:\n',...
+                                                         '  Images 1 to 1000\n',...
+                                                         '  Images 1001 to 2000\n',...
+                                                         '  Images 2001 to 3000\n',...
+                                                         '  Images 3001 to 4000\n',...
+                                                         '  Images 4001 to 5000\n',...
+                                                         '  Images 5001 to 6000\n',...
+                                                         '  Images 6001 to 7000\n',...
+                                                         '  Images 7001 to 8000\n',...
+                                                         '  Images 8001 to 9000\n',...
+                                                         '  Images 9001 to 10000\n',...
+                                                         'Starting reading of labels\n',...
+                                                         'Building dataset and labels information.\n'))));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With invalid external inputs.\n');
+            
+            try
+                dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte_aaa','../test/mnist/t10k-labels-idx1-ubyte');
+                assert(false);
+            catch exp
+                if strcmp(exp.message,'Could not load images in "../test/mnist/t10k-images-idx3-ubyte_aaa": No such file or directory!')
+                    fprintf('      Passes "No such file or directory!" for images file.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte_aaa');
+                assert(false);
+            catch exp
+                if strcmp(exp.message,'Could not load labels in "../test/mnist/t10k-labels-idx1-ubyte_aaa": No such file or directory!')
+                    fprintf('      Passes "No such file or directory!" for labels file.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                chmod_code = system('chmod a-r ../test/mnist/t10k-images-idx3-ubyte');
+                
+                assert(chmod_code == 0);
+                
+                dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
+                
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-images-idx3-ubyte');
+                
+                assert(chmod2_code == 0);
+                assert(false);
+            catch exp
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-images-idx3-ubyte');
+                
+                assert(chmod2_code == 0);
+                
+                if strcmp(exp.message,'Could not load images in "../test/mnist/t10k-images-idx3-ubyte": Permission denied!')
+                    fprintf('      Passes "Permission denied!" for images file.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                chmod_code = system('chmod a-r ../test/mnist/t10k-labels-idx1-ubyte');
+                
+                assert(chmod_code == 0);
+                
+                dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
+                
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-labels-idx1-ubyte');
+                
+                assert(chmod2_code == 0);                
+                assert(false);
+            catch exp
+                chmod2_code = system('chmod a+r ../test/mnist/t10k-labels-idx1-ubyte');
+                
+                assert(chmod2_code == 0);                
+                
+                if strcmp(exp.message,'Could not load labels in "../test/mnist/t10k-labels-idx1-ubyte": Permission denied!')
+                    fprintf('      Passes "Permission denied!" for labels file.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                dataset.load_image_mnist('../test/scenes_small/scenes_small1.jpg','../test/mnist/t10k-labels-idx1-ubyte');
+            catch exp
+                if strcmp(exp.message,'Images file "../test/scenes_small/scenes_small1.jpg" not in MNIST format!')
+                    fprintf('      Passes "Not in MNIST format!" for images file.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/scenes_small/scenes_small1.jpg');
+            catch exp
+                if strcmp(exp.message,'Labels file "../test/scenes_small/scenes_small1.jpg" not in MNIST format!')
+                    fprintf('      Passes "Not in MNIST format!" for labels file.\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            try
+                dataset.load_image_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
+            catch exp
+                if strcmp(exp.message,'Different number of labels in "../test/mnist/t10k-labels-idx1-ubyte" for images in "../test/mnist/t10k-images-idx3-ubyte"!')
+                    fprintf('      Passes "Different number of labels!".\n');
+                else
+                    assert(false);
+                end
+            end
+            
+            clearvars -except display;
+            
+            fprintf('  Function "rebuild_image".\n');
+            
+            fprintf('    Single layer.\n');
+            
+            A = rand(20,100);
+            A_i = zeros(10,10,1,20);
+            for ii = 1:20
+                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
+            end
+            
+            s = dataset.rebuild_image(A,1,10,10);
+            
+            assert(tc.dataset_image(s));
+            assert(tc.same(size(s),[10 10 1 20]));
+            assert(tc.unitreal(s));
+            assert(tc.same(s,A_i));
+            
+            clearvars -except display;
+            
+            fprintf('    Three layers.\n');
+            
+            A = rand(20,300);
+            A_i = zeros(10,10,3,20);
+            for ii = 1:20
+                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
+            end
+            
+            s = dataset.rebuild_image(A,3,10,10);
+            
+            assert(tc.dataset_image(s));
+            assert(tc.same(size(s),[10 10 3 20]));
+            assert(tc.unitreal(s));
+            assert(tc.same(s,A_i));
+
+            clearvars -except display;
+            
+            fprintf('  Function "flatten_image".\n');
+            
+            fprintf('    Single layer.\n');
+            
+            A = rand(10,10,1,20);
+            A_i = zeros(20,100);
+            for ii = 1:20
+                A_i(ii,:) = reshape(A(:,:,:,ii),1,100);
+            end
+            
+            s = dataset.flatten_image(A);
+            
+            assert(tc.dataset_record(s));
+            assert(tc.same(size(s),[20 100]));
+            assert(tc.unitreal(s));
+            assert(tc.same(s,A_i));
+            
+            clearvars -except display;
+            
+            fprintf('    Three layers.\n');
+            
+            A = rand(10,10,3,20);
+            A_i = zeros(20,300);
+            for ii = 1:20
+                A_i(ii,:) = reshape(A(:,:,:,ii),1,300);
+            end
+            
+            s = dataset.flatten_image(A);
+            
+            assert(tc.dataset_record(s));
+            assert(tc.same(size(s),[20 300]));
+            assert(tc.unitreal(s));
+            assert(tc.same(s,A_i));
+            
+            clearvars -except display;
+            
+            fprintf('  Function "subsample".\n');
+            
+            fprintf('    With boolean indices on records.\n');
+            
+            s = rand(100,10);
+            idx = logical(randi(2,1,100) - 1);
+            
+            s_1 = dataset.subsample(s,idx);
+            
+            assert(tc.dataset_record(s_1));
+            assert(tc.same(size(s_1),[sum(idx) 10]));
+            assert(tc.unitreal(s_1));
+            assert(tc.same(s_1,s(idx,:)));
+            
+            clearvars -except display;
+            
+            fprintf('    With boolean indices on images.\n');
+            
+            s = rand(8,8,3,100);
+            idx = logical(randi(2,1,100) - 1);
+            
+            s_1 = dataset.subsample(s,idx);
+            
+            assert(tc.dataset_image(s_1));
+            assert(tc.same(size(s_1),[8 8 3 sum(idx)]));
+            assert(tc.unitreal(s_1));
+            assert(tc.same(s_1,s(:,:,:,idx)));
+            
+            clearvars -except display;
+            
+            fprintf('    With integer indices on records.\n');
+            
+            s = rand(100,10);
+            idx = randi(100,10,1);
+            
+            s_1 = dataset.subsample(s,idx);
+            
+            assert(tc.dataset_record(s_1));
+            assert(tc.same(size(s_1),[10 10]));
+            assert(tc.unitreal(s_1));
+            assert(tc.same(s_1,s(idx,:)));
+            
+            clearvars -except display;
+            
+            fprintf('    With integer indices on images.\n');
+            
+            s = rand(8,8,3,100);
+            idx = randi(100,10,1);
+            
+            s_1 = dataset.subsample(s,idx);
+            
+            assert(tc.dataset_image(s_1));
+            assert(tc.same(size(s_1),[8 8 3 10]));
+            assert(tc.unitreal(s_1));
+            assert(tc.same(s_1,s(:,:,:,idx)));
             
             clearvars -except display;
         end
