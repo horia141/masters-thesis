@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = true;
+DISPLAY = false;
 
 tic;
 
@@ -8,7 +8,6 @@ tic;
 
 tc.test(DISPLAY);
 utils.test(DISPLAY);
-utilstest.test(DISPLAY);
 params.test(DISPLAY);
 logging.level.test(DISPLAY);
 logging.handlers.zero.test(DISPLAY);
@@ -22,7 +21,7 @@ logging.logger.test(DISPLAY);
 
 dataset.test(DISPLAY);
 classification_info.test(DISPLAY);
-% regression_info.test(DISPLAY);
+regression_info.test(DISPLAY);
 
 %% Tests for "transform" and derived classes.
 
@@ -36,7 +35,8 @@ transforms.image.window.test(DISPLAY);
 transforms.image.patch_extract.test(DISPLAY);
 transforms.image.remove_pinknoise.test(DISPLAY);
 transforms.image.random_corr.test(DISPLAY);
-transforms.sparse.gdmp2.test(DISPLAY);
+transforms.sparse.gdmp.test(DISPLAY);
+transforms.image.window_sparse_recoder.test(DISPLAY);
 
 %% Tests for "classifier" and derived classes.
 
@@ -46,6 +46,8 @@ classifiers.logistic_regression.test(DISPLAY);
 classifiers.svm.test(DISPLAY);
 classifiers.one_vs_all.test(DISPLAY);
 classifiers.one_vs_one.test(DISPLAY);
+classifiers.liblinear.one_vs_all.test(DISPLAY);
+classifiers.liblinear.one_vs_one.test(DISPLAY);
 
 %% Print timing results.
 

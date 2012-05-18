@@ -1,3 +1,17 @@
+- [55] B:07.05.2012 E:??.??.????
+  Task: Check all occurances of "samples" in the source code (even in logging
+    messages) and replace it with "sample". This also includes expressions
+    like "each sample".
+
+- [54] B:06.05.2012 E:??.??.????
+  Task: See where "logger.new_*" is used in critical code and remove
+    it. Experiments with "transforms.image.window_sparse_recoder" have shown
+    that code without many calls to "logger.new_*" inside critical loops is
+    faster. This comes as a surpise, as the loops were small (3x3x7x7 in the
+    experiment) and most of the heavy work was done in vectorized
+    MATLAB. Also, see why "logger.beg_*" is so expensive. It adds two seconds
+    to the test runs.
+
 - [53] B:30.04.2012 E:??.??.????
   Task: Add "confidence" surface test for classifiers. This should be a
     visualization of the per-class confidence returned for the domain points

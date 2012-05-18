@@ -1,5 +1,7 @@
 classdef zca < transforms.reversible
     properties (GetAccess=public,SetAccess=immutable)
+        saved_transform_code;
+        saved_transform_decode;
         coeffs;
         coeffs_eigenvalues;
         sample_mean;
@@ -32,6 +34,8 @@ classdef zca < transforms.reversible
             output_geometry = input_geometry;
             
             obj = obj@transforms.reversible(input_geometry,output_geometry,logger);
+            obj.saved_transform_code = coeffs_t * diag(1 ./ sqrt(coeffs_eigenvalues_t + div_epsilon)) * coeffs_t';
+            obj.saved_transform_decode = coeffs_t * diag(sqrt(coeffs_eigenvalues_t + div_epsilon)) * coeffs_t';
             obj.coeffs = coeffs_t;
             obj.coeffs_eigenvalues = coeffs_eigenvalues_t;
             obj.sample_mean = sample_mean_t;
@@ -41,27 +45,19 @@ classdef zca < transforms.reversible
     
     methods (Access=protected)
         function [sample_coded] = do_code(obj,sample_plain,logger)
+            logger.message('Substracting mean from each sample.');
             logger.message('Projecting onto scaled space of principal components.');
-            
-            sample_coded_t1 = bsxfun(@minus,sample_plain,obj.sample_mean);
-            sample_coded_t2 = sample_coded_t1 * obj.coeffs;
-            sample_coded_t3 = sample_coded_t2 * diag(1 ./ sqrt(obj.coeffs_eigenvalues + obj.div_epsilon));
-            
             logger.message('Projecting onto scaled original space from scaled principal components space.');
             
-            sample_coded = sample_coded_t3 * obj.coeffs';
+            sample_coded = bsxfun(@minus,sample_plain,obj.sample_mean) * obj.saved_transform_code;
         end
         
         function [sample_plain_hat] = do_decode(obj,sample_coded,logger)
+            logger.message('Adding saved mean to each sample.');
             logger.message('Projecting onto scaled space of principal components from scaled original space.');
-            
-            sample_plain_hat_t1 = sample_coded* obj.coeffs;
-            sample_plain_hat_t2 = sample_plain_hat_t1 * diag(sqrt(obj.coeffs_eigenvalues + obj.div_epsilon));
-            
             logger.message('Projecting onto original space from scaled principal components space.');
             
-            sample_plain_hat_t3 = sample_plain_hat_t2 * obj.coeffs';
-            sample_plain_hat = bsxfun(@plus,sample_plain_hat_t3,obj.sample_mean);
+            sample_plain_hat = bsxfun(@plus,sample_coded * obj.saved_transform_decode,obj.sample_mean);
         end
     end
     
@@ -83,6 +79,7 @@ classdef zca < transforms.reversible
             assert(tc.same(t.coeffs,s_s));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
             assert(tc.same(t.coeffs_eigenvalues,p_latent));
+            assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent)) * s_s'));
             assert(tc.same(t.sample_mean,mean(s,1)));
             assert(t.div_epsilon == 0);
             assert(tc.same(t.input_geometry,2));
@@ -108,6 +105,7 @@ classdef zca < transforms.reversible
             assert(tc.same(t.coeffs,s_s));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
             assert(tc.same(t.coeffs_eigenvalues,p_latent));
+            assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent + 1e-5)) * s_s'));
             assert(tc.same(t.sample_mean,mean(s,1)));
             assert(t.div_epsilon == 1e-5);
             assert(tc.same(t.input_geometry,2));
@@ -136,6 +134,7 @@ classdef zca < transforms.reversible
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
                                                           'Computing principal components and associated variances.\n',...
+                                                          'Substracting mean from each sample.\n',...
                                                           'Projecting onto scaled space of principal components.\n',...
                                                           'Projecting onto scaled original space from scaled principal components space.\n'))));
             
@@ -148,7 +147,7 @@ classdef zca < transforms.reversible
                 subplot(1,2,2);
                 scatter(s_p(:,1),s_p(:,2),'x');
                 axis([-4 6 -4 6]);
-                title('ZCA transformed sample.');
+                title('zca transformed sample.');
                 pause(5);
                 close(gcf());
             end
@@ -172,8 +171,10 @@ classdef zca < transforms.reversible
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
                                                           'Computing principal components and associated variances.\n',...
+                                                          'Substracting mean from each sample.\n',...
                                                           'Projecting onto scaled space of principal components.\n',...
                                                           'Projecting onto scaled original space from scaled principal components space.\n',...
+                                                          'Adding saved mean to each sample.\n',...
                                                           'Projecting onto scaled space of principal components from scaled original space.\n',...
                                                           'Projecting onto original space from scaled principal components space.\n'))));
             
@@ -186,7 +187,7 @@ classdef zca < transforms.reversible
                 subplot(1,3,2);
                 scatter(s_p(:,1),s_p(:,2),'x');
                 axis([-4 6 -4 6]);
-                title('ZCA transformed sample.');
+                title('zca transformed sample.');
                 subplot(1,3,3);
                 hold('on');
                 scatter(s(:,1),s(:,2),'o','r');
@@ -202,7 +203,7 @@ classdef zca < transforms.reversible
             
             clearvars -except display;
             
-            fprintf('  Apply ZCA on image patches.\n');
+            fprintf('  Apply zca on image patches.\n');
             
             fprintf('    On grayscale images.\n');
             
@@ -236,6 +237,7 @@ classdef zca < transforms.reversible
                                                           '  Patches 1351 to 1500.\n',...
                                                           'Computing dataset mean.\n',...
                                                           'Computing principal components and associated variances.\n',...
+                                                          'Substracting mean from each sample.\n',...
                                                           'Projecting onto scaled space of principal components.\n',...
                                                           'Projecting onto scaled original space from scaled principal components space.\n'))));
             
@@ -246,7 +248,7 @@ classdef zca < transforms.reversible
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s5(:,:,:,1:20:end)));
-                title('ZCA transformed images.');
+                title('zca transformed images.');
                 pause(5);
                 close(gcf());
             end
@@ -288,6 +290,7 @@ classdef zca < transforms.reversible
                                                           '  Patches 1351 to 1500.\n',...
                                                           'Computing dataset mean.\n',...
                                                           'Computing principal components and associated variances.\n',...
+                                                          'Substracting mean from each sample.\n',...
                                                           'Projecting onto scaled space of principal components.\n',...
                                                           'Projecting onto scaled original space from scaled principal components space.\n'))));
             
@@ -298,7 +301,7 @@ classdef zca < transforms.reversible
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s5(:,:,:,1:20:end)));
-                title('ZCA transformed images.');
+                title('zca transformed images.');
                 pause(5);
                 close(gcf());
             end

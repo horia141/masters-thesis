@@ -3,10 +3,11 @@ classdef svm < classifiers.binary
         svm_info;
         kernel_type;
         kernel_param;
+        reg_param;
     end
     
     methods (Access=public)
-        function [obj] = svm(train_sample,class_info,kernel_type,kernel_param,logger)
+        function [obj] = svm(train_sample,class_info,kernel_type,kernel_param,reg_param,logger)
             assert(tc.dataset_record(train_sample));
             assert(tc.scalar(class_info));
             assert(tc.classification_info(class_info));
@@ -20,9 +21,13 @@ classdef svm < classifiers.binary
                      tc.scalar(kernel_param) && tc.number(kernel_param) && (kernel_param > 0)) || ...
                    (strcmp(kernel_type,'poly') && ...
                      tc.scalar(kernel_param) && tc.natural(kernel_param) && (kernel_param > 0)));
+            assert(tc.scalar(reg_param));
+            assert(tc.number(reg_param));
+            assert(reg_param > 0);
             assert(tc.scalar(logger));
             assert(tc.logging_logger(logger));
             assert(logger.active);
+            assert(class_info.compatible(train_sample));
 
             logger.message('Computing separation surfaces.');
             
@@ -30,13 +35,13 @@ classdef svm < classifiers.binary
 
             try
                 if strcmp(kernel_type,'linear')
-                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','linear');
+                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','linear','boxconstraint',reg_param);
                     kernel_param_t = 0;
                 elseif strcmp(kernel_type,'rbf')
-                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','rbf','rbf_sigma',kernel_param,'kernelcachelimit',N);
+                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','rbf','rbf_sigma',kernel_param,'kernelcachelimit',N,'boxconstraint',reg_param);
                     kernel_param_t = kernel_param;
                 elseif strcmp(kernel_type,'poly')
-                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','poly','polyorder',kernel_param,'kernelcachelimit',N);
+                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','poly','polyorder',kernel_param,'kernelcachelimit',N,'boxconstraint',reg_param);
                     kernel_param_t = kernel_param;
                 else
                     assert(false);
@@ -44,7 +49,7 @@ classdef svm < classifiers.binary
             catch exp
                 if strcmp(exp.identifier,'Bioinfo:svmtrain:NoConvergence')
                     throw(MException('master:NoConvergence',...
-                             sprintf('Failed to converge with kernel "%s" and parameter "%f"',kernel_type,kernel_param)));
+                             sprintf('Failed to converge with kernel "%s" with parameter "%f" and "C=%f"',kernel_type,kernel_param,reg_param)));
                 else
                     rethrow(exp);
                 end
@@ -56,6 +61,7 @@ classdef svm < classifiers.binary
             obj.svm_info = svm_info_t;
             obj.kernel_type = kernel_type;
             obj.kernel_param = kernel_param_t;
+            obj.reg_param = reg_param;
         end
     end
        
@@ -84,7 +90,7 @@ classdef svm < classifiers.binary
             
             [s,ci] = utilstest.classifier_data_2();
             
-            cl = classifiers.svm(s,ci,'linear',0,log);
+            cl = classifiers.svm(s,ci,'linear',0,1,log);
             
             assert(strcmp(cl.kernel_type,'linear'));
             assert(cl.kernel_param == 0);
@@ -106,7 +112,7 @@ classdef svm < classifiers.binary
             
             [s,ci] = utilstest.classifier_data_2();
             
-            cl = classifiers.svm(s,ci,'rbf',0.7,log);
+            cl = classifiers.svm(s,ci,'rbf',0.7,1,log);
             
             assert(strcmp(cl.kernel_type,'rbf'));
             assert(cl.kernel_param == 0.7);
@@ -128,7 +134,7 @@ classdef svm < classifiers.binary
             
             [s,ci] = utilstest.classifier_data_2();
             
-            cl = classifiers.svm(s,ci,'poly',3,log);
+            cl = classifiers.svm(s,ci,'poly',3,1,log);
             
             assert(strcmp(cl.kernel_type,'poly'));
             assert(cl.kernel_param == 3);
@@ -152,7 +158,7 @@ classdef svm < classifiers.binary
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_2();
             
-            cl = classifiers.svm(s_tr,ci_tr,'linear',0,log);            
+            cl = classifiers.svm(s_tr,ci_tr,'linear',0,1,log);            
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
@@ -180,7 +186,7 @@ classdef svm < classifiers.binary
 
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_mostly_clear_data_2();
 
-            cl = classifiers.svm(s_tr,ci_tr,'linear',0,log);            
+            cl = classifiers.svm(s_tr,ci_tr,'linear',0,1,log);            
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat(1:19),ci_ts.labels_idx(1:19)));
@@ -211,7 +217,7 @@ classdef svm < classifiers.binary
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_unclear_data_2();
             
-            cl = classifiers.svm(s_tr,ci_tr,'linear',0,log);
+            cl = classifiers.svm(s_tr,ci_tr,'linear',0,1,log);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
             
@@ -237,7 +243,7 @@ classdef svm < classifiers.binary
             ci_tr = ci.subsample(tr_i);
             ci_ts = ci.subsample(ts_i);
             
-            cl = classifiers.svm(s_tr,ci_tr,'rbf',0.5,log);
+            cl = classifiers.svm(s_tr,ci_tr,'rbf',0.5,1,log);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
             
@@ -263,7 +269,7 @@ classdef svm < classifiers.binary
             ci_tr = ci.subsample(tr_i);
             ci_ts = ci.subsample(ts_i);
             
-            cl = classifiers.svm(s_tr,ci_tr,'rbf',0.1,log);
+            cl = classifiers.svm(s_tr,ci_tr,'rbf',0.1,1,log);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
             

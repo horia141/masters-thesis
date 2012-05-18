@@ -1,9 +1,18 @@
 classdef utilstest
     methods (Static,Access=public)
+        function [mnist_tr,mnist_tr_ci,mnist_ts,mnist_ts_ci] = load_mnist(logger)
+            assert(tc.scalar(logger));
+            assert(tc.logging_logger(logger));
+            assert(logger.active);
+
+            [mnist_tr,mnist_tr_ci] = dataset.load_image_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte',logger);
+            [mnist_ts,mnist_ts_ci] = dataset.load_image_mnist('../data/mnist/t10k-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte',logger);
+        end
+        
         function [s,ci] = classifier_data_3()
-            s = [mvnrnd([3 1],[0.1 0; 0 0.1],100);
-                 mvnrnd([3 3],[0.1 0; 0 0.1],100);
-                 mvnrnd([1 3],[0.1 0; 0 0.1],100)];
+            s = [mvnrnd([3 1],[0.01 0; 0 0.01],100);
+                 mvnrnd([3 3],[0.01 0; 0 0.01],100);
+                 mvnrnd([1 3],[0.01 0; 0 0.01],100)];
             ci = classification_info({'1' '2' '3'},[1*ones(100,1);2*ones(100,1);3*ones(100,1)]);
         end
 
@@ -113,8 +122,10 @@ classdef utilstest
             hold on;
             gscatter(sample_tr(:,1),sample_tr(:,2),ci_tr.labels_idx,'rgb','o',6);
             gscatter(sample_ts(:,1),sample_ts(:,2),ci_ts.labels_idx,'rgb','o',6);
-            ptmp = allcomb(-1:0.05:5,-1:0.05:5);
-            ptmp2 = allcomb(-1:0.2:5,-1:0.2:5);
+            [ptmp_x,ptmp_y] = meshgrid(-1:0.05:5,-1:0.05:5);
+            ptmp = [ptmp_x(:),ptmp_y(:)];
+            [ptmp2_x,ptmp2_y] = meshgrid(-1:0.2:5,-1:0.2:5);
+            ptmp2 = [ptmp2_x(:),ptmp2_y(:)];
             l = cl.classify(ptmp,-1,log);
             [~,cfd] = cl.classify(ptmp2,-1,log);
             subplot(2,2,1);
@@ -133,11 +144,6 @@ classdef utilstest
             end
             pause(3);
             close(gcf());
-        end
-    end
-
-    methods (Static,Access=public)
-        function test(~)
         end
     end
 end

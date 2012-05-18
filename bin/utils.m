@@ -197,6 +197,27 @@ classdef utils
                 o = utils.force_same(o,cells);
             end
         end
+        
+        function [] = display_sparse_basis(dict,row_count,col_count)
+            assert(tc.matrix(dict));
+            assert(tc.unitreal(abs(dict)));
+            assert(tc.same(sum(dict .^ 2,1),ones(1,size(dict,2)),'Epsilon',1e-7));
+            assert(tc.scalar(row_count));
+            assert(tc.natural(row_count));
+            assert(row_count >= 1);
+            assert(tc.scalar(col_count));
+            assert(tc.natural(col_count));
+            assert(col_count >= 1);
+            assert(row_count * col_count == size(dict,1));
+            
+            im_dict = zeros(row_count,col_count,1,size(dict,2));
+            
+            for ii = 1:size(dict,2)
+                im_dict(:,:,1,ii) = reshape(dict(:,ii),row_count,col_count);
+            end
+            
+            imshow(utils.format_as_tiles(utils.remap_images_to_unit(im_dict,'global')));
+        end
     end
     
     methods (Static,Access=public)

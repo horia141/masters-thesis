@@ -171,6 +171,10 @@ classdef tc
             end
         end
         
+        function [o] = sparse(obj)
+            o = issparse(obj);
+        end
+        
         function [o] = match_dims(obj1,obj2,d1,d2)
             if exist('d1','var') && exist('d2','var')
                 o = size(obj1,d1) == size(obj2,d2);

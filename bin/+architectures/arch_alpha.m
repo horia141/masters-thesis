@@ -4,7 +4,7 @@ classdef arch_alpha
         image_patch_col_count;
         pooled_patch_row_count;
         pooled_patch_col_count;
-        one_sample_plain;
+        input_geometry;
         t_dc_offset;
         t_mean_substract;
         t_zca;
@@ -26,11 +26,11 @@ classdef arch_alpha
     end
     
     methods (Access=public)
-        function [obj] = arch_alpha(train_image_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,coding_fn,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,window_step,reduce_fn,reduce_spread,classifier_ctor_fn,classifier_params,log)
-            assert(tc.scalar(train_image_plain));
-            assert(tc.datasets_image(train_image_plain));
-            assert(train_image_plain.samples_count >= 1);
-            assert(train_image_plain.layers_count == 1);
+        function [obj] = arch_alpha(train_sample_plain,class_info,patches_count,patch_row_count,patch_col_count,patch_required_variance,coding_fn,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,window_step,reduce_fn,reduce_spread,classifier_ctor_fn,classifier_params,log)
+            assert(tc.dataset_image(train_sample_plain));
+            assert(size(train_sample_plain,3) == 1);
+            assert(tc.scalar(class_info));
+            assert(tc.classification_info(class_info));
             assert(tc.scalar(patches_count));
             assert(tc.scalar(patches_count));
             assert(tc.natural(patches_count));
@@ -80,46 +80,52 @@ classdef arch_alpha
             assert(tc.scalar(log));
             assert(tc.logging_logger(log));
             assert(log.active);
-            assert(mod(train_image_plain.row_count - patch_row_count,window_step) == 0);
-            assert(mod(train_image_plain.col_count - patch_col_count,window_step) == 0);
-            assert(mod((train_image_plain.row_count - patch_row_count) / window_step + 1,reduce_spread) == 0);
-            assert(mod((train_image_plain.col_count - patch_col_count) / window_step + 1,reduce_spread) == 0);
+            assert(mod(size(train_sample_plain,1)- patch_row_count,window_step) == 0); % A BIT OF A HACK
+            assert(mod(size(train_sample_plain,2)- patch_col_count,window_step) == 0);
+            assert(mod((size(train_sample_plain,1) - patch_row_count) / window_step + 1,reduce_spread) == 0);
+            assert(mod((size(train_sample_plain,2) - patch_col_count) / window_step + 1,reduce_spread) == 0);
+            assert(class_info.compatible(train_sample_plain));
             
-            image_patch_row_count_t = (train_image_plain.row_count - patch_row_count) / window_step + 1;
-            image_patch_col_count_t = (train_image_plain.col_count - patch_col_count) / window_step + 1;
+            N = dataset.count(train_sample_plain);
+            [d,dr,dc,~] = dataset.geometry(train_sample_plain);
+            
+            image_patch_row_count_t = (dr - patch_row_count) / window_step + 1;
+            image_patch_col_count_t = (dc - patch_col_count) / window_step + 1;
             pooled_image_patch_row_count = image_patch_row_count_t / reduce_spread;
             pooled_image_patch_col_count = image_patch_col_count_t / reduce_spread;
             
-            t_patches = transforms.image.patch_extract(train_image_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,log.new_transform('Building patch extract transform'));
-            patches_1 = t_patches.code(train_image_plain,log.new_transform('Extracting patches'));
-            t_dc_offset_t = transforms.dc_offset(patches_1,log.new_transform('Building DC offset removal transform'));
-            patches_2 = t_dc_offset_t.code(patches_1,log.new_transform('Removing DC component'));
-            t_mean_substract_t = transforms.mean_substract(patches_2,log.new_transform('Building mean substract transform'));
-            patches_3 = t_mean_substract_t.code(patches_2,log.new_transform('Substracting mean'));
-            t_zca_t = transforms.mean_substract(patches_3,log.new_transform('Building ZCA transform'));
-            patches_4 = t_zca_t.code(patches_3,log.new_transform('Applying ZCA transform'));
+            t_patches = transforms.image.patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,log.new_transform('Building patch extract transform'));
+            patches_1 = t_patches.code(train_sample_plain,log.new_transform('Extracting patches'));
+            patches_2 = dataset.flatten_image(patches_1);
+            t_dc_offset_t = transforms.record.dc_offset(patches_2,log.new_transform('Building DC offset removal transform'));
+            patches_3 = t_dc_offset_t.code(patches_2,log.new_transform('Removing DC component'));
+            t_mean_substract_t = transforms.record.mean_substract(patches_3,log.new_transform('Building mean substract transform'));
+            patches_4 = t_mean_substract_t.code(patches_3,log.new_transform('Substracting mean'));
+            t_zca_t = transforms.record.zca(patches_4,log.new_transform('Building ZCA transform'));
+            patches_5 = t_zca_t.code(patches_4,log.new_transform('Applying ZCA transform'));
             
-            t_sparse_t = transforms.sparse.gdmp2(patches_4,coding_fn,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,log.new_transform('Building sparse coder for patches'));
-            
-            clear patches_1 patches_2 patches_3 patches_4;
+            t_sparse_t = transforms.sparse.gdmp2(patches_5,coding_fn,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,log.new_transform('Building sparse coder for patches'));
+
+            clear patches_1 patches_2 patches_3 patches_4 patches_5;
             
             log.beg_node('Window coding dataset');
-            
-            patch_coded_data = zeros(train_image_plain.samples_count,2 * word_count,image_patch_row_count_t,image_patch_col_count_t);
+
+            patch_coded_data = zeros(N,2 * word_count,image_patch_row_count_t,image_patch_col_count_t);
             ii_image = 1;
             jj_image = 1;
             
-            for ii = 1:window_step:(train_image_plain.row_count - patch_row_count + 1)
-                for jj = 1:window_step:(train_image_plain.col_count - patch_col_count + 1)
+            for ii = 1:window_step:(dr - patch_row_count + 1)
+                for jj = 1:window_step:(dr - patch_col_count + 1)
                     log.beg_node('Window %02d%02d',ii_image,jj_image);
 
-                    temp_train_image_1 = datasets.image({'none'},train_image_plain.images(ii:(ii + patch_row_count - 1),jj:(jj + patch_col_count - 1),:,:),ones(train_image_plain.samples_count,1));
-                    temp_train_image_2 = t_dc_offset_t.code(temp_train_image_1,log.new_transform('Removing DC component'));
-                    temp_train_image_3 = t_mean_substract_t.code(temp_train_image_2,log.new_transform('Substracting mean'));
-                    temp_train_image_4 = t_zca_t.code(temp_train_image_3,log.new_transform('Applying ZCA transform'));
-                    temp_train_image_coded = t_sparse_t.code(temp_train_image_4,log.new_transform('Computing sparse representation'));
-                    patch_coded_data(:,:,ii_image,jj_image) = temp_train_image_coded.samples;
-                    clear temp_train_image_1 temp_train_image_2 temp_train_image_3 temp_traim_image_4 temp_train_image_coded;
+                    temp_train_image_1 = train_sample_plain(ii:(ii + patch_row_count - 1),jj:(jj + patch_col_count - 1),:,:);
+                    temp_train_image_2 = dataset.flatten_image(temp_train_image_1);
+                    temp_train_image_3 = t_dc_offset_t.code(temp_train_image_2,log.new_transform('Removing DC component'));
+                    temp_train_image_4 = t_mean_substract_t.code(temp_train_image_3,log.new_transform('Substracting mean'));
+                    temp_train_image_5 = t_zca_t.code(temp_train_image_4,log.new_transform('Applying ZCA transform'));
+                    temp_train_image_coded = t_sparse_t.code(temp_train_image_5,log.new_transform('Computing sparse representation'));
+                    patch_coded_data(:,:,ii_image,jj_image) = temp_train_image_coded;
+                    clear temp_train_image_1 temp_train_image_2 temp_train_image_3 temp_traim_image_4 temp_train_image_5 temp_train_image_coded;
                     jj_image = jj_image + 1;
 
                     log.end_node();
@@ -134,9 +140,9 @@ classdef arch_alpha
             log.beg_node('Pooling coded image patches');
             
             index_size_tmp = pooled_image_patch_row_count * pooled_image_patch_col_count;
-            new_samples = zeros(train_image_plain.samples_count,2 * word_count * index_size_tmp);
+            new_samples = zeros(N,2 * word_count * index_size_tmp);
             log_batch_size = ceil(2 * word_count / 25);
-            local = zeros(train_image_plain.samples_count,index_size_tmp);
+            local = zeros(N,index_size_tmp);
             
             for word = 1:2 * word_count
                 if mod(word - 1,log_batch_size) == 0
@@ -161,14 +167,13 @@ classdef arch_alpha
             
             log.end_node();
             
-            train_dataset_1 = dataset(train_image_plain.classes,new_samples,train_image_plain.labels_idx);
-            classifier_t = classifier_ctor_fn(train_dataset_1,classifier_params{:},log.new_classifier('Training classifier'));
+            classifier_t = classifier_ctor_fn(new_samples,class_info,classifier_params{:},log.new_classifier('Training classifier'));
 
             obj.image_patch_row_count = image_patch_row_count_t;
             obj.image_patch_col_count = image_patch_col_count_t;
             obj.pooled_patch_row_count = pooled_image_patch_row_count;
             obj.pooled_patch_col_count = pooled_image_patch_col_count;
-            obj.one_sample_plain = train_image_plain.subsamples(1);
+            obj.input_geometry = [d,dc,dr,1];
             obj.t_dc_offset = t_dc_offset_t;
             obj.t_mean_substract = t_mean_substract_t;
             obj.t_zca = t_zca_t;
@@ -189,34 +194,40 @@ classdef arch_alpha
             obj.reduce_spread = reduce_spread;
         end
         
-        function [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
-                  score,conf_matrix,misclassified] = classify(obj,image_plain,log)
+        function [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = classify(obj,sample_plain,class_info,log)
             assert(tc.scalar(obj));
             assert(isa(obj,'architectures.arch_alpha'));
-            assert(tc.scalar(image_plain));
-            assert(tc.dataset(image_plain));
+            assert(tc.dataset_image(sample_plain));
+            assert(tc.scalar(class_info));
+            assert(tc.classification_info(class_info) || (class_info == -1));
             assert(tc.scalar(log));
             assert(tc.logging_logger(log));
             assert(log.active);
-            assert(obj.one_sample_plain.compatible(image_plain));
+            assert(dataset.geom_compatible(obj.input_geometry,dataset.geometry(sample_plain)));
+            assert(~tc.classification_info(class_info) || (tc.same(obj.classifier.saved_labels,class_info.labels)));
+            assert(~tc.classification_info(class_info) || class_info.compatible(sample_plain));
             
             log.beg_node('Window coding dataset');
             
-            patch_coded_data = zeros(image_plain.samples_count,2 * obj.word_count,obj.image_patch_row_count,obj.image_patch_col_count);
+            N = dataset.count(sample_plain);
+            [~,dr,dc,~] = dataset.geometry(sample_plain);
+            
+            patch_coded_data = zeros(N,2 * obj.word_count,obj.image_patch_row_count,obj.image_patch_col_count);
             ii_image = 1;
             jj_image = 1;
             
-            for ii = 1:obj.window_step:(image_plain.row_count - obj.patch_row_count + 1)
-                for jj = 1:obj.window_step:(image_plain.col_count - obj.patch_col_count + 1)
+            for ii = 1:obj.window_step:(dr - obj.patch_row_count + 1)
+                for jj = 1:obj.window_step:(dc - obj.patch_col_count + 1)
                     log.beg_node('Window %02d%02d',ii_image,jj_image);
                     
-                    temp_train_image_1 = datasets.image({'none'},image_plain.images(ii:(ii + obj.patch_row_count - 1),jj:(jj + obj.patch_col_count - 1),:,:),ones(image_plain.samples_count,1));
-                    temp_train_image_2 = obj.t_dc_offset.code(temp_train_image_1,log.new_transform('Removing DC component'));
-                    temp_train_image_3 = obj.t_mean_substract.code(temp_train_image_2,log.new_transform('Substracting mean'));
-                    temp_train_image_4 = obj.t_zca.code(temp_train_image_3,log.new_transform('Applying ZCA transform'));
-                    temp_train_image_coded = obj.t_sparse.code(temp_train_image_4,log.new_transform('Computing sparse representation'));
-                    patch_coded_data(:,:,ii_image,jj_image) = temp_train_image_coded.samples;
-                    clear temp_train_image_1 temp_train_image_2 temp_train_image_3 temp_traim_image_4 temp_train_image_coded;
+                    temp_train_image_1 = sample_plain(ii:(ii + obj.patch_row_count - 1),jj:(jj + obj.patch_col_count - 1),:,:);
+                    temp_train_image_2 = dataset.flatten_image(temp_train_image_1);
+                    temp_train_image_3 = obj.t_dc_offset.code(temp_train_image_2,log.new_transform('Removing DC component'));
+                    temp_train_image_4 = obj.t_mean_substract.code(temp_train_image_3,log.new_transform('Substracting mean'));
+                    temp_train_image_5 = obj.t_zca.code(temp_train_image_4,log.new_transform('Applying ZCA transform'));
+                    temp_train_image_coded = obj.t_sparse.code(temp_train_image_5,log.new_transform('Computing sparse representation'));
+                    patch_coded_data(:,:,ii_image,jj_image) = temp_train_image_coded;
+                    clear temp_train_image_1 temp_train_image_2 temp_train_image_3 temp_traim_image_4 temp_traim_image_5 temp_train_image_coded;
                     jj_image = jj_image + 1;
                     
                     log.end_node();
@@ -231,9 +242,9 @@ classdef arch_alpha
             log.beg_node('Pooling coded image patches');
             
             index_size_tmp = obj.pooled_patch_row_count * obj.pooled_patch_col_count;
-            new_samples = zeros(image_plain.samples_count,2 * obj.word_count * index_size_tmp);
+            new_samples = zeros(N,2 * obj.word_count * index_size_tmp);
             log_batch_size = ceil(2 * obj.word_count / 25);
-            local = zeros(train_image_plain.samples_count,index_size_tmp);
+            local = zeros(N,index_size_tmp);
             
             for word = 1:2 * obj.word_count
                 if mod(word - 1,log_batch_size) == 0
@@ -243,9 +254,9 @@ classdef arch_alpha
                 ii_image = 1;
                 jj_image = 1;
                 
-                for ii = 1:obj.reduce_spread:image_patch_row_count_t
-                    for jj = 1:obj.reduce_spread:image_patch_col_count_t
-                        local(:,(ii_image - 1) * pooled_image_patch_col_count + jj_image) = obj.reduce_fn(patch_coded_data(:,word,(ii:(ii + obj.reduce_spread - 1)),jj:(jj + obj.reduce_spread - 1)));
+                for ii = 1:obj.reduce_spread:obj.image_patch_row_count
+                    for jj = 1:obj.reduce_spread:obj.image_patch_col_count
+                        local(:,(ii_image - 1) * obj.pooled_patch_col_count + jj_image) = obj.reduce_fn(patch_coded_data(:,word,(ii:(ii + obj.reduce_spread - 1)),jj:(jj + obj.reduce_spread - 1)));
                         jj_image = jj_image + 1;
                     end
                     
@@ -258,10 +269,8 @@ classdef arch_alpha
             
             log.end_node();
             
-            dataset_1 = dataset(image_plain.classes,new_samples,image_plain.labels_idx);
-            
-            [labels_idx_hat,labels_confidence,labels_idx_hat2,labels_confidence2,...
-             score,conf_matrix,misclassified] = obj.classifier.classify(dataset_1,log.new_classifier('Classifying'));
+
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = obj.classifier.classify(new_samples,class_info,log.new_classifier('Classifying'));
         end
     end
     

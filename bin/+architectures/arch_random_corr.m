@@ -8,11 +8,9 @@ classdef arch_random_corr < architecture
     end
     
     methods (Access=public)
-        function [obj] = arch_random_corr(train_image_plain,filters_count,filter_row_count,filter_col_count,reduce_function,reduce_spread,classifier_ctor_fn,classifier_params,logger)
-            assert(tc.scalar(train_image_plain));
-            assert(tc.dataset(train_image_plain));
-            assert(train_image_plain.samples_count >= 1);
-            assert(train_image_plain.layers_count == 1);
+        function [obj] = arch_random_corr(train_sample_plain,filters_count,filter_row_count,filter_col_count,reduce_function,reduce_spread,classifier_ctor_fn,classifier_params,logger)
+            assert(tc.dataset_image(train_sample_plain));
+            assert(size(train_sample_plain,3) == 1); % A BIT OF A HACK
             assert(tc.scalar(filters_count));
             assert(tc.natural(filters_count));
             assert(filters_count >= 1);
@@ -37,16 +35,16 @@ classdef arch_random_corr < architecture
             assert(tc.scalar(logger));
             assert(tc.logging_logger(logger));
             assert(logger.active);
-            assert(mod(train_image_plain.row_count - filter_row_count + 1,reduce_spread) == 0);
-            assert(mod(train_image_plain.col_count - filter_col_count + 1,reduce_spread) == 0);
+            assert(mod(train_sample_plain.row_count - filter_row_count + 1,reduce_spread) == 0);
+            assert(mod(train_sample_plain.col_count - filter_col_count + 1,reduce_spread) == 0);
             
-            t_random_corr = transforms.image.random_corr(train_image_plain,filters_count,filter_row_count,filter_col_count,...
+            t_random_corr = transforms.image.random_corr(train_sample_plain,filters_count,filter_row_count,filter_col_count,...
                                                          reduce_function,reduce_spread,logger.new_transform('Training RandomCorr transform'));
-            train_image_1 = t_random_corr.code(train_image_plain,logger.new_transform('Transforming training dataset'));
-            
+            train_image_1 = t_random_corr.code(train_sample_plain,logger.new_transform('Transforming training dataset'));
+
             classifier = classifier_ctor_fn(train_image_1,classifier_params{:},logger.new_classifier('Training classifier'));
             
-            obj = obj@architecture(train_image_plain.subsamples(1),{t_random_corr},classifier,logger);
+            obj = obj@architecture(train_sample_plain.subsamples(1),{t_random_corr},classifier,logger);
             obj.filters_count = filters_count;
             obj.filter_row_count = filter_row_count;
             obj.filter_col_count = filter_col_count;
