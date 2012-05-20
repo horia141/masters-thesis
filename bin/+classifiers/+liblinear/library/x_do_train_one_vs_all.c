@@ -58,7 +58,7 @@ train_worker(
     memcpy(local_prob.x,worker_info->prob->x,worker_info->train_sample_count * sizeof(struct feature_node*));
 
     for (idx_task = 0; idx_task < worker_info->task_buffer_count; idx_task++) {
-	/* Separate instances into "class" and "all" groupts. */
+	/* Separate instances into "class" and "all" groups. */
 
 	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
 	    if (worker_info->prob->y[ii] == worker_info->task_buffer[idx_task] + 1) {
@@ -220,19 +220,19 @@ mexFunction(
 		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.logging_logger.");
     check_condition(mxGetScalar(mxGetProperty(input[I_LOGGER],0,"active")) == 1,
     		    "master:InvalidMEXCall","Parameter \"logger\" is not active.");
-    check_condition(mxGetM(input[I_TRAIN_SAMPLE]) == mxGetM(mxGetProperty(input[I_CLASS_INFO],0,"labels_idx")),
+    check_condition(mxGetN(input[I_TRAIN_SAMPLE]) == mxGetN(mxGetProperty(input[I_CLASS_INFO],0,"labels_idx")),
 		    "master:InvalidMEXCall","Different number of sample instances and label indices.");
-    check_condition(mxGetM(input[I_TRAIN_SAMPLE]) < INT_MAX,
+    check_condition(mxGetN(input[I_TRAIN_SAMPLE]) < INT_MAX,
 		    "master:InvalidMEXCall","Too many sample instances for \"liblinear\".");
-    check_condition(mxGetN(input[I_TRAIN_SAMPLE]) < INT_MAX - 1,
+    check_condition(mxGetM(input[I_TRAIN_SAMPLE]) < INT_MAX - 1,
 		    "master:InvalidMEXCall","Too many features for \"liblinear\".");
     check_condition(mxGetScalar(mxGetProperty(input[I_CLASS_INFO],0,"labels_count")) < INT_MAX,
 		    "master:InvalidMEXCall","Too many classes for \"liblinear\".");
 
     /* Extract relevant information from all inputs. */
 
-    train_sample_count = mxGetM(input[I_TRAIN_SAMPLE]);
-    train_sample_geometry = mxGetN(input[I_TRAIN_SAMPLE]);
+    train_sample_count = mxGetN(input[I_TRAIN_SAMPLE]);
+    train_sample_geometry = mxGetM(input[I_TRAIN_SAMPLE]);
     train_sample = mxGetPr(input[I_TRAIN_SAMPLE]);
     classes_count = (int)mxGetScalar(mxGetProperty(input[I_CLASS_INFO],0,"labels_count"));
     labels_idx = mxGetPr(mxGetProperty(input[I_CLASS_INFO],0,"labels_idx"));
@@ -252,18 +252,17 @@ mexFunction(
     logger_message(local_logger,"Regularization Parameter: %f",reg_param);
     logger_message(local_logger,"Number of Worker Threads: %d",num_threads);
 
-
     /* Count non-null entries for each instance. */
 
     non_null_counts = (mwSize*)mxCalloc(train_sample_count,sizeof(mwSize));
     memset(non_null_counts,0,train_sample_count * sizeof(mwSize));
     non_null_full_count = 0;
 
-    for (jj = 0; jj < train_sample_geometry; jj++) {
-	idx_base = jj * train_sample_count;
+    for (ii = 0; ii < train_sample_count; ii++) {
+	idx_base = ii * train_sample_geometry;
 
-	for (ii = 0; ii < train_sample_count; ii++) {
-	    if (train_sample[idx_base + ii] != 0) {
+	for (jj = 0; jj < train_sample_geometry; jj++) {
+	    if (train_sample[idx_base + jj] != 0) {
 		non_null_counts[ii] = non_null_counts[ii] + 1;
 		non_null_full_count = non_null_full_count + 1;
 	    }
@@ -297,13 +296,13 @@ mexFunction(
     current_feature_counts = (mwSize*)mxCalloc(train_sample_count,sizeof(mwSize));
     memset(current_feature_counts,0,train_sample_count);
 
-    for (jj = 0; jj < train_sample_geometry; jj++) {
-    	idx_base = jj * train_sample_count;
+    for (ii = 0; ii < train_sample_count; ii++) {
+	idx_base = ii * train_sample_geometry;
 
-    	for (ii = 0; ii < train_sample_count; ii++) {
-    	    if (train_sample[idx_base + ii] != 0) {
+	for (jj = 0; jj < train_sample_geometry; jj++) {
+    	    if (train_sample[idx_base + jj] != 0) {
     		prob.x[ii][current_feature_counts[ii]].index = (int)jj + 1;
-    		prob.x[ii][current_feature_counts[ii]].value = train_sample[idx_base + ii];
+    		prob.x[ii][current_feature_counts[ii]].value = train_sample[idx_base + jj];
     		current_feature_counts[ii] = current_feature_counts[ii] + 1;
     	    }
     	}

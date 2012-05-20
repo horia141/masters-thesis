@@ -36,9 +36,9 @@ classdef knn < classifier
             
             N = dataset.count(sample);
             
-            labels_idx_hat = knnclassify(sample,obj.sample,obj.labels_idx);
-            labels_confidence = zeros(N,obj.saved_labels_count);
-            labels_confidence(sub2ind(size(labels_confidence),(1:N)',labels_idx_hat)) = 1;
+            labels_idx_hat = knnclassify(sample',obj.sample',obj.labels_idx)';
+            labels_confidence = zeros(obj.saved_labels_count,N);
+            labels_confidence(sub2ind(size(labels_confidence),labels_idx_hat,1:N)) = 1;
         end
     end
     
@@ -59,7 +59,7 @@ classdef knn < classifier
             assert(tc.same(cl.labels_idx,ci.labels_idx));
             assert(cl.k == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n'))));
@@ -82,7 +82,7 @@ classdef knn < classifier
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
-            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1) zeros(20,1);zeros(20,1) ones(20,1) zeros(20,1);zeros(20,1) zeros(20,1) ones(20,1)]));
+            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1) zeros(20,1);zeros(20,1) ones(20,1) zeros(20,1);zeros(20,1) zeros(20,1) ones(20,1)]'));
             assert(score == 100);
             assert(tc.same(conf_matrix,[20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -118,10 +118,10 @@ classdef knn < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence,[ones(18,1) zeros(18,1) zeros(18,1);0 1 0; 0 0 1;zeros(18,1) ones(18,1) zeros(18,1);1 0 0; 0 0 1;zeros(18,1) zeros(18,1) ones(18,1); 1 0 0; 0 1 0]));
+            assert(tc.same(labels_confidence,[ones(18,1) zeros(18,1) zeros(18,1);0 1 0; 0 0 1;zeros(18,1) ones(18,1) zeros(18,1);1 0 0; 0 0 1;zeros(18,1) zeros(18,1) ones(18,1); 1 0 0; 0 1 0]'));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n',...
                                                           'Computing distances to each stored sample.\n'))));

@@ -39,7 +39,7 @@ classdef window_sparse_recoder < transform
             assert(patch_required_variance >= 0);
             assert(tc.scalar(coding_fn));
             assert(tc.function_h(coding_fn));
-            assert(tc.one_of(coding_fn,@transforms.sparse.gdmp.correlation,@transforms.sparse.gdmp.matching_pursuit,@transforms.sparse.gdmp.matching_pursuit_alpha,@transforms.sparse.gdmp.ortho_matching_pursuit));
+            assert(tc.one_of(coding_fn,@transforms.sparse.gdmp.matching_pursuit,@transforms.sparse.gdmp.ortho_matching_pursuit));
             assert(tc.scalar(word_count));
             assert(tc.natural(word_count));
             assert(word_count >= 1);
@@ -83,7 +83,7 @@ classdef window_sparse_recoder < transform
             t_patches = transforms.image.patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,logger.new_transform('Building patch extract transform'));
             patches_1 = t_patches.code(train_sample_plain,logger.new_transform('Extracting patches'));
             patches_2 = dataset.flatten_image(patches_1);
-            patches_3 = bsxfun(@minus,patches_2,mean(patches_2,2));
+            patches_3 = bsxfun(@minus,patches_2,mean(patches_2,1));
             t_zca_t = transforms.record.zca(patches_3,logger.new_transform('Building ZCA transform'));
             patches_4 = t_zca_t.code(patches_3,logger.new_transform('Applying ZCA transform'));
             t_sparse_t = transforms.sparse.gdmp(patches_4,coding_fn,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,logger.new_transform('Building sparse coder'));
@@ -117,9 +117,10 @@ classdef window_sparse_recoder < transform
         function [sample_coded] = do_code(obj,sample_plain,logger)
             N = dataset.count(sample_plain);
             
-            full_sample = zeros(N,2*obj.word_count,obj.pooled_patch_row_count,obj.pooled_patch_col_count);
-            local_sample = sparse([],[],[],N,2*obj.word_count,0);
+            full_sample = zeros(2*obj.word_count,N,obj.pooled_patch_row_count,obj.pooled_patch_col_count);
+            local_sample = sparse([],[],[],2*obj.word_count,N,0);
             local_sample_plain = shiftdim(sample_plain,2);
+	    draw_sample = zeros(2*obj.word_count,N,obj.patch_row_count,obj.patch_col_count);
             
             for ii = 1:obj.pooled_patch_row_count
                 for jj = 1:obj.pooled_patch_col_count
@@ -135,26 +136,26 @@ classdef window_sparse_recoder < transform
                             % Should check again that what we do here actually works.
                             local_sample_1 = local_sample_plain(:,:,((ii_1 - 1) * obj.window_step + 1):((ii_1 - 1) * obj.window_step + obj.patch_row_count),...
                                                                     ((jj_1 - 1) * obj.window_step + 1):((jj_1 - 1) * obj.window_step + obj.patch_col_count));
-                            local_sample_2 = reshape(local_sample_1,N,obj.patch_row_count * obj.patch_col_count); 
-                            local_sample_3 = bsxfun(@minus,local_sample_2,mean(local_sample_2,2));
+                            local_sample_2 = reshape(local_sample_1,N,obj.patch_row_count * obj.patch_col_count)'; 
+                            local_sample_3 = bsxfun(@minus,local_sample_2,mean(local_sample_2,1));
                             local_sample_4 = obj.t_zca.code(local_sample_3,logger);
                             local_sample_5 = obj.t_sparse.code(local_sample_4,logger);
                              
                             local_sample = obj.reduce_fn(local_sample,local_sample_5);
+			    draw_sample(:,:,ii_1,jj_1) = local_sample_5;
                             
                             logger.end_node();
                         end
                     end
 
-		    full_sample(:,:,ii,jj) = local_sample;
+		            full_sample(:,:,ii,jj) = local_sample;
 
                     logger.end_node();
                 end
             end
             
-	        % Maybe we can do it here as we do it in local_sample_1 & 2
-            sample_coded = reshape(shiftdim(full_sample,1),obj.output_geometry,N)';
-        end         
+            sample_coded = reshape(shiftdim(full_sample,2),obj.output_geometry,N);
+        end
     end
     
     methods (Static,Access=public)

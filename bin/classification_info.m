@@ -12,9 +12,9 @@ classdef classification_info
             assert(tc.vector(labels_idx));
             assert(tc.labels_idx(labels_idx,labels));
             
-            obj.labels = utils.force_col(labels);
+            obj.labels = utils.force_row(labels);
             obj.labels_count = length(labels);
-            obj.labels_idx = utils.force_col(labels_idx);
+            obj.labels_idx = utils.force_row(labels_idx);
         end
         
         function [o] = compatible(obj,samples)
@@ -40,12 +40,12 @@ classdef classification_info
                
             partition = cvpartition(obj.labels_idx,type,param);
             
-            tr_index = false(length(obj.labels_idx),partition.NumTestSets);
-            ts_index = false(length(obj.labels_idx),partition.NumTestSets);
+            tr_index = false(partition.NumTestSets,length(obj.labels_idx));
+            ts_index = false(partition.NumTestSets,length(obj.labels_idx));
             
             for ii = 1:partition.NumTestSets
-                tr_index(:,ii) = training(partition,ii)';
-                ts_index(:,ii) = test(partition,ii)';
+                tr_index(ii,:) = training(partition,ii);
+                ts_index(ii,:) = test(partition,ii);
             end
         end
         
@@ -54,7 +54,7 @@ classdef classification_info
             assert(tc.classification_info(obj));
             assert(tc.vector(index));
             assert((tc.logical(index) && tc.match_dims(obj.labels_idx,index)) || ...
-                   (tc.natural(index) && tc.check(index >= 1 & index <= size(obj.labels_idx,1))));
+                   (tc.natural(index) && tc.check(index >= 1 & index <= size(obj.labels_idx,2))));
                    
             new_classification_info = classification_info(obj.labels,obj.labels_idx(index));
         end
@@ -68,9 +68,9 @@ classdef classification_info
             
             ci = classification_info({'1' '2'},[1*ones(1,10) 2*ones(1,10)]);
             
-            assert(tc.same(ci.labels,{'1';'2'}));
+            assert(tc.same(ci.labels,{'1' '2'}));
             assert(ci.labels_count == 2);
-            assert(tc.same(ci.labels_idx,[1*ones(10,1);2*ones(10,1)]));
+            assert(tc.same(ci.labels_idx,[1*ones(1,10) 2*ones(1,10)]));
             
             clearvars -except display;
             
@@ -78,11 +78,11 @@ classdef classification_info
             
             ci = classification_info({'1' '2'},[1*ones(1,10) 2*ones(1,10)]);
             
-            assert(ci.compatible(rand(20,2)) == true);
-            assert(ci.compatible(rand(20,40)) == true);
-            assert(ci.compatible(rand(19,2)) == false);
-            assert(ci.compatible(rand(21,2)) == false);
-            assert(ci.compatible(rand(2,20)) == false);
+            assert(ci.compatible(rand(2,20)) == true);
+            assert(ci.compatible(rand(40,20)) == true);
+            assert(ci.compatible(rand(2,19)) == false);
+            assert(ci.compatible(rand(2,21)) == false);
+            assert(ci.compatible(rand(20,2)) == false);
             assert(ci.compatible(rand(8,8,1,20)) == true);
             assert(ci.compatible(rand(16,16,3,20)) == true);
             assert(ci.compatible(rand(20,8,3,19)) == false);
@@ -96,14 +96,14 @@ classdef classification_info
 
             [tr,ts] = ci.partition('kfold',2);
 
-            assert(sum(tr(:,1) == 0) == 6);
-            assert(sum(tr(:,1) == 1) == 6);
-            assert(sum(tr(:,2) == 0) == 6);
-            assert(sum(tr(:,2) == 1) == 6);
-            assert(sum(ts(:,1) == 0) == 6);
-            assert(sum(ts(:,1) == 1) == 6);
-            assert(sum(ts(:,2) == 0) == 6);
-            assert(sum(ts(:,2) == 1) == 6);
+            assert(sum(tr(1,:) == 0) == 6);
+            assert(sum(tr(1,:) == 1) == 6);
+            assert(sum(tr(2,:) == 0) == 6);
+            assert(sum(tr(2,:) == 1) == 6);
+            assert(sum(ts(1,:) == 0) == 6);
+            assert(sum(ts(1,:) == 1) == 6);
+            assert(sum(ts(2,:) == 0) == 6);
+            assert(sum(ts(2,:) == 1) == 6);
 
             clearvars -except display;
 
@@ -120,7 +120,7 @@ classdef classification_info
 
             clearvars -except display;
             
-            fprintf('  Function "sublabels".\n');
+            fprintf('  Function "subsample".\n');
             
             ci = classification_info({'1' '2' '3'},[1 2 3 1 2 3 1 2 3 1 2 3]);
             
@@ -133,10 +133,10 @@ classdef classification_info
             assert(tc.same(ci_1.labels_idx,1));
             assert(tc.same(ci_2.labels,ci.labels));
             assert(ci_2.labels_count == 3);
-            assert(tc.same(ci_2.labels_idx,[1 2 2]'));
+            assert(tc.same(ci_2.labels_idx,[1 2 2]));
             assert(tc.same(ci_3.labels,ci.labels));
             assert(ci_3.labels_count == 3);
-            assert(tc.same(ci_3.labels_idx,[1 2 3 1 3 2]'));
+            assert(tc.same(ci_3.labels_idx,[1 2 3 1 3 2]));
         end
     end
 end

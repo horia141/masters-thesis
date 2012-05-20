@@ -18,7 +18,7 @@ classdef logistic_regression < classifier
             input_geometry = dataset.geometry(train_sample);
             
             obj = obj@classifier(input_geometry,class_info.labels,logger);
-            obj.sep_plane_coeffs = mnrfit(train_sample,class_info.labels_idx);
+            obj.sep_plane_coeffs = mnrfit(train_sample',class_info.labels_idx);
         end
     end
     
@@ -26,11 +26,11 @@ classdef logistic_regression < classifier
         function [labels_idx_hat,labels_confidence] = do_classify(obj,sample,logger)
             logger.message('Computing dataset classes.');
             
-            classes_probs = mnrval(obj.sep_plane_coeffs,sample);
+            classes_probs = mnrval(obj.sep_plane_coeffs,sample');
             [max_probs,max_probs_idx] = max(classes_probs,[],2);
             
-            labels_idx_hat = max_probs_idx;
-            labels_confidence = bsxfun(@rdivide,classes_probs,max_probs);
+            labels_idx_hat = max_probs_idx';
+            labels_confidence = bsxfun(@rdivide,classes_probs,max_probs)';
         end
     end
     
@@ -47,9 +47,9 @@ classdef logistic_regression < classifier
             
             cl = classifiers.logistic_regression(s,ci,log);
             
-            assert(tc.same(cl.sep_plane_coeffs,mnrfit(s,ci.labels_idx)));
+            assert(tc.same(cl.sep_plane_coeffs,mnrfit(s',ci.labels_idx)));
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
@@ -72,7 +72,7 @@ classdef logistic_regression < classifier
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
-            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1) zeros(20,1);zeros(20,1) ones(20,1) zeros(20,1);zeros(20,1) zeros(20,1) ones(20,1)],'Epsilon',1e-4));
+            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1) zeros(20,1);zeros(20,1) ones(20,1) zeros(20,1);zeros(20,1) zeros(20,1) ones(20,1)]','Epsilon',1e-4));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -108,10 +108,10 @@ classdef logistic_regression < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence,[ones(18,1) zeros(18,1) zeros(18,1);0 1 0; 0 0 1;zeros(18,1) ones(18,1) zeros(18,1);1 0 0; 0 0 1;zeros(18,1) zeros(18,1) ones(18,1); 1 0 0; 0 1 0],'Epsilon',1e-5));
+            assert(tc.same(labels_confidence,[ones(18,1) zeros(18,1) zeros(18,1);0 1 0; 0 0 1;zeros(18,1) ones(18,1) zeros(18,1);1 0 0; 0 0 1;zeros(18,1) zeros(18,1) ones(18,1); 1 0 0; 0 1 0]','Epsilon',1e-5));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n',...
                                                           'Computing dataset classes.\n'))));

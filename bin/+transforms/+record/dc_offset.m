@@ -17,7 +17,7 @@ classdef dc_offset < transform
         function [sample_coded] = do_code(~,sample_plain,logger)
             logger.message('Substracting DC component from each sample.');
 
-            sample_coded = bsxfun(@minus,sample_plain,mean(sample_plain,2));
+            sample_coded = bsxfun(@minus,sample_plain,mean(sample_plain,1));
         end
     end
 
@@ -29,10 +29,10 @@ classdef dc_offset < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = [mvnrnd(randi(5) - 3,2,50)';
-                 mvnrnd(randi(5) - 3,2,50)';
-                 mvnrnd(randi(5) - 3,2,50)';
-                 mvnrnd(randi(5) - 3,2,50)'];
+            s = [mvnrnd(randi(5) - 3,2,50),...
+                 mvnrnd(randi(5) - 3,2,50),...
+                 mvnrnd(randi(5) - 3,2,50),...
+                 mvnrnd(randi(5) - 3,2,50)];
             
             t = transforms.record.dc_offset(s,log);
             
@@ -50,15 +50,15 @@ classdef dc_offset < transform
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = [mvnrnd(randi(5) - 3,2,50)';
-                 mvnrnd(randi(5) - 3,2,50)';
-                 mvnrnd(randi(5) - 3,2,50)';
-                 mvnrnd(randi(5) - 3,2,50)'];
+            s = [mvnrnd(randi(5) - 3,2,50),...
+                 mvnrnd(randi(5) - 3,2,50),...
+                 mvnrnd(randi(5) - 3,2,50),...
+                 mvnrnd(randi(5) - 3,2,50)];
             
             t = transforms.record.dc_offset(s,log);
             s_p = t.code(s,log);
             
-            assert(tc.same(s_p,s - repmat(mean(s,2),1,50)));
+            assert(tc.same(s_p,s - repmat(mean(s,1),50,1)));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Substracting DC component from each sample.\n'))));
             
@@ -66,10 +66,10 @@ classdef dc_offset < transform
                 figure();
                 for ii = 1:4
                     subplot(4,2,(ii - 1)*2 + 1);
-                    plot(s(ii,:));
+                    plot(s(:,ii));
                     axis([1 50 -5 5]);
                     subplot(4,2,(ii - 1)*2 + 2);
-                    plot(s_p(ii,:));
+                    plot(s_p(:,ii));
                     axis([1 50 -5 5]);
                 end
                 pause(5);

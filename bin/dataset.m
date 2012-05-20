@@ -4,7 +4,7 @@ classdef dataset
             assert(tc.dataset(dataset));
             
             if tc.dataset_record(dataset)
-                sample_count = size(dataset,1);
+                sample_count = size(dataset,2);
             elseif tc.dataset_image(dataset)
                 sample_count = size(dataset,4);
             else
@@ -16,7 +16,7 @@ classdef dataset
             assert(tc.dataset(dataset));
 
             if tc.dataset_record(dataset)
-                varargout{1} = size(dataset,2);
+                varargout{1} = size(dataset,1);
             elseif tc.dataset_image(dataset)
                 features_count = size(dataset,1) * size(dataset,2) * size(dataset,3);
 
@@ -92,7 +92,7 @@ classdef dataset
             
             [labels_idx,labels] = grp2idx(sample_raw{:,1});
             
-            sample = cell2mat(sample_raw(:,2:end));
+            sample = cell2mat(sample_raw(:,2:end))';
             class_info = classification_info(labels,labels_idx);
         end
 
@@ -309,10 +309,10 @@ classdef dataset
             assert(tc.scalar(col_count));
             assert(tc.natural(col_count));
             assert(col_count >= 1);
-            assert(size(sample,2) == (layers_count * row_count * col_count));
+            assert(size(sample,1) == (layers_count * row_count * col_count));
             
             N = dataset.count(sample);
-            new_sample = reshape(sample',row_count,col_count,layers_count,N);
+            new_sample = reshape(sample,row_count,col_count,layers_count,N);
         end
 
         function [new_sample] = flatten_image(sample)
@@ -320,7 +320,7 @@ classdef dataset
             
             N = dataset.count(sample);
             [d,~,~,~] = dataset.geometry(sample);
-            new_sample = reshape(sample,d,N)';
+            new_sample = reshape(sample,d,N);
         end
 
         function [new_sample] = subsample(sample,index)
@@ -328,10 +328,10 @@ classdef dataset
             assert(tc.vector(index));
             
             if tc.dataset_record(sample)
-                assert((tc.logical(index) && tc.match_dims(sample,index,1)) || ...
-                       (tc.natural(index) && tc.check(index >= 1 & index <= size(sample,1))));
+                assert((tc.logical(index) && tc.match_dims(sample,index,2,2)) || ...
+                       (tc.natural(index) && tc.check(index >= 1 & index <= size(sample,2))));
                    
-                new_sample = sample(index,:);
+                new_sample = sample(:,index);
             elseif tc.dataset_image(sample)
                 assert((tc.logical(index) && tc.match_dims(sample,index,4)) || ...
                        (tc.natural(index) && tc.check(index >= 1 & index <= size(sample,4))));
@@ -356,7 +356,7 @@ classdef dataset
             
             fprintf('  Function "count".\n');
             
-            s_1 = randi(2,10,4);
+            s_1 = randi(2,4,10);
             s_2 = randi(2,8,8,1,10);
             
             assert(dataset.count(s_1) == 10);
@@ -368,7 +368,7 @@ classdef dataset
             
             fprintf('    Geometry of records.\n');
             
-            s = randi(2,10,4);
+            s = randi(2,4,10);
             
             d = dataset.geometry(s);
             
@@ -395,10 +395,10 @@ classdef dataset
             
             fprintf('  Function "geom_compatible".\n');
             
-            s_1 = rand(10,2);
-            s_2 = rand(10,2);
-            s_3 = rand(10,4);
-            s_4 = rand(10,1);
+            s_1 = rand(2,10);
+            s_2 = rand(2,10);
+            s_3 = rand(4,10);
+            s_4 = rand(1,10);
             s_5 = rand(8,8,1,10);
             s_6 = rand(10,10,1,20);
             
@@ -432,13 +432,13 @@ classdef dataset
             [s,ci] = dataset.load_record_csvfile('../test/wine/wine.csv','%f%f%f%f%f%f%f%f%f%f%f%f%f');
             
             assert(tc.dataset_record(s));
-            assert(tc.same(size(s),[178 13]));
+            assert(tc.same(size(s),[13 178]));
             assert(length(ci.labels) == 3);
             assert(strcmp(ci.labels{1},'1'));
             assert(strcmp(ci.labels{2},'2'));
             assert(strcmp(ci.labels{3},'3'));
             assert(ci.labels_count == 3);
-            assert(tc.same(ci.labels_idx,[1*ones(59,1);2*ones(71,1);3*ones(48,1)]));
+            assert(tc.same(ci.labels_idx,[1*ones(1,59) 2*ones(1,71) 3*ones(1,48)]));
             
             clearvars -except display;
             
@@ -447,13 +447,13 @@ classdef dataset
             [s,ci] = dataset.load_record_csvfile('../test/iris/iris.csv','%f%f%f%f',',');
             
             assert(tc.dataset_record(s));
-            assert(tc.same(size(s),[150 4]));
+            assert(tc.same(size(s),[4 150]));
             assert(length(ci.labels) == 3);
             assert(strcmp(ci.labels{1},'Iris-setosa'));
             assert(strcmp(ci.labels{2},'Iris-versicolor'));
             assert(strcmp(ci.labels{3},'Iris-virginica'));
             assert(ci.labels_count == 3);
-            assert(tc.same(ci.labels_idx,[1*ones(50,1);2*ones(50,1);3*ones(50,1)]));
+            assert(tc.same(ci.labels_idx,[1*ones(1,50) 2*ones(1,50) 3*ones(1,50)]));
             
             clearvars -except display;
             
@@ -465,13 +465,13 @@ classdef dataset
             [s,ci] = dataset.load_record_csvfile('../test/iris/iris.csv','%f%f%f%f',',',log);
             
             assert(tc.dataset_record(s));
-            assert(tc.same(size(s),[150 4]));
+            assert(tc.same(size(s),[4 150]));
             assert(length(ci.labels) == 3);
             assert(strcmp(ci.labels{1},'Iris-setosa'));
             assert(strcmp(ci.labels{2},'Iris-versicolor'));
             assert(strcmp(ci.labels{3},'Iris-virginica'));
             assert(ci.labels_count == 3);
-            assert(tc.same(ci.labels_idx,[1*ones(50,1);2*ones(50,1);3*ones(50,1)]));
+            assert(tc.same(ci.labels_idx,[1*ones(1,50) 2*ones(1,50) 3*ones(1,50)]));
             
             assert(strcmp(hnd.logged_data,sprintf(strcat('Opening csv file "../test/iris/iris.csv".\n',...
                                                          'Bulk reading of CSV data.\n',...
@@ -1060,10 +1060,10 @@ classdef dataset
             
             fprintf('    Single layer.\n');
             
-            A = rand(20,100);
+            A = rand(100,20);
             A_i = zeros(10,10,1,20);
             for ii = 1:20
-                A_i(:,:,1,ii) = reshape(A(ii,:),[10 10]);
+                A_i(:,:,1,ii) = reshape(A(:,ii),[10 10]);
             end
             
             s = dataset.rebuild_image(A,1,10,10);
@@ -1077,10 +1077,10 @@ classdef dataset
             
             fprintf('    Three layers.\n');
             
-            A = rand(20,300);
+            A = rand(300,20);
             A_i = zeros(10,10,3,20);
             for ii = 1:20
-                A_i(:,:,:,ii) = reshape(A(ii,:),[10 10 3]);
+                A_i(:,:,:,ii) = reshape(A(:,ii),[10 10 3]);
             end
             
             s = dataset.rebuild_image(A,3,10,10);
@@ -1097,15 +1097,15 @@ classdef dataset
             fprintf('    Single layer.\n');
             
             A = rand(10,10,1,20);
-            A_i = zeros(20,100);
+            A_i = zeros(100,20);
             for ii = 1:20
-                A_i(ii,:) = reshape(A(:,:,:,ii),1,100);
+                A_i(:,ii) = reshape(A(:,:,:,ii),100,1);
             end
             
             s = dataset.flatten_image(A);
             
             assert(tc.dataset_record(s));
-            assert(tc.same(size(s),[20 100]));
+            assert(tc.same(size(s),[100 20]));
             assert(tc.unitreal(s));
             assert(tc.same(s,A_i));
             
@@ -1114,15 +1114,15 @@ classdef dataset
             fprintf('    Three layers.\n');
             
             A = rand(10,10,3,20);
-            A_i = zeros(20,300);
+            A_i = zeros(300,20);
             for ii = 1:20
-                A_i(ii,:) = reshape(A(:,:,:,ii),1,300);
+                A_i(:,ii) = reshape(A(:,:,:,ii),300,1);
             end
             
             s = dataset.flatten_image(A);
             
             assert(tc.dataset_record(s));
-            assert(tc.same(size(s),[20 300]));
+            assert(tc.same(size(s),[300 20]));
             assert(tc.unitreal(s));
             assert(tc.same(s,A_i));
             
@@ -1132,15 +1132,15 @@ classdef dataset
             
             fprintf('    With boolean indices on records.\n');
             
-            s = rand(100,10);
+            s = rand(10,100);
             idx = logical(randi(2,1,100) - 1);
             
             s_1 = dataset.subsample(s,idx);
             
             assert(tc.dataset_record(s_1));
-            assert(tc.same(size(s_1),[sum(idx) 10]));
+            assert(tc.same(size(s_1),[10 sum(idx)]));
             assert(tc.unitreal(s_1));
-            assert(tc.same(s_1,s(idx,:)));
+            assert(tc.same(s_1,s(:,idx)));
             
             clearvars -except display;
             
@@ -1160,15 +1160,15 @@ classdef dataset
             
             fprintf('    With integer indices on records.\n');
             
-            s = rand(100,10);
-            idx = randi(100,10,1);
+            s = rand(10,100);
+            idx = randi(100,20,1);
             
             s_1 = dataset.subsample(s,idx);
             
             assert(tc.dataset_record(s_1));
-            assert(tc.same(size(s_1),[10 10]));
+            assert(tc.same(size(s_1),[10 20]));
             assert(tc.unitreal(s_1));
-            assert(tc.same(s_1,s(idx,:)));
+            assert(tc.same(s_1,s(:,idx)));
             
             clearvars -except display;
             

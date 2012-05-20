@@ -12,15 +12,15 @@ classdef utilstest
         function [s,ci] = classifier_data_3()
             s = [mvnrnd([3 1],[0.01 0; 0 0.01],100);
                  mvnrnd([3 3],[0.01 0; 0 0.01],100);
-                 mvnrnd([1 3],[0.01 0; 0 0.01],100)];
-            ci = classification_info({'1' '2' '3'},[1*ones(100,1);2*ones(100,1);3*ones(100,1)]);
+                 mvnrnd([1 3],[0.01 0; 0 0.01],100)]';
+            ci = classification_info({'1' '2' '3'},[1*ones(1,100) 2*ones(1,100) 3*ones(1,100)]);
         end
 
         function [s_tr,s_ts,ci_tr,ci_ts] = classifier_clear_data_3()
             s = [mvnrnd([3 1],[0.01 0; 0 0.01],100);
                  mvnrnd([3 3],[0.01 0; 0 0.01],100);
-                 mvnrnd([1 3],[0.01 0; 0 0.01],100)];
-            ci = classification_info({'1' '2' '3'},[1*ones(100,1);2*ones(100,1);3*ones(100,1)]);
+                 mvnrnd([1 3],[0.01 0; 0 0.01],100)]';
+            ci = classification_info({'1' '2' '3'},[1*ones(1,100) 2*ones(1,100) 3*ones(1,100)]);
             [tr_i,ts_i] = ci.partition('holdout',0.2);
             s_tr = dataset.subsample(s,tr_i);
             s_ts = dataset.subsample(s,ts_i);
@@ -31,7 +31,7 @@ classdef utilstest
         function [s_tr,s_ts,ci_tr,ci_ts] = classifier_mostly_clear_data_3()
             s_tr = [mvnrnd([3 1],[0.01 0; 0 0.01],80);
                     mvnrnd([3 3],[0.01 0; 0 0.01],80);
-                    mvnrnd([1 3],[0.01 0; 0 0.01],80)];
+                    mvnrnd([1 3],[0.01 0; 0 0.01],80)]';
             s_ts = [mvnrnd([3 1],[0.01 0; 0 0.01],18);
                     3 3;
                     1 3;
@@ -40,17 +40,17 @@ classdef utilstest
                     1 3;
                     mvnrnd([1 3],[0.01 0; 0 0.01],18)
                     3 1;
-                    3 3];
-            ci_tr = classification_info({'1' '2' '3'},[1*ones(80,1);2*ones(80,1);3*ones(80,1)]);
-            ci_ts = classification_info({'1' '2' '3'},[1*ones(20,1);2*ones(20,1);3*ones(20,1)]);
+                    3 3]';
+            ci_tr = classification_info({'1' '2' '3'},[1*ones(1,80) 2*ones(1,80) 3*ones(1,80)]);
+            ci_ts = classification_info({'1' '2' '3'},[1*ones(1,20) 2*ones(1,20) 3*ones(1,20)]);
         end
         
         function [s_tr,s_ts,ci_tr,ci_ts] = classifier_unclear_data_3()
             s = [mvnrnd([3 1],[0.5 0; 0 0.5],100);
                  mvnrnd([3 3],[0.5 0; 0 0.5],100);
-                 mvnrnd([1 3],[0.5 0; 0 0.5],100)];
-            ci = classification_info({'1' '2' '3'},[1*ones(100,1);2*ones(100,1);3*ones(100,1)]);
-            [tr_i,ts_i] = ci.partition('holdout',0.2);            
+                 mvnrnd([1 3],[0.5 0; 0 0.5],100)]';
+            ci = classification_info({'1' '2' '3'},[1*ones(1,100) 2*ones(1,100) 3*ones(1,100)]);
+            [tr_i,ts_i] = ci.partition('holdout',0.2);
             s_tr = dataset.subsample(s,tr_i);
             s_ts = dataset.subsample(s,ts_i);
             ci_tr = ci.subsample(tr_i);
@@ -59,14 +59,14 @@ classdef utilstest
         
         function [s,ci] = classifier_data_2()
             s = [mvnrnd([3 1],[0.1 0; 0 0.1],100);
-                 mvnrnd([1 3],[0.1 0; 0 0.1],100)];
-            ci = classification_info({'1' '2'},[1*ones(100,1);2*ones(100,1)]);
+                 mvnrnd([1 3],[0.1 0; 0 0.1],100)]';
+            ci = classification_info({'1' '2'},[1*ones(1,100) 2*ones(1,100)]);
         end
 
         function [s_tr,s_ts,ci_tr,ci_ts] = classifier_clear_data_2()
             s = [mvnrnd([3 1],[0.01 0; 0 0.01],100);
-                 mvnrnd([1 3],[0.01 0; 0 0.01],100)];
-            ci = classification_info({'1' '2'},[1*ones(100,1);2*ones(100,1)]);
+                 mvnrnd([1 3],[0.01 0; 0 0.01],100)]';
+            ci = classification_info({'1' '2'},[1*ones(1,100) 2*ones(1,100)]);
             [tr_i,ts_i] = ci.partition('holdout',0.2);
             s_tr = dataset.subsample(s,tr_i);
             s_ts = dataset.subsample(s,ts_i);
@@ -76,20 +76,20 @@ classdef utilstest
         
         function [s_tr,s_ts,ci_tr,ci_ts] = classifier_mostly_clear_data_2()
             s_tr = [mvnrnd([3 1],[0.01 0; 0 0.01],80);
-                    mvnrnd([1 3],[0.01 0; 0 0.01],80)];
+                    mvnrnd([1 3],[0.01 0; 0 0.01],80)]';
             s_ts = [mvnrnd([3 1],[0.01 0; 0 0.01],19);
                     1 3;
                     mvnrnd([1 3],[0.01 0; 0 0.01],19)
-                    3 1];
-            ci_tr = classification_info({'1' '2'},[1*ones(80,1);2*ones(80,1)]);
-            ci_ts = classification_info({'1' '2'},[1*ones(20,1);2*ones(20,1)]);
+                    3 1]';
+            ci_tr = classification_info({'1' '2'},[1*ones(1,80) 2*ones(1,80)]);
+            ci_ts = classification_info({'1' '2'},[1*ones(1,20) 2*ones(1,20)]);
         end
         
         function [s_tr,s_ts,ci_tr,ci_ts] = classifier_unclear_data_2()
             s = [mvnrnd([3 1],[1 0; 0 1],100);
-                 mvnrnd([1 3],[1 0; 0 1],100)];
-            ci = classification_info({'1' '2'},[1*ones(100,1);2*ones(100,1)]);
-            [tr_i,ts_i] = ci.partition('holdout',0.2);            
+                 mvnrnd([1 3],[1 0; 0 1],100)]';
+            ci = classification_info({'1' '2'},[1*ones(1,100) 2*ones(1,100)]);
+            [tr_i,ts_i] = ci.partition('holdout',0.2);
             s_tr = dataset.subsample(s,tr_i);
             s_ts = dataset.subsample(s,ts_i);
             ci_tr = ci.subsample(tr_i);
@@ -120,26 +120,26 @@ classdef utilstest
 
             figure();
             hold on;
-            gscatter(sample_tr(:,1),sample_tr(:,2),ci_tr.labels_idx,'rgb','o',6);
-            gscatter(sample_ts(:,1),sample_ts(:,2),ci_ts.labels_idx,'rgb','o',6);
+            gscatter(sample_tr(1,:),sample_tr(2,:),ci_tr.labels_idx,'rgb','o',6);
+            gscatter(sample_ts(1,:),sample_ts(2,:),ci_ts.labels_idx,'rgb','o',6);
             [ptmp_x,ptmp_y] = meshgrid(-1:0.05:5,-1:0.05:5);
-            ptmp = [ptmp_x(:),ptmp_y(:)];
+            ptmp = [ptmp_x(:),ptmp_y(:)]';
             [ptmp2_x,ptmp2_y] = meshgrid(-1:0.2:5,-1:0.2:5);
-            ptmp2 = [ptmp2_x(:),ptmp2_y(:)];
+            ptmp2 = [ptmp2_x(:),ptmp2_y(:)]';
             l = cl.classify(ptmp,-1,log);
             [~,cfd] = cl.classify(ptmp2,-1,log);
             subplot(2,2,1);
-            gscatter(ptmp(:,1),ptmp(:,2),l,'rgb','*',2);
+            gscatter(ptmp(1,:),ptmp(2,:),l,'rgb','*',2);
             axis(range);
             subplot(2,2,2);
-            mesh(-1:0.2:5,-1:0.2:5,reshape(cfd(:,1),31,31),cat(3,reshape(cfd(:,1),31,31),zeros(31,31),zeros(31,31)));
+            mesh(-1:0.2:5,-1:0.2:5,reshape(cfd(1,:),31,31),cat(3,reshape(cfd(1,:),31,31),zeros(31,31),zeros(31,31)));
             axis([range 0 1]);
             subplot(2,2,3);
-            mesh(-1:0.2:5,-1:0.2:5,reshape(cfd(:,2),31,31),cat(3,zeros(31,31),reshape(cfd(:,2),31,31),zeros(31,31)));
+            mesh(-1:0.2:5,-1:0.2:5,reshape(cfd(2,:),31,31),cat(3,zeros(31,31),reshape(cfd(2,:),31,31),zeros(31,31)));
             axis([range 0 1]);
             subplot(2,2,4);
-            if size(cfd,2) > 2
-                mesh(-1:0.2:5,-1:0.2:5,reshape(cfd(:,3),31,31),cat(3,zeros(31,31),zeros(31,31),reshape(cfd(:,3),31,31)));
+            if size(cfd,1) > 2
+                mesh(-1:0.2:5,-1:0.2:5,reshape(cfd(3,:),31,31),cat(3,zeros(31,31),zeros(31,31),reshape(cfd(3,:),31,31)));
                 axis([range 0 1]);
             end
             pause(3);

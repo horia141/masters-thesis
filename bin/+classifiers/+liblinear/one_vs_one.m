@@ -78,8 +78,8 @@ classdef one_vs_one < classifier
             votes = hist(partial_labels_idx',obj.saved_labels_count);
             [max_votes,labels_idx_hat_t] = max(votes,[],1);
 
-            labels_idx_hat = labels_idx_hat_t';
-            labels_confidence = bsxfun(@rdivide,votes,max_votes)';
+            labels_idx_hat = labels_idx_hat_t;
+            labels_confidence = bsxfun(@rdivide,votes,max_votes);
         end
     end
     
@@ -134,16 +134,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.logistic_primal_regL1));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -186,16 +186,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.logistic_primal_regL2));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -238,16 +238,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.logistic_dual_regL2));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -290,16 +290,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.support_primal_regL1));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -342,16 +342,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.support_primal_regL2));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -394,16 +394,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.support_dual_lossL1));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -446,16 +446,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.support_dual_lossL2));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -498,16 +498,16 @@ classdef one_vs_one < classifier
             assert(tc.same(size(cl.model_weights),[3 3]));
             assert(tc.number(cl.model_weights));
             assert(tc.same(cl.method_type_fn,@classifiers.liblinear.one_vs_one.support_primal_regL2));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,1) < 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) >= 0,1:100));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,2) < 0,201:300));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) >= 0,101:200));
-            assert(tc.checkf(@(ii)[s(ii,:) 1] * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
             assert(cl.reg_param == 1);
             assert(cl.num_threads == 3);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -553,11 +553,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -623,11 +623,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -693,11 +693,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -763,11 +763,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -833,11 +833,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -903,11 +903,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -973,11 +973,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -1043,11 +1043,11 @@ classdef one_vs_one < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[60 3]));
+            assert(tc.same(size(labels_confidence),[3 60]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1:20,1),ones(20,1)));
-            assert(tc.same(labels_confidence(21:40,2),ones(20,1)));
-            assert(tc.same(labels_confidence(41:60,3),ones(20,1)));
+            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
+            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -1124,18 +1124,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1205,18 +1205,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1286,18 +1286,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1367,18 +1367,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1448,18 +1448,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1529,18 +1529,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1610,18 +1610,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...
@@ -1691,18 +1691,18 @@ classdef one_vs_one < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1:18,1),ones(18,1)));
-            assert(tc.same(labels_confidence(19,2),1));
-            assert(tc.same(labels_confidence(20,3),1));
-            assert(tc.same(labels_confidence(21:38,2),ones(18,1)));
-            assert(tc.same(labels_confidence(39,1),1));
-            assert(tc.same(labels_confidence(40,3),1));
-            assert(tc.same(labels_confidence(41:58,3),ones(18,1)));
-            assert(tc.same(labels_confidence(59,1),1));
-            assert(tc.same(labels_confidence(60,2),1));
+            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
+            assert(tc.same(labels_confidence(2,19),1));
+            assert(tc.same(labels_confidence(3,20),1));
+            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
+            assert(tc.same(labels_confidence(1,39),1));
+            assert(tc.same(labels_confidence(3,40),1));
+            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
+            assert(tc.same(labels_confidence(1,59),1));
+            assert(tc.same(labels_confidence(2,60),1));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Parallel training via "liblinear" in One-vs-One fashion:\n',...

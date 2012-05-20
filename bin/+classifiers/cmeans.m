@@ -16,10 +16,10 @@ classdef cmeans < classifier
             logger.message('Computing dataset class centers.');
             
             d = dataset.geometry(train_sample);
-            centers_t = zeros(class_info.labels_count,d);
+            centers_t = zeros(d,class_info.labels_count);
             
             for ii = 1:class_info.labels_count
-                centers_t(ii,:) = mean(train_sample(class_info.labels_idx == ii,:));
+                centers_t(:,ii) = mean(train_sample(:,class_info.labels_idx == ii),2);
             end
             
             input_geometry = d;
@@ -33,23 +33,23 @@ classdef cmeans < classifier
         function [labels_idx_hat,labels_confidence] = do_classify(obj,sample,logger)
             N = dataset.count(sample);
 
-            distances = zeros(N,obj.saved_labels_count);
+            distances = zeros(obj.saved_labels_count,N);
             
             logger.beg_node('Computing distances to each class center');
             
             for ii = 1:obj.saved_labels_count
                 logger.message('Class %s.',obj.saved_labels{ii});
                 
-                distances(:,ii) = sum((sample - repmat(obj.centers(ii,:),N,1)) .^ 2,2);
+                distances(ii,:) = sum((sample - repmat(obj.centers(:,ii),1,N)) .^ 2,1);
             end
             
             logger.end_node();
             
             logger.message('Selecting class for each sample.');
             
-            [min_distance,min_index] = min(distances,[],2);
+            [min_distance,min_index] = min(distances,[],1);
 
-            labels_idx_hat = min_index(:,1);
+            labels_idx_hat = min_index;
             labels_confidence = 1 ./ bsxfun(@rdivide,distances,min_distance);
         end
     end
@@ -67,10 +67,10 @@ classdef cmeans < classifier
 
             cl = classifiers.cmeans(s,ci,log);
             
-            assert(tc.check(arrayfun(@(ii)tc.same(cl.centers(ii,:),mean(s(ci.labels_idx == ii,:))),1:3)));
-            assert(tc.same(cl.centers,[3 1;3 3;1 3],'Epsilon',0.1));
+            assert(tc.check(arrayfun(@(ii)tc.same(cl.centers(:,ii),mean(s(:,ci.labels_idx == ii),2)),1:3)));
+            assert(tc.same(cl.centers,[3 1;3 3;1 3]','Epsilon',0.1));
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
 
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset class centers.\n'))));
@@ -89,9 +89,9 @@ classdef cmeans < classifier
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_3();
             
-            t_centers = cell2mat(arrayfun(@(ii)mean(s_tr(ci_tr.labels_idx == ii,:))',1:3,'UniformOutput',false))';
-            dists = cell2mat(arrayfun(@(ii)sum((s_ts - repmat(t_centers(ii,:),60,1)) .^ 2,2),1:3,'UniformOutput',false));
-            min_dists = min(dists,[],2);
+            t_centers = cell2mat(arrayfun(@(ii)mean(s_tr(:,ci_tr.labels_idx == ii),2),1:3,'UniformOutput',false));
+            dists = cell2mat(arrayfun(@(ii)sum((s_ts - repmat(t_centers(:,ii),1,60)) .^ 2,1)',1:3,'UniformOutput',false))';
+            min_dists = min(dists,[],1);
             distsn = 1 ./ bsxfun(@rdivide,dists,min_dists);
             
             cl = classifiers.cmeans(s_tr,ci_tr,log);            
@@ -126,9 +126,9 @@ classdef cmeans < classifier
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_mostly_clear_data_3();
             
-            t_centers = cell2mat(arrayfun(@(ii)mean(s_tr(ci_tr.labels_idx == ii,:))',1:3,'UniformOutput',false))';
-            dists = cell2mat(arrayfun(@(ii)sum((s_ts - repmat(t_centers(ii,:),60,1)) .^ 2,2),1:3,'UniformOutput',false));
-            min_dists = min(dists,[],2);
+            t_centers = cell2mat(arrayfun(@(ii)mean(s_tr(:,ci_tr.labels_idx == ii),2),1:3,'UniformOutput',false));
+            dists = cell2mat(arrayfun(@(ii)sum((s_ts - repmat(t_centers(:,ii),1,60)) .^ 2,1)',1:3,'UniformOutput',false))';
+            min_dists = min(dists,[],1);
             distsn = 1 ./ bsxfun(@rdivide,dists,min_dists);
             
             cl = classifiers.cmeans(s_tr,ci_tr,log);            
@@ -146,7 +146,7 @@ classdef cmeans < classifier
             assert(tc.same(labels_confidence,distsn));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset class centers.\n',...
                                                           'Computing distances to each class center:\n',...

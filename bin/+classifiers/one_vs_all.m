@@ -32,7 +32,7 @@ classdef one_vs_all < classifier
             
             logger.beg_node('Training each classifier');
             
-            classifier_list_t = cell(class_info.labels_count,1);
+            classifier_list_t = cell(1,class_info.labels_count);
             
             try
                 for ii = 1:class_info.labels_count
@@ -64,18 +64,18 @@ classdef one_vs_all < classifier
             logger.beg_node('Classifying with each classifier');
 
             N = dataset.count(sample);
-            classes_probs = zeros(N,obj.saved_labels_count);
+            classes_probs = zeros(obj.saved_labels_count,N);
             
             for ii = 1:obj.classifier_count
                 [~,local_confidence] = obj.classifier_list{ii}.classify(sample,-1,logger.new_classifier('Classifier for %s-vs-All',obj.saved_labels{ii}));
-                classes_probs(:,ii) = local_confidence(:,1);
+                classes_probs(ii,:) = local_confidence(1,:);
             end
             
             logger.end_node();
             
             logger.message('Determining most probable class.');
             
-            [max_probs,max_probs_idx] = max(classes_probs,[],2);
+            [max_probs,max_probs_idx] = max(classes_probs,[],1);
             
             labels_idx_hat = max_probs_idx;
             labels_confidence = bsxfun(@rdivide,classes_probs,max_probs);
@@ -99,21 +99,21 @@ classdef one_vs_all < classifier
             
             assert(strcmp(func2str(cl.classifier_list{1}.svm_info.KernelFunction),'linear_kernel'));
             assert(tc.empty(cl.classifier_list{1}.svm_info.KernelFunctionArgs));
-            assert(tc.same(cl.classifier_list{1}.svm_info.GroupNames,(ci.labels_idx ~= 1) + 1));
+            assert(tc.same(cl.classifier_list{1}.svm_info.GroupNames',(ci.labels_idx ~= 1) + 1));
             assert(strcmp(cl.classifier_list{1}.kernel_type,'linear'));
             assert(cl.classifier_list{1}.kernel_param == 0);
             assert(strcmp(func2str(cl.classifier_list{2}.svm_info.KernelFunction),'linear_kernel'));
             assert(tc.empty(cl.classifier_list{2}.svm_info.KernelFunctionArgs));
-            assert(tc.same(cl.classifier_list{2}.svm_info.GroupNames,(ci.labels_idx ~= 2) + 1));
+            assert(tc.same(cl.classifier_list{2}.svm_info.GroupNames',(ci.labels_idx ~= 2) + 1));
             assert(strcmp(cl.classifier_list{2}.kernel_type,'linear'));
             assert(cl.classifier_list{2}.kernel_param == 0);
             assert(strcmp(func2str(cl.classifier_list{3}.svm_info.KernelFunction),'linear_kernel'));
             assert(tc.empty(cl.classifier_list{3}.svm_info.KernelFunctionArgs));
-            assert(tc.same(cl.classifier_list{3}.svm_info.GroupNames,(ci.labels_idx ~= 3) + 1));
+            assert(tc.same(cl.classifier_list{3}.svm_info.GroupNames',(ci.labels_idx ~= 3) + 1));
             assert(strcmp(cl.classifier_list{3}.kernel_type,'linear'));
             assert(cl.classifier_count == 3);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -140,22 +140,22 @@ classdef one_vs_all < classifier
             
             assert(strcmp(func2str(cl.classifier_list{1}.svm_info.KernelFunction),'rbf_kernel'));
             assert(cl.classifier_list{1}.svm_info.KernelFunctionArgs{1} == 0.7);
-            assert(tc.same(cl.classifier_list{1}.svm_info.GroupNames,(ci.labels_idx ~= 1) + 1));
+            assert(tc.same(cl.classifier_list{1}.svm_info.GroupNames',(ci.labels_idx ~= 1) + 1));
             assert(strcmp(cl.classifier_list{1}.kernel_type,'rbf'));
             assert(cl.classifier_list{1}.kernel_param == 0.7);
             assert(strcmp(func2str(cl.classifier_list{2}.svm_info.KernelFunction),'rbf_kernel'));
             assert(cl.classifier_list{2}.svm_info.KernelFunctionArgs{1} == 0.7);
-            assert(tc.same(cl.classifier_list{2}.svm_info.GroupNames,(ci.labels_idx ~= 2) + 1));
+            assert(tc.same(cl.classifier_list{2}.svm_info.GroupNames',(ci.labels_idx ~= 2) + 1));
             assert(strcmp(cl.classifier_list{2}.kernel_type,'rbf'));
             assert(cl.classifier_list{2}.kernel_param == 0.7);
             assert(strcmp(func2str(cl.classifier_list{3}.svm_info.KernelFunction),'rbf_kernel'));
             assert(cl.classifier_list{3}.svm_info.KernelFunctionArgs{1} == 0.7);
-            assert(tc.same(cl.classifier_list{3}.svm_info.GroupNames,(ci.labels_idx ~= 3) + 1));
+            assert(tc.same(cl.classifier_list{3}.svm_info.GroupNames',(ci.labels_idx ~= 3) + 1));
             assert(strcmp(cl.classifier_list{3}.kernel_type,'rbf'));
             assert(cl.classifier_list{3}.kernel_param == 0.7);
             assert(cl.classifier_count == 3);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -182,22 +182,22 @@ classdef one_vs_all < classifier
             
             assert(strcmp(func2str(cl.classifier_list{1}.svm_info.KernelFunction),'linear_kernel'));
             assert(tc.empty(cl.classifier_list{1}.svm_info.KernelFunctionArgs));
-            assert(tc.same(cl.classifier_list{1}.svm_info.GroupNames,(ci.labels_idx ~= 1) + 1));
+            assert(tc.same(cl.classifier_list{1}.svm_info.GroupNames',(ci.labels_idx ~= 1) + 1));
             assert(strcmp(cl.classifier_list{1}.kernel_type,'linear'));
             assert(cl.classifier_list{1}.kernel_param == 0);
             assert(strcmp(func2str(cl.classifier_list{2}.svm_info.KernelFunction),'rbf_kernel'));
             assert(cl.classifier_list{2}.svm_info.KernelFunctionArgs{1} == 0.7);
-            assert(tc.same(cl.classifier_list{2}.svm_info.GroupNames,(ci.labels_idx ~= 2) + 1));
+            assert(tc.same(cl.classifier_list{2}.svm_info.GroupNames',(ci.labels_idx ~= 2) + 1));
             assert(strcmp(cl.classifier_list{2}.kernel_type,'rbf'));
             assert(cl.classifier_list{2}.kernel_param == 0.7);
             assert(strcmp(func2str(cl.classifier_list{3}.svm_info.KernelFunction),'poly_kernel'));
             assert(cl.classifier_list{3}.svm_info.KernelFunctionArgs{1} == 3);
-            assert(tc.same(cl.classifier_list{3}.svm_info.GroupNames,(ci.labels_idx ~= 3) + 1));
+            assert(tc.same(cl.classifier_list{3}.svm_info.GroupNames',(ci.labels_idx ~= 3) + 1));
             assert(strcmp(cl.classifier_list{3}.kernel_type,'poly'));
             assert(cl.classifier_list{3}.kernel_param == 3);
             assert(cl.classifier_count == 3);
             assert(tc.same(cl.input_geometry,2));
-            assert(tc.same(cl.saved_labels,{'1';'2';'3'}));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
@@ -226,7 +226,7 @@ classdef one_vs_all < classifier
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
-            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1) zeros(20,1);zeros(20,1) ones(20,1) zeros(20,1);zeros(20,1) zeros(20,1) ones(20,1)],'Epsilon',1e-4));
+            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1) zeros(20,1);zeros(20,1) ones(20,1) zeros(20,1);zeros(20,1) zeros(20,1) ones(20,1)]','Epsilon',1e-4));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -275,10 +275,10 @@ classdef one_vs_all < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence,[ones(18,1) zeros(18,1) zeros(18,1);0 1 0; 0 0 1;zeros(18,1) ones(18,1) zeros(18,1);1 0 0; 0 0 1;zeros(18,1) zeros(18,1) ones(18,1); 1 0 0; 0 1 0],'Epsilon',1e-5));
+            assert(tc.same(labels_confidence,[ones(18,1) zeros(18,1) zeros(18,1);0 1 0; 0 0 1;zeros(18,1) ones(18,1) zeros(18,1);1 0 0; 0 0 1;zeros(18,1) zeros(18,1) ones(18,1); 1 0 0; 0 1 0]','Epsilon',1e-5));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
-            assert(tc.same(misclassified,[19 20 39 40 59 60]'));
+            assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Training each classifier:\n',...
                                                           '  Classifier for 1-vs-All:\n',...

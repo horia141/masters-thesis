@@ -17,11 +17,11 @@ classdef pca < transforms.reversible
             
             logger.message('Computing dataset mean.');
             
-            sample_mean_t = mean(train_sample_plain,1);
+            sample_mean_t = mean(train_sample_plain,2);
             
             logger.message('Computing principal components and associated variances.');
             
-            [coeffs_t,~,latent] = princomp(train_sample_plain);
+            [coeffs_t,~,latent] = princomp(train_sample_plain');
             
             logger.message('Determining number of components to keep.');
             
@@ -33,7 +33,7 @@ classdef pca < transforms.reversible
             output_geometry = coded_features_count_t;
             
             obj = obj@transforms.reversible(input_geometry,output_geometry,logger);
-            obj.coeffs = coeffs_t;
+            obj.coeffs = coeffs_t';
             obj.sample_mean = sample_mean_t;
             obj.kept_energy = kept_energy;
             obj.coded_features_count = coded_features_count_t;
@@ -43,16 +43,16 @@ classdef pca < transforms.reversible
     methods (Access=protected)
         function [sample_coded] = do_code(obj,sample_plain,logger)
             logger.message('Projecting onto reduced space of principal components.');
-            
+
             sample_coded_t1 = bsxfun(@minus,sample_plain,obj.sample_mean);
-            sample_coded = sample_coded_t1 * obj.coeffs(:,1:obj.coded_features_count);
+            sample_coded = obj.coeffs(1:obj.coded_features_count,:) * sample_coded_t1;
         end
         
         function [sample_plain_hat] = do_decode(obj,sample_coded,logger)
             logger.message('Projecting onto original space from principal components space.');
             
             coeffs_t = obj.coeffs';
-            sample_plain_hat_t1 = sample_coded * coeffs_t(1:obj.coded_features_count,:);
+            sample_plain_hat_t1 = coeffs_t(:,1:obj.coded_features_count) * sample_coded;
             sample_plain_hat = bsxfun(@plus,sample_plain_hat_t1,obj.sample_mean);
         end
     end
@@ -67,14 +67,14 @@ classdef pca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[1 0.6; 0.6 0.5],100);
-            s_s = princomp(s);
+            s = mvnrnd([3 3],[1 0.6; 0.6 0.5],100)';
+            s_s = princomp(s');
             
             t = transforms.record.pca(s,0.9,log);
             
-            assert(tc.same(t.coeffs,s_s));
+            assert(tc.same(t.coeffs,s_s'));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
-            assert(tc.same(t.sample_mean,mean(s,1)));
+            assert(tc.same(t.sample_mean,mean(s,2)));
             assert(t.kept_energy == 0.9);
             assert(t.coded_features_count == 1);
             assert(tc.same(t.input_geometry,2));
@@ -93,14 +93,14 @@ classdef pca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[1 0.6; 0.6 0.5],100);
-            s_s = princomp(s);
+            s = mvnrnd([3 3],[1 0.6; 0.6 0.5],100)';
+            s_s = princomp(s');
             
             t = transforms.record.pca(s,1,log);
             
-            assert(tc.same(t.coeffs,s_s));
+            assert(tc.same(t.coeffs,s_s'));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
-            assert(tc.same(t.sample_mean,mean(s,1)));
+            assert(tc.same(t.sample_mean,mean(s,2)));
             assert(t.kept_energy == 1);
             assert(t.coded_features_count == 2);
             assert(tc.same(t.input_geometry,2));
@@ -121,13 +121,13 @@ classdef pca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
-            [~,s_s,p_latent] = princomp(s);
+            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100)';
+            [~,s_s,p_latent] = princomp(s');
             
             t = transforms.record.pca(s,0.9,log);            
             s_p = t.code(s,log);
             
-            assert(tc.same(s_p,s_s(:,1)));
+            assert(tc.same(s_p,s_s(:,1)'));
             assert(tc.same(var(s_p),p_latent(1)));
 
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
@@ -138,11 +138,11 @@ classdef pca < transforms.reversible
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                scatter(s(:,1),s(:,2),'o');
+                scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,2,2);
-                scatter(s_p(:,1),zeros(100,1),'x');
+                scatter(s_p(1,:),zeros(100,1),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed samples.');
                 pause(5);
@@ -158,14 +158,14 @@ classdef pca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
-            [~,s_s,p_latent] = princomp(s);
+            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100)';
+            [~,s_s,p_latent] = princomp(s');
             
             t = transforms.record.pca(s,1,log);            
             s_p = t.code(s,log);
             
-            assert(tc.same(s_p,s_s));
-            assert(tc.same(var(s_p),p_latent','Epsilon',1e-4));
+            assert(tc.same(s_p,s_s'));
+            assert(tc.same(var(s_p,0,2),p_latent,'Epsilon',1e-4));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
                                                           'Computing principal components and associated variances.\n',...
@@ -175,11 +175,11 @@ classdef pca < transforms.reversible
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                scatter(s(:,1),s(:,2),'o');
+                scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,2,2);
-                scatter(s_p(:,1),s_p(:,2),'x');
+                scatter(s_p(1,:),s_p(2,:),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed samples.');
                 pause(5);
@@ -197,14 +197,14 @@ classdef pca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
+            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100)';
             
             t = transforms.record.pca(s,0.9,log);
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
             
             assert(tc.matrix(s_r));
-            assert(tc.same(size(s_r),[100 2]));
+            assert(tc.same(size(s_r),[2 100]));
             assert(tc.number(s_r));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
@@ -216,17 +216,17 @@ classdef pca < transforms.reversible
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,3,1);
-                scatter(s(:,1),s(:,2),'o');
+                scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,3,2);
-                scatter(s_p(:,1),zeros(100,1),'x');
+                scatter(s_p(1,:),zeros(100,1),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed samples.');
                 subplot(1,3,3);
                 hold('on');
-                scatter(s(:,1),s(:,2),'o','r');
-                scatter(s_r(:,1),s_r(:,2),'.','b');
+                scatter(s(1,:),s(2,:),'o','r');
+                scatter(s_r(1,:),s_r(2,:),'.','b');
                 axis([-4 6 -4 6]);
                 title('Restored samples.');
                 pause(5);
@@ -242,7 +242,7 @@ classdef pca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100);
+            s = mvnrnd([3 3],[1 0.6; 0.6 0.4],100)';
             
             t = transforms.record.pca(s,1,log);
             s_p = t.code(s,log);
@@ -259,17 +259,17 @@ classdef pca < transforms.reversible
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,3,1);
-                scatter(s(:,1),s(:,2),'o');
+                scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
                 title('Original samples.');
                 subplot(1,3,2);
-                scatter(s_p(:,1),s_p(:,2),'x');
+                scatter(s_p(1,:),s_p(2,:),'x');
                 axis([-4 6 -4 6]);
                 title('PCA transformed samples.');
                 subplot(1,3,3);
                 hold('on');
-                scatter(s(:,1),s(:,2),'o','r');
-                scatter(s_r(:,1),s_r(:,2),'.','b');
+                scatter(s(1,:),s(2,:),'o','r');
+                scatter(s_r(1,:),s_r(2,:),'.','b');
                 axis([-4 6 -4 6]);
                 title('Restored samples.');
                 pause(5);

@@ -24,11 +24,11 @@ classdef zca < transforms.reversible
             
             logger.message('Computing dataset mean.');
             
-            sample_mean_t = mean(train_sample_plain,1);
+            sample_mean_t = mean(train_sample_plain,2);
             
             logger.message('Computing principal components and associated variances.');
 
-            [coeffs_t,~,coeffs_eigenvalues_t] = princomp(train_sample_plain);
+            [coeffs_t,~,coeffs_eigenvalues_t] = princomp(train_sample_plain');
             
             input_geometry = dataset.geometry(train_sample_plain);
             output_geometry = input_geometry;
@@ -36,7 +36,7 @@ classdef zca < transforms.reversible
             obj = obj@transforms.reversible(input_geometry,output_geometry,logger);
             obj.saved_transform_code = coeffs_t * diag(1 ./ sqrt(coeffs_eigenvalues_t + div_epsilon)) * coeffs_t';
             obj.saved_transform_decode = coeffs_t * diag(sqrt(coeffs_eigenvalues_t + div_epsilon)) * coeffs_t';
-            obj.coeffs = coeffs_t;
+            obj.coeffs = coeffs_t';
             obj.coeffs_eigenvalues = coeffs_eigenvalues_t;
             obj.sample_mean = sample_mean_t;
             obj.div_epsilon = div_epsilon;
@@ -49,7 +49,7 @@ classdef zca < transforms.reversible
             logger.message('Projecting onto scaled space of principal components.');
             logger.message('Projecting onto scaled original space from scaled principal components space.');
             
-            sample_coded = bsxfun(@minus,sample_plain,obj.sample_mean) * obj.saved_transform_code;
+            sample_coded = obj.saved_transform_code * bsxfun(@minus,sample_plain,obj.sample_mean);
         end
         
         function [sample_plain_hat] = do_decode(obj,sample_coded,logger)
@@ -57,7 +57,7 @@ classdef zca < transforms.reversible
             logger.message('Projecting onto scaled space of principal components from scaled original space.');
             logger.message('Projecting onto original space from scaled principal components space.');
             
-            sample_plain_hat = bsxfun(@plus,sample_coded * obj.saved_transform_decode,obj.sample_mean);
+            sample_plain_hat = bsxfun(@plus,obj.saved_transform_decode * sample_coded,obj.sample_mean);
         end
     end
     
@@ -71,16 +71,17 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100);
-            [s_s,~,p_latent] = princomp(s);
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            [s_s,~,p_latent] = princomp(s');
 
             t = transforms.record.zca(s,log);
             
-            assert(tc.same(t.coeffs,s_s));
+            assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent)) * s_s'));
+            assert(tc.same(t.saved_transform_decode,s_s * diag(sqrt(p_latent)) * s_s'));
+            assert(tc.same(t.coeffs,s_s'));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
             assert(tc.same(t.coeffs_eigenvalues,p_latent));
-            assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent)) * s_s'));
-            assert(tc.same(t.sample_mean,mean(s,1)));
+            assert(tc.same(t.sample_mean,mean(s,2)));
             assert(t.div_epsilon == 0);
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
@@ -97,16 +98,17 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100);
-            [s_s,~,p_latent] = princomp(s);
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            [s_s,~,p_latent] = princomp(s');
 
             t = transforms.record.zca(s,log,1e-5);
             
-            assert(tc.same(t.coeffs,s_s));
+            assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent + 1e-5)) * s_s'));
+            assert(tc.same(t.saved_transform_decode,s_s * diag(sqrt(p_latent + 1e-5)) * s_s'));
+            assert(tc.same(t.coeffs,s_s'));
             assert(tc.same(t.coeffs * t.coeffs',eye(2)));
             assert(tc.same(t.coeffs_eigenvalues,p_latent));
-            assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent + 1e-5)) * s_s'));
-            assert(tc.same(t.sample_mean,mean(s,1)));
+            assert(tc.same(t.sample_mean,mean(s,2)));
             assert(t.div_epsilon == 1e-5);
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
@@ -123,14 +125,14 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100);
-            [s_s,~,p_latent] = princomp(s);
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            [s_s,~,p_latent] = princomp(s');
             
             t = transforms.record.zca(s,log);            
             s_p = t.code(s,log);
             
-            assert(tc.same(s_p,bsxfun(@minus,s,mean(s,1)) * (s_s * diag(1 ./ sqrt(p_latent)) * s_s')));
-            assert(tc.same(cov(s_p),eye(2,2)));
+            assert(tc.same(s_p,s_s * diag(1 ./ sqrt(p_latent)) * s_s' * bsxfun(@minus,s,mean(s,2))));
+            assert(tc.same(cov(s_p'),eye(2,2)));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
                                                           'Computing principal components and associated variances.\n',...
@@ -141,11 +143,11 @@ classdef zca < transforms.reversible
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
-                scatter(s(:,1),s(:,2),'o');
+                scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
                 title('Original sample.');
                 subplot(1,2,2);
-                scatter(s_p(:,1),s_p(:,2),'x');
+                scatter(s_p(1,:),s_p(2,:),'x');
                 axis([-4 6 -4 6]);
                 title('zca transformed sample.');
                 pause(5);
@@ -161,7 +163,7 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100);
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
             
             t = transforms.record.zca(s,log);            
             s_p = t.code(s,log);
@@ -181,17 +183,17 @@ classdef zca < transforms.reversible
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,3,1);
-                scatter(s(:,1),s(:,2),'o');
+                scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
                 title('Original sample.');
                 subplot(1,3,2);
-                scatter(s_p(:,1),s_p(:,2),'x');
+                scatter(s_p(1,:),s_p(2,:),'x');
                 axis([-4 6 -4 6]);
-                title('zca transformed sample.');
+                title('ZCA transformed sample.');
                 subplot(1,3,3);
                 hold('on');
-                scatter(s(:,1),s(:,2),'o','r');
-                scatter(s_r(:,1),s_r(:,2),'.','b');
+                scatter(s(1,:),s(2,:),'o','r');
+                scatter(s_r(1,:),s_r(2,:),'.','b');
                 axis([-4 6 -4 6]);
                 title('Restored sample.');
                 pause(5);
@@ -203,7 +205,7 @@ classdef zca < transforms.reversible
             
             clearvars -except display;
             
-            fprintf('  Apply zca on image patches.\n');
+            fprintf('  Apply ZCA on image patches.\n');
             
             fprintf('    On grayscale images.\n');
             
@@ -248,7 +250,7 @@ classdef zca < transforms.reversible
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s5(:,:,:,1:20:end)));
-                title('zca transformed images.');
+                title('ZCA transformed images.');
                 pause(5);
                 close(gcf());
             end
@@ -301,7 +303,7 @@ classdef zca < transforms.reversible
                 title('Original images.');
                 subplot(1,2,2);
                 imshow(utils.format_as_tiles(s5(:,:,:,1:20:end)));
-                title('zca transformed images.');
+                title('ZCA transformed images.');
                 pause(5);
                 close(gcf());
             end

@@ -35,13 +35,13 @@ classdef svm < classifiers.binary
 
             try
                 if strcmp(kernel_type,'linear')
-                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','linear','boxconstraint',reg_param);
+                    svm_info_t = svmtrain(train_sample',class_info.labels_idx,'kernel_function','linear','boxconstraint',reg_param);
                     kernel_param_t = 0;
                 elseif strcmp(kernel_type,'rbf')
-                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','rbf','rbf_sigma',kernel_param,'kernelcachelimit',N,'boxconstraint',reg_param);
+                    svm_info_t = svmtrain(train_sample',class_info.labels_idx,'kernel_function','rbf','rbf_sigma',kernel_param,'kernelcachelimit',N,'boxconstraint',reg_param);
                     kernel_param_t = kernel_param;
                 elseif strcmp(kernel_type,'poly')
-                    svm_info_t = svmtrain(train_sample,class_info.labels_idx,'kernel_function','poly','polyorder',kernel_param,'kernelcachelimit',N,'boxconstraint',reg_param);
+                    svm_info_t = svmtrain(train_sample',class_info.labels_idx,'kernel_function','poly','polyorder',kernel_param,'kernelcachelimit',N,'boxconstraint',reg_param);
                     kernel_param_t = kernel_param;
                 else
                     assert(false);
@@ -71,9 +71,9 @@ classdef svm < classifiers.binary
             
             N = dataset.count(sample);
 
-            labels_idx_hat = svmclassify(obj.svm_info,sample);
-            labels_confidence = zeros(N,obj.saved_labels_count);
-            labels_confidence(sub2ind(size(labels_confidence),(1:N)',labels_idx_hat)) = 1;
+            labels_idx_hat = svmclassify(obj.svm_info,sample')';
+            labels_confidence = zeros(obj.saved_labels_count,N);
+            labels_confidence(sub2ind(size(labels_confidence),labels_idx_hat,1:N)) = 1;
         end
     end
     
@@ -96,7 +96,7 @@ classdef svm < classifiers.binary
             assert(cl.kernel_param == 0);
             assert(strcmp(func2str(cl.svm_info.KernelFunction),'linear_kernel'));
             assert(tc.empty(cl.svm_info.KernelFunctionArgs));
-            assert(tc.check(cl.svm_info.GroupNames == ci.labels_idx));
+            assert(tc.same(cl.svm_info.GroupNames,ci.labels_idx'));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
             
@@ -118,7 +118,7 @@ classdef svm < classifiers.binary
             assert(cl.kernel_param == 0.7);
             assert(strcmp(func2str(cl.svm_info.KernelFunction),'rbf_kernel'));
             assert(tc.same(cl.svm_info.KernelFunctionArgs,{0.7}));
-            assert(tc.check(cl.svm_info.GroupNames == ci.labels_idx));
+            assert(tc.same(cl.svm_info.GroupNames,ci.labels_idx'));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
             
@@ -140,7 +140,7 @@ classdef svm < classifiers.binary
             assert(cl.kernel_param == 3);
             assert(strcmp(func2str(cl.svm_info.KernelFunction),'poly_kernel'));
             assert(tc.same(cl.svm_info.KernelFunctionArgs,{3}));
-            assert(tc.check(cl.svm_info.GroupNames == ci.labels_idx));
+            assert(tc.check(cl.svm_info.GroupNames,ci.labels_idx'));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n'))));
             
@@ -162,7 +162,7 @@ classdef svm < classifiers.binary
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
-            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1);zeros(20,1) ones(20,1)]));
+            assert(tc.same(labels_confidence,[ones(20,1) zeros(20,1);zeros(20,1) ones(20,1)]'));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -193,10 +193,10 @@ classdef svm < classifiers.binary
             assert(tc.same(labels_idx_hat(21:39),ci_ts.labels_idx(21:39)));
             assert(labels_idx_hat(20) == 2);
             assert(labels_idx_hat(40) == 1);
-            assert(tc.same(labels_confidence,[ones(19,1) zeros(19,1);0 1;zeros(19,1) ones(19,1);1 0]));
+            assert(tc.same(labels_confidence,[ones(19,1) zeros(19,1);0 1;zeros(19,1) ones(19,1);1 0]'));
             assert(score == 95);
             assert(tc.same(conf_matrix,[19 1; 1 19]));
-            assert(tc.same(misclassified,[20 40]'));
+            assert(tc.same(misclassified,[20 40]));
 
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing separation surfaces.\n',...
                                                           'Computing dataset classes.\n'))));
@@ -234,14 +234,7 @@ classdef svm < classifiers.binary
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = [mvnrnd([3 1],[1 0; 0 1],100);
-                 mvnrnd([1 3],[1 0; 0 1],100)];
-            ci = classification_info({'1' '2'},[1*ones(100,1);2*ones(100,1)]);
-            [tr_i,ts_i] = ci.partition('holdout',0.2);            
-            s_tr = dataset.subsample(s,tr_i);
-            s_ts = dataset.subsample(s,ts_i);
-            ci_tr = ci.subsample(tr_i);
-            ci_ts = ci.subsample(ts_i);
+            [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_unclear_data_2();
             
             cl = classifiers.svm(s_tr,ci_tr,'rbf',0.5,1,log);
             
@@ -260,14 +253,7 @@ classdef svm < classifiers.binary
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = [mvnrnd([3 1],[1 0; 0 1],100);
-                 mvnrnd([1 3],[1 0; 0 1],100)];
-            ci = classification_info({'1' '2'},[1*ones(100,1);2*ones(100,1)]);
-            [tr_i,ts_i] = ci.partition('holdout',0.2);            
-            s_tr = dataset.subsample(s,tr_i);
-            s_ts = dataset.subsample(s,ts_i);
-            ci_tr = ci.subsample(tr_i);
-            ci_ts = ci.subsample(ts_i);
+            [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_unclear_data_2();
             
             cl = classifiers.svm(s_tr,ci_tr,'rbf',0.1,1,log);
             

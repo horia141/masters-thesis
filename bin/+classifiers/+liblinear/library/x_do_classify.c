@@ -112,19 +112,19 @@ mexFunction(
 		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.logging_logger.");
     check_condition(mxGetScalar(mxGetProperty(input[I_LOGGER],0,"active")) == 1,
     		    "master:InvalidMEXCall","Parameter \"logger\" is not active.");
-    check_condition(mxGetM(input[I_SAMPLE]) < INT_MAX,
+    check_condition(mxGetN(input[I_SAMPLE]) < INT_MAX,
 		    "master:InvalidMEXCall","Too many sample instances for \"liblinear\".");
-    check_condition(mxGetN(input[I_SAMPLE]) < INT_MAX - 1,
+    check_condition(mxGetM(input[I_SAMPLE]) < INT_MAX - 1,
 		    "master:InvalidMEXCall","Too many features for \"liblinear\".");
-    check_condition(mxGetN(input[I_SAMPLE]) + 1 == mxGetM(input[I_WEIGHTS]),
+    check_condition(mxGetM(input[I_SAMPLE]) + 1 == mxGetM(input[I_WEIGHTS]),
 		    "master:InvalidMEXCall","Different number of features in \"sample\" and \"weights\".");
     check_condition(mxGetN(input[I_WEIGHTS]) < INT_MAX,
 		    "master:InvalidMEXCall","Too many classifiers.");
 
     /* Extract relevant information from all inputs. */
 
-    sample_count = mxGetM(input[I_SAMPLE]);
-    sample_geometry = mxGetN(input[I_SAMPLE]);
+    sample_count = mxGetN(input[I_SAMPLE]);
+    sample_geometry = mxGetM(input[I_SAMPLE]);
     sample = mxGetPr(input[I_SAMPLE]);
     classifiers_count = (int)mxGetN(input[I_WEIGHTS]);
     weights = mxGetPr(input[I_WEIGHTS]);
@@ -181,11 +181,11 @@ mexFunction(
 	current_feature_count = 0;
 
 	for (jj = 0; jj < sample_geometry; jj++) {
-	    idx_base_features = jj * sample_count;
+	    idx_base_features = ii * sample_geometry;
 
-	    if (sample[idx_base_features + ii] != 0) {
+	    if (sample[idx_base_features + jj] != 0) {
 		instance_features[current_feature_count].index = (int)jj + 1;
-		instance_features[current_feature_count].value = sample[idx_base_features + ii];
+		instance_features[current_feature_count].value = sample[idx_base_features + jj];
 		current_feature_count = current_feature_count + 1;
 	    }
 	}
