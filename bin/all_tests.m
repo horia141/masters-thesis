@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = false;
+DISPLAY = true;
 
 tic;
 
@@ -27,8 +27,9 @@ regression_info.test(DISPLAY);
 
 transforms.record.dc_offset.test(DISPLAY);
 transforms.record.mean_substract.test(DISPLAY);
+transforms.record.normalize.test(DISPLAY);
+transforms.record.standardize.test(DISPLAY);
 transforms.record.pca.test(DISPLAY);
-transforms.record.pca_whitening.test(DISPLAY);
 transforms.record.zca.test(DISPLAY);
 transforms.image.resize.test(DISPLAY);
 transforms.image.window.test(DISPLAY);

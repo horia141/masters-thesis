@@ -120,7 +120,7 @@ classdef window_sparse_recoder < transform
             full_sample = zeros(2*obj.word_count,N,obj.pooled_patch_row_count,obj.pooled_patch_col_count);
             local_sample = sparse([],[],[],2*obj.word_count,N,0);
             local_sample_plain = shiftdim(sample_plain,2);
-	    draw_sample = zeros(2*obj.word_count,N,obj.patch_row_count,obj.patch_col_count);
+	    % draw_sample = zeros(2*obj.word_count,N,obj.patch_row_count,obj.patch_col_count);
             
             for ii = 1:obj.pooled_patch_row_count
                 for jj = 1:obj.pooled_patch_col_count
@@ -142,7 +142,7 @@ classdef window_sparse_recoder < transform
                             local_sample_5 = obj.t_sparse.code(local_sample_4,logger);
                              
                             local_sample = obj.reduce_fn(local_sample,local_sample_5);
-			    draw_sample(:,:,ii_1,jj_1) = local_sample_5;
+			  %  draw_sample(:,:,ii_1,jj_1) = local_sample_5;
                             
                             logger.end_node();
                         end

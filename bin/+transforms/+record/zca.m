@@ -71,17 +71,17 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],10000)';
             [s_s,~,p_latent] = princomp(s');
 
             t = transforms.record.zca(s,log);
             
             assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent)) * s_s'));
             assert(tc.same(t.saved_transform_decode,s_s * diag(sqrt(p_latent)) * s_s'));
-            assert(tc.same(t.coeffs,s_s'));
-            assert(tc.same(t.coeffs * t.coeffs',eye(2)));
-            assert(tc.same(t.coeffs_eigenvalues,p_latent));
-            assert(tc.same(t.sample_mean,mean(s,2)));
+            assert(tc.same(t.coeffs,s_s','Epsilon',0.1));
+            assert(tc.same(t.coeffs * t.coeffs',eye(2),'Epsilon',0.1));
+            assert(tc.same(t.coeffs_eigenvalues,p_latent,'Epsilon',0.1));
+            assert(tc.same(t.sample_mean,[3;3],'Epsilon',0.1));
             assert(t.div_epsilon == 0);
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
@@ -98,17 +98,17 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],10000)';
             [s_s,~,p_latent] = princomp(s');
 
             t = transforms.record.zca(s,log,1e-5);
             
             assert(tc.same(t.saved_transform_code,s_s * diag(1 ./ sqrt(p_latent + 1e-5)) * s_s'));
             assert(tc.same(t.saved_transform_decode,s_s * diag(sqrt(p_latent + 1e-5)) * s_s'));
-            assert(tc.same(t.coeffs,s_s'));
-            assert(tc.same(t.coeffs * t.coeffs',eye(2)));
-            assert(tc.same(t.coeffs_eigenvalues,p_latent));
-            assert(tc.same(t.sample_mean,mean(s,2)));
+            assert(tc.same(t.coeffs,s_s','Epsilon',0.1));
+            assert(tc.same(t.coeffs * t.coeffs',eye(2),'Epsilon',0.1));
+            assert(tc.same(t.coeffs_eigenvalues,p_latent,'Epsilon',0.1));
+            assert(tc.same(t.sample_mean,[3;3],'Epsilon',0.1));
             assert(t.div_epsilon == 1e-5);
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
@@ -125,13 +125,14 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],10000)';
             [s_s,~,p_latent] = princomp(s');
             
             t = transforms.record.zca(s,log);            
             s_p = t.code(s,log);
             
             assert(tc.same(s_p,s_s * diag(1 ./ sqrt(p_latent)) * s_s' * bsxfun(@minus,s,mean(s,2))));
+            assert(tc.same(mean(s_p,2),[0;0],'Epsilon',0.1));
             assert(tc.same(cov(s_p'),eye(2,2)));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
@@ -145,10 +146,12 @@ classdef zca < transforms.reversible
                 subplot(1,2,1);
                 scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
+                axis('square');
                 title('Original sample.');
                 subplot(1,2,2);
                 scatter(s_p(1,:),s_p(2,:),'x');
                 axis([-4 6 -4 6]);
+                axis('square');
                 title('zca transformed sample.');
                 pause(5);
                 close(gcf());
@@ -163,7 +166,7 @@ classdef zca < transforms.reversible
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
-            s = mvnrnd([3 3],[4 2.4; 2.4 2],100)';
+            s = mvnrnd([3 3],[4 2.4; 2.4 2],10000)';
             
             t = transforms.record.zca(s,log);            
             s_p = t.code(s,log);
@@ -185,16 +188,19 @@ classdef zca < transforms.reversible
                 subplot(1,3,1);
                 scatter(s(1,:),s(2,:),'o');
                 axis([-4 6 -4 6]);
+                axis('square');
                 title('Original sample.');
                 subplot(1,3,2);
                 scatter(s_p(1,:),s_p(2,:),'x');
                 axis([-4 6 -4 6]);
+                axis('square');
                 title('ZCA transformed sample.');
                 subplot(1,3,3);
                 hold('on');
                 scatter(s(1,:),s(2,:),'o','r');
                 scatter(s_r(1,:),s_r(2,:),'.','b');
                 axis([-4 6 -4 6]);
+                axis('square');
                 title('Restored sample.');
                 pause(5);
                 close(gcf());

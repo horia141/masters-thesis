@@ -59,6 +59,7 @@ classdef dc_offset < transform
             s_p = t.code(s,log);
             
             assert(tc.same(s_p,s - repmat(mean(s,1),50,1)));
+            assert(tc.same(mean(s_p,1),zeros(1,4)));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Substracting DC component from each sample.\n'))));
             
