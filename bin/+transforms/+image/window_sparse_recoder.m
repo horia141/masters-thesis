@@ -89,7 +89,7 @@ classdef window_sparse_recoder < transform
             t_sparse_t = transforms.sparse.gdmp(patches_4,coding_fn,word_count,coeffs_count,initial_learning_rate,final_learning_rate,max_iter_count,logger.new_transform('Building sparse coder'));
             
             input_geometry = [d,dr,dc,1];
-            output_geometry = pooled_patch_row_count_t * pooled_patch_col_count_t * 2 * word_count;
+            output_geometry = pooled_patch_row_count_t * pooled_patch_col_count_t * word_count;
             
             obj = obj@transform(input_geometry,output_geometry,logger);
             obj.pooled_patch_row_count = pooled_patch_row_count_t;
@@ -117,10 +117,10 @@ classdef window_sparse_recoder < transform
         function [sample_coded] = do_code(obj,sample_plain,logger)
             N = dataset.count(sample_plain);
             
-            full_sample = zeros(2*obj.word_count,N,obj.pooled_patch_row_count,obj.pooled_patch_col_count);
-            local_sample = sparse([],[],[],2*obj.word_count,N,0);
+            full_sample = zeros(obj.word_count,N,obj.pooled_patch_row_count,obj.pooled_patch_col_count);
+            local_sample = sparse([],[],[],obj.word_count,N,0);
             local_sample_plain = shiftdim(sample_plain,2);
-	    % draw_sample = zeros(2*obj.word_count,N,obj.patch_row_count,obj.patch_col_count);
+            % draw_sample = zeros(obj.word_count,N,obj.patch_row_count,obj.patch_col_count);
             
             for ii = 1:obj.pooled_patch_row_count
                 for jj = 1:obj.pooled_patch_col_count
@@ -140,9 +140,10 @@ classdef window_sparse_recoder < transform
                             local_sample_3 = bsxfun(@minus,local_sample_2,mean(local_sample_2,1));
                             local_sample_4 = obj.t_zca.code(local_sample_3,logger);
                             local_sample_5 = obj.t_sparse.code(local_sample_4,logger);
+                            local_sample_6 = 1 ./ (1 + 2.7182 .^ (-local_sample_5));
                              
-                            local_sample = obj.reduce_fn(local_sample,local_sample_5);
-			  %  draw_sample(:,:,ii_1,jj_1) = local_sample_5;
+                            local_sample = obj.reduce_fn(local_sample,local_sample_6);
+                            %  draw_sample(:,:,ii_1,jj_1) = local_sample_5;
                             
                             logger.end_node();
                         end

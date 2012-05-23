@@ -6,9 +6,6 @@ MEXFLAGS = -g CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -
 LIBS = blas/blas.a
 
 all: x_do_train_one_vs_all x_do_train_one_vs_one x_do_classify
-	mv x_do_train_one_vs_all.mexa64 ../
-	mv x_do_train_one_vs_one.mexa64 ../
-	mv x_do_classify.mexa64 ../
 
 x_do_train_one_vs_all: x_do_train_one_vs_all.c x_common.h tron.o linear.o blas/blas.a
 	$(MEX) $(MEXFLAGS) x_do_train_one_vs_all.c tron.o linear.o $(LIBS)

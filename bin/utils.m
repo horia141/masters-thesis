@@ -1,5 +1,15 @@
 classdef utils
     methods (Static,Access=public)
+        function [o] = rand_range(a,b)
+            assert(tc.scalar(a));
+            assert(tc.number(a));
+            assert(tc.scalar(b));
+            assert(tc.scalar(b));
+            assert(a < b);
+            
+            o = (b - a) * rand() + a;
+        end
+        
         function [o_v] = force_row(v)
             assert(tc.vector(v));
             
@@ -223,6 +233,10 @@ classdef utils
     methods (Static,Access=public)
         function test(display)
             fprintf('Testing "utils".\n');
+            
+            fprintf('  Function "rand_range".\n');
+            
+            assert(false);
             
             fprintf('  Function "force_row".\n');
             

@@ -302,6 +302,21 @@ classdef logger < handle
             obj.level_stack = obj.level_stack(1:end-1);
         end
         
+        function [new_logger] = new_node(obj,message_fmt,varargin)
+            assert(tc.scalar(obj));
+            assert(tc.logging_logger(obj));
+            assert(obj.active);
+            assert(tc.scalar(message_fmt));
+            assert(tc.string(message_fmt));
+            assert(tc.empty(varargin) || tc.vector(varargin));
+            assert(tc.empty(varargin) || tc.cell(varargin));
+            assert(tc.empty(varargin) || tc.checkf(@tc.scalar,varargin));
+            assert(tc.empty(varargin) || tc.checkf(@tc.value,varargin));
+            
+            new_logger = logging.logger(obj.handlers,obj.level_stack,obj.per_handler_indent,obj.level_at_indent);
+            new_logger.beg_node(message_fmt,varargin{:});
+        end
+        
         function [new_logger] = new_experiment(obj,message_fmt,varargin)
             assert(tc.scalar(obj));
             assert(tc.logging_logger(obj));
@@ -1053,6 +1068,117 @@ classdef logger < handle
             hnd8.close();
             hnd9.close();
             
+            clearvars -except display;
+            
+            fprintf('  Function "new_node".\n');
+            
+            hnd1 = logging.handlers.testing(logging.level.TopLevel);
+            hnd2 = logging.handlers.testing(logging.level.Experiment);
+            hnd3 = logging.handlers.testing(logging.level.Architecture);
+            hnd4 = logging.handlers.testing(logging.level.Transform);
+            hnd5 = logging.handlers.testing(logging.level.Classifier);
+            hnd6 = logging.handlers.testing(logging.level.Dataset_IO);
+            hnd7 = logging.handlers.testing(logging.level.Results);
+            hnd8 = logging.handlers.testing(logging.level.Error);
+            hnd9 = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd1,hnd2,hnd3,hnd4,hnd5,hnd6,hnd7,hnd8,hnd9});
+            
+            log_a = log.new_node('A');
+            
+            assert(tc.same(length(log_a.handlers),9));
+            assert(tc.same(log_a.handlers{1}.active,true));
+            assert(tc.same(log_a.handlers{1}.min_level,logging.level.TopLevel));
+            assert(tc.same(log_a.handlers{1}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers{2}.active,true));
+            assert(tc.same(log_a.handlers{2}.min_level,logging.level.Experiment));
+            assert(tc.same(log_a.handlers{2}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers{3}.active,true));
+            assert(tc.same(log_a.handlers{3}.min_level,logging.level.Architecture));
+            assert(tc.same(log_a.handlers{3}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers{4}.active,true));
+            assert(tc.same(log_a.handlers{4}.min_level,logging.level.Transform));
+            assert(tc.same(log_a.handlers{4}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers{5}.active,true));
+            assert(tc.same(log_a.handlers{5}.min_level,logging.level.Classifier));
+            assert(tc.same(log_a.handlers{5}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers{6}.active,true));
+            assert(tc.same(log_a.handlers{6}.min_level,logging.level.Dataset_IO));
+            assert(tc.same(log_a.handlers{6}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers{7}.active,true));
+            assert(tc.same(log_a.handlers{7}.min_level,logging.level.Results));
+            assert(tc.same(log_a.handlers{7}.logged_data,''));
+            assert(tc.same(log_a.handlers{8}.active,true));
+            assert(tc.same(log_a.handlers{8}.min_level,logging.level.Error));
+            assert(tc.same(log_a.handlers{8}.logged_data,''));
+            assert(tc.same(log_a.handlers{9}.active,true));
+            assert(tc.same(log_a.handlers{9}.min_level,logging.level.All));
+            assert(tc.same(log_a.handlers{9}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log_a.handlers_count,9));
+            assert(tc.same(log_a.active,true));
+            assert(tc.same(log_a.level_stack,[logging.level.TopLevel]));
+            assert(tc.same(log_a.per_handler_indent,[2;2;2;2;2;2;0;0;2]));
+            assert(tc.same(log_a.level_at_indent,{{logging.level.TopLevel;logging.level.TopLevel};...
+                                                  {logging.level.TopLevel;logging.level.TopLevel};...
+                                                  {logging.level.TopLevel;logging.level.TopLevel};...
+                                                  {logging.level.TopLevel;logging.level.TopLevel};...
+                                                  {logging.level.TopLevel;logging.level.TopLevel};...
+                                                  {logging.level.TopLevel;logging.level.TopLevel};...
+                                                  {logging.level.TopLevel};...
+                                                  {logging.level.TopLevel};...
+                                                  {logging.level.TopLevel;logging.level.TopLevel}}));
+            assert(tc.same(length(log.handlers),9));
+            assert(tc.same(log.handlers{1}.active,true));
+            assert(tc.same(log.handlers{1}.min_level,logging.level.TopLevel));
+            assert(tc.same(log.handlers{1}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers{2}.active,true));
+            assert(tc.same(log.handlers{2}.min_level,logging.level.Experiment));
+            assert(tc.same(log.handlers{2}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers{3}.active,true));
+            assert(tc.same(log.handlers{3}.min_level,logging.level.Architecture));
+            assert(tc.same(log.handlers{3}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers{4}.active,true));
+            assert(tc.same(log.handlers{4}.min_level,logging.level.Transform));
+            assert(tc.same(log.handlers{4}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers{5}.active,true));
+            assert(tc.same(log.handlers{5}.min_level,logging.level.Classifier));
+            assert(tc.same(log.handlers{5}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers{6}.active,true));
+            assert(tc.same(log.handlers{6}.min_level,logging.level.Dataset_IO));
+            assert(tc.same(log.handlers{6}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers{7}.active,true));
+            assert(tc.same(log.handlers{7}.min_level,logging.level.Results));
+            assert(tc.same(log.handlers{7}.logged_data,''));
+            assert(tc.same(log.handlers{8}.active,true));
+            assert(tc.same(log.handlers{8}.min_level,logging.level.Error));
+            assert(tc.same(log.handlers{8}.logged_data,''));
+            assert(tc.same(log.handlers{9}.active,true));
+            assert(tc.same(log.handlers{9}.min_level,logging.level.All));
+            assert(tc.same(log.handlers{9}.logged_data,sprintf('A:\n')));
+            assert(tc.same(log.handlers_count,9));
+            assert(tc.same(log.active,true));
+            assert(tc.same(log.level_stack,logging.level.TopLevel));
+            assert(tc.same(log.per_handler_indent,[0;0;0;0;0;0;0;0;0]));
+            assert(tc.same(log.level_at_indent,{{logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel};...
+                                                {logging.level.TopLevel}}));
+                                            
+            log.close();
+            hnd1.close();
+            hnd2.close();
+            hnd3.close();
+            hnd4.close();
+            hnd5.close();
+            hnd6.close();
+            hnd7.close();
+            hnd8.close();
+            hnd9.close();
+
             clearvars -except display;
             
             fprintf('  Function "new_experiment".\n');

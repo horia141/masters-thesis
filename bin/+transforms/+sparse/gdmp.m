@@ -48,7 +48,7 @@ classdef gdmp < transforms.reversible
             logger.end_node();
             
             input_geometry = d;
-            output_geometry = 2 * word_count;
+            output_geometry = word_count;
 
             obj = obj@transforms.reversible(input_geometry,output_geometry,logger);
             obj.coding_fn = coding_fn;
@@ -67,8 +67,8 @@ classdef gdmp < transforms.reversible
         function [sample_coded] = do_code(obj,sample_plain,logger)
             logger.message('Building sparse samples.');
 
-            sample_coded_1 = obj.coding_fn(obj.sparse_dict,obj.sparse_dict_transp,sample_plain,obj.coeffs_count);
-            sample_coded = [max(0,sample_coded_1);max(0,-sample_coded_1)];
+            sample_coded = obj.coding_fn(obj.sparse_dict,obj.sparse_dict_transp,sample_plain,obj.coeffs_count);
+            % sample_coded = [max(0,sample_coded_1);max(0,-sample_coded_1)];
         end
         
         function [sample_plain_hat] = do_decode(obj,sample_coded,logger)
@@ -76,9 +76,9 @@ classdef gdmp < transforms.reversible
             
             d = dataset.geometry(sample_coded);
 
-            end_2 = d / 2;
-            sample_coded_1 = sample_coded(1:end_2,:) - sample_coded((end_2+1):end,:);
-            sample_plain_hat = obj.sparse_dict_transp * sample_coded_1;
+            % end_2 = d / 2;
+            % sample_coded_1 = sample_coded(1:end_2,:) - sample_coded((end_2+1):end,:);
+            sample_plain_hat = obj.sparse_dict_transp * sample_coded;
         end
     end
     
@@ -143,8 +143,8 @@ classdef gdmp < transforms.reversible
                 saved_mse(iter) = mean_error;
                 % logger.message('Mean error: %.0f',mean_error);
                 % sz = sqrt(size(initial_dict,2));
-		% utils.display_sparse_basis(dict,sz,sz);
-		% pause;
+                % utils.display_sparse_basis(dict,sz,sz);
+                % pause;
             end
             
             logger.end_node();
@@ -191,7 +191,7 @@ classdef gdmp < transforms.reversible
             assert(tc.check(t.saved_mse > 0));
             assert(tc.checkf(@(ii)t.saved_mse(ii) <= t.saved_mse(ii-1),8:20));
             assert(tc.same(t.input_geometry,2));
-            assert(tc.same(t.output_geometry,8));
+            assert(tc.same(t.output_geometry,4));
 
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
                                                           '  Building initial dictionary.\n',...
@@ -235,7 +235,7 @@ classdef gdmp < transforms.reversible
             
             assert(tc.matrix(s_p));
             assert(tc.sparse(s_p));
-            assert(tc.same(size(s_p),[6 600]));
+            assert(tc.same(size(s_p),[3 600]));
             assert(tc.number(s_p));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
@@ -271,11 +271,15 @@ classdef gdmp < transforms.reversible
                 line([0;t.sparse_dict(1,1)],[0;t.sparse_dict(1,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(2,1)],[0;t.sparse_dict(2,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(3,1)],[0;t.sparse_dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Original samples.');
                 hold off;
                 subplot(1,2,2);
                 scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
-                title('gdmp transformed samples.');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('GDMP transformed samples.');
                 pause(5);
                 close(gcf());
             end
@@ -296,7 +300,7 @@ classdef gdmp < transforms.reversible
             
             assert(tc.matrix(s_p));
             assert(tc.sparse(s_p));
-            assert(tc.same(size(s_p),[6 600]));
+            assert(tc.same(size(s_p),[3 600]));
             assert(tc.number(s_p));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
@@ -332,11 +336,15 @@ classdef gdmp < transforms.reversible
                 line([0;t.sparse_dict(1,1)],[0;t.sparse_dict(1,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(2,1)],[0;t.sparse_dict(2,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(3,1)],[0;t.sparse_dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Original samples.');
                 hold off;
                 subplot(1,2,2);
                 scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
-                title('gdmp transformed samples.');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('GDMP transformed samples.');
                 pause(5);
                 close(gcf());
             end
@@ -358,7 +366,8 @@ classdef gdmp < transforms.reversible
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
             
-            assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
+            assert(tc.same(s_r,t.sparse_dict_transp * s_p));
+            %assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
                                                           '  Building initial dictionary.\n',...
@@ -394,13 +403,19 @@ classdef gdmp < transforms.reversible
                 line([0;t.sparse_dict(1,1)],[0;t.sparse_dict(1,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(2,1)],[0;t.sparse_dict(2,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(3,1)],[0;t.sparse_dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Original samples.');
                 hold off;
                 subplot(1,3,2);
                 scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
-                title('gdmp transformed samples.');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('GDMP transformed samples.');
                 subplot(1,3,3);
                 scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Restored samples.');
                 pause(5);
                 close(gcf());
@@ -421,7 +436,8 @@ classdef gdmp < transforms.reversible
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
 
-            assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
+            assert(tc.same(s_r,t.sparse_dict_transp * s_p));
+            % assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
                                                           '  Building initial dictionary.\n',...
@@ -457,13 +473,19 @@ classdef gdmp < transforms.reversible
                 line([0;t.sparse_dict(1,1)],[0;t.sparse_dict(1,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(2,1)],[0;t.sparse_dict(2,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(3,1)],[0;t.sparse_dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Original samples.');
                 hold off;
                 subplot(1,3,2);
                 scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
-                title('gdmp transformed samples.');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('GDMP transformed samples.');
                 subplot(1,3,3);
                 scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Restored samples.');
                 pause(5);
                 close(gcf());
@@ -484,7 +506,8 @@ classdef gdmp < transforms.reversible
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
             
-            assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
+            assert(tc.same(s_r,t.sparse_dict_transp * s_p));
+            % assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
             
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
                                                           '  Building initial dictionary.\n',...
@@ -520,13 +543,19 @@ classdef gdmp < transforms.reversible
                 line([0;t.sparse_dict(1,1)],[0;t.sparse_dict(1,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(2,1)],[0;t.sparse_dict(2,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(3,1)],[0;t.sparse_dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Original samples.');
                 hold off;
                 subplot(1,3,2);
                 scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
-                title('gdmp transformed samples.');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('GDMP transformed samples.');
                 subplot(1,3,3);
                 scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Restored samples.');
                 pause(5);
                 close(gcf());
@@ -547,7 +576,8 @@ classdef gdmp < transforms.reversible
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
 
-            assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
+            assert(tc.same(s_r,t.sparse_dict_transp * s_p));
+            % assert(tc.same(s_r,t.sparse_dict_transp * (s_p(1:3,:) - s_p(4:6,:))));
 
             assert(tc.same(hnd.logged_data,sprintf(strcat('Learning sparse dictionary:\n',...
                                                           '  Building initial dictionary.\n',...
@@ -583,13 +613,19 @@ classdef gdmp < transforms.reversible
                 line([0;t.sparse_dict(1,1)],[0;t.sparse_dict(1,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(2,1)],[0;t.sparse_dict(2,2)],'Color','r','LineWidth',3);
                 line([0;t.sparse_dict(3,1)],[0;t.sparse_dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Original samples.');
                 hold off;
                 subplot(1,3,2);
                 scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
-                title('gdmp transformed samples.');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('GDMP transformed samples.');
                 subplot(1,3,3);
                 scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
                 title('Restored samples.');
                 pause(5);
                 close(gcf());
