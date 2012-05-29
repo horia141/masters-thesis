@@ -39,8 +39,6 @@ classdef dc_offset < transform
             assert(tc.same(t.input_geometry,50));
             assert(tc.same(t.output_geometry,50));
 
-            assert(tc.same(hnd.logged_data,sprintf(strcat(''))));
-
             log.close();
             hnd.close();
             
@@ -60,8 +58,6 @@ classdef dc_offset < transform
             
             assert(tc.same(s_p,s - repmat(mean(s,1),50,1)));
             assert(tc.same(mean(s_p,1),zeros(1,4)));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Substracting DC component from each sample.\n'))));
             
             if exist('display','var') && (display == true)
                 figure();

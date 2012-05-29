@@ -1,19 +1,19 @@
 CXX ?= g++
 CC ?= gcc
-CFLAGS = -g -Wall -Wconversion -fPIC -lpthread
+CFLAGS = -O3 -Wall -Wconversion -fPIC -lpthread
 MEX = /opt/local-ubuntu/MATLAB/R2011a/bin/mex
 MEXFLAGS = -g CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -largeArrayDims
 LIBS = blas/blas.a
 
-all: x_do_train_one_vs_all x_do_train_one_vs_one x_do_classify
+all: x_do_train_one_vs_all.mexa64 x_do_train_one_vs_one.mexa64 x_do_classify.mexa64
 
-x_do_train_one_vs_all: x_do_train_one_vs_all.c x_common.h tron.o linear.o blas/blas.a
+x_do_train_one_vs_all.mexa64: x_do_train_one_vs_all.c x_common.h tron.o linear.o blas/blas.a
 	$(MEX) $(MEXFLAGS) x_do_train_one_vs_all.c tron.o linear.o $(LIBS)
 
-x_do_train_one_vs_one: x_do_train_one_vs_one.c x_common.h tron.o linear.o blas/blas.a
+x_do_train_one_vs_one.mexa64: x_do_train_one_vs_one.c x_common.h tron.o linear.o blas/blas.a
 	$(MEX) $(MEXFLAGS) x_do_train_one_vs_one.c tron.o linear.o $(LIBS)
 
-x_do_classify: x_do_classify.c x_common.h tron.o linear.o blas/blas.a
+x_do_classify.mexa64: x_do_classify.c x_common.h tron.o linear.o blas/blas.a
 	$(MEX) $(MEXFLAGS) x_do_classify.c tron.o linear.o $(LIBS)
 
 tron.o: tron.cpp tron.h
@@ -27,4 +27,5 @@ blas/blas.a: blas/*.c blas/*.h
 
 clean:
 	make -C blas clean
-	rm -f *~ tron.o linear.o
+	rm -f *.mexa64
+	rm -f *.o

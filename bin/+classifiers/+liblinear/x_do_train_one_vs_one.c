@@ -32,8 +32,8 @@ struct worker_info {
     const double*            labels_idx;
     const struct parameter*  param;
     int                      task_buffer_count;
-    int*                     task_buffer1;
-    int*                     task_buffer2;
+    const int*               task_buffer1;
+    const int*               task_buffer2;
     double*                  results_weights_base;
 };
 
@@ -230,6 +230,8 @@ train_worker(
     	free(class1_found_index);
     }
 
+    /* Return to the "caller" thread. */
+
     pthread_exit(NULL);
 }
 
@@ -351,6 +353,10 @@ mexFunction(
     check_condition(mxGetScalar(mxGetProperty(input[I_CLASS_INFO],0,"labels_count")) < INT_MAX,
 		    "master:InvalidMEXCall","Too many classes for \"liblinear\".");
 
+    /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
+
+    set_print_string_function(liblinear_mexPrintf_wrapper);
+
     /* Extract relevant information from all inputs. */
 
     train_sample_count = mxGetN(input[I_TRAIN_SAMPLE]);
@@ -367,21 +373,21 @@ mexFunction(
 
     logger_beg_node(local_logger,"Parallel training via \"liblinear\" in One-vs-One fashion");
 
-    logger_beg_node(local_logger,"Configuration");
+    logger_beg_node(local_logger,"Passed configuration");
 
-    logger_message(local_logger,"Train Sample Count: %d",train_sample_count);
-    logger_message(local_logger,"Train Sample Geometry: %d",train_sample_geometry);
-    logger_message(local_logger,"Classes Count: %d",classes_count);
+    logger_message(local_logger,"Train sample count: %d",train_sample_count);
+    logger_message(local_logger,"Train sample geometry: %d",train_sample_geometry);
+    logger_message(local_logger,"Classes count: %d",classes_count);
     logger_message(local_logger,"Method: %s",METHOD_CODE_TO_STRING[method_code]);
-    logger_message(local_logger,"Regularization Parameter: %f",reg_param);
-    logger_message(local_logger,"Number of Worker Threads: %d",num_threads);
-    logger_message(local_logger,"Classifiers Count: %d",classifiers_count);
+    logger_message(local_logger,"Regularization parameter: %.3f",reg_param);
+    logger_message(local_logger,"Number of worker threads: %d",num_threads);
+    logger_message(local_logger,"Classifiers count: %d",classifiers_count);
 
     logger_end_node(local_logger);
 
-    logger_message(local_logger,"Building parameters info.");
-
     /* Build "param" parameter structure. */
+
+    logger_message(local_logger,"Building parameters info structure.");
 
     param.solver_type = method_code;
     param.eps = EPS_DEFAULT[method_code];
@@ -391,10 +397,15 @@ mexFunction(
     param.weight = NULL;
     param.p = 0;
 
-    /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf".
-       Later, we should replace this with calls to the "message" function of a "logger" object. */
+    logger_beg_node(local_logger,"Parameters structure [Sanity Check]");
 
-    set_print_string_function(liblinear_mexPrintf_wrapper);
+    logger_message(local_logger,"Solver type: %s",METHOD_CODE_TO_STRING[param.solver_type]);
+    logger_message(local_logger,"Epsilon: %f",param.eps);
+    logger_message(local_logger,"Regularization param: %.3f",param.C);
+    logger_message(local_logger,"Number of weight biases: %d",param.nr_weight);
+    logger_message(local_logger,"SVR p: %.3f",param.p);
+
+    logger_end_node(local_logger);
 
     /* Build thread pool. */
 
@@ -463,6 +474,8 @@ mexFunction(
 
     logger_end_node(local_logger);
 
+    /* Starting worker threads. */
+
     logger_message(local_logger,"Starting parallel training of classifiers.");
 
     thread_handles = (pthread_t*)mxCalloc(num_threads,sizeof(pthread_t));
@@ -494,4 +507,5 @@ mexFunction(
     mxFree(worker_info);
     mxFree(worker_task_buffers2_t);
     mxFree(worker_task_buffers1_t);
+    mxDestroyArray(local_logger);
 }

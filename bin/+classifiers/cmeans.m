@@ -73,8 +73,6 @@ classdef cmeans < classifier
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
 
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset class centers.\n'))));
-            
             log.close();
             hnd.close();
             
@@ -102,13 +100,6 @@ classdef cmeans < classifier
             assert(score == 100);
             assert(tc.same(conf_matrix,[20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset class centers.\n',...
-                                                          'Computing distances to each class center:\n',...
-                                                          '  Class 1.\n',...
-                                                          '  Class 2.\n',...
-                                                          '  Class 3.\n',...
-                                                          'Selecting class for each sample.\n'))));
             
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
@@ -148,13 +139,6 @@ classdef cmeans < classifier
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset class centers.\n',...
-                                                          'Computing distances to each class center:\n',...
-                                                          '  Class 1.\n',...
-                                                          '  Class 2.\n',...
-                                                          '  Class 3.\n',...
-                                                          'Selecting class for each sample.\n'))));
-            
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
             end
@@ -173,8 +157,6 @@ classdef cmeans < classifier
             
             cl = classifiers.cmeans(s_tr,ci_tr,log);
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset class centers.\n'))));
-
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
             end

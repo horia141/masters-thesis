@@ -61,9 +61,6 @@ classdef standardize < transforms.reversible
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing sample mean.\n',...
-                                                          'Computing sample standard deviation.\n'))));
-            
             log.close();
             hnd.close();
             
@@ -82,10 +79,6 @@ classdef standardize < transforms.reversible
             assert(tc.same(mean(s_p,2),[0;0],'Epsilon',0.1));
             assert(tc.same(std(s_p,0,2),[1;1],'Epsilon',0.1));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing sample mean.\n',...
-                                                          'Computing sample standard deviation.\n',...
-                                                          'Substracting mean from each instance and dividing by standard deviation.\n'))));
-                                                      
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
@@ -119,11 +112,6 @@ classdef standardize < transforms.reversible
             
             assert(tc.same(s_r,s,'Epsilon',0.1));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing sample mean.\n',...
-                                                          'Computing sample standard deviation.\n',...
-                                                          'Substracting mean from each instance and dividing by standard deviation.\n',...
-                                                          'Multiplying by standard deviation and adding saved mean to each instance.\n'))));
-                                                      
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,3,1);
@@ -165,11 +153,6 @@ classdef standardize < transforms.reversible
             assert(tc.same(std(s_p,0,2),[1;1],'Epsilon',0.1));
             assert(tc.same(s_r,s,'Epsilon',0.1));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing sample mean.\n',...
-                                                          'Computing sample standard deviation.\n',...
-                                                          'Substracting mean from each instance and dividing by standard deviation.\n',...
-                                                          'Multiplying by standard deviation and adding saved mean to each instance.\n'))));
-                                                      
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,3,1);

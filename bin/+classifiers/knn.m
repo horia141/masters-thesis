@@ -62,8 +62,6 @@ classdef knn < classifier
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n'))));
-            
             log.close();
             hnd.close();
             
@@ -86,9 +84,6 @@ classdef knn < classifier
             assert(score == 100);
             assert(tc.same(conf_matrix,[20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n',...
-                                                          'Computing distances to each stored sample.\n'))));
             
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
@@ -123,9 +118,6 @@ classdef knn < classifier
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n',...
-                                                          'Computing distances to each stored sample.\n'))));
-            
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
             end
@@ -144,8 +136,6 @@ classdef knn < classifier
             
             cl = classifiers.knn(s_tr,ci_tr,3,log);
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n'))));
-            
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
             end
@@ -163,8 +153,6 @@ classdef knn < classifier
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_unclear_data_3();
             
             cl = classifiers.knn(s_tr,ci_tr,7,log);
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Storing dataset.\n'))));
             
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);

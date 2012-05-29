@@ -52,8 +52,6 @@ classdef mean_substract < transforms.reversible
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n'))));
-            
             log.close();
             hnd.close();
             
@@ -70,9 +68,6 @@ classdef mean_substract < transforms.reversible
             
             assert(tc.same(s_p,s - repmat([3;3],1,10000),'Epsilon',0.1));
             assert(tc.same(mean(s_p,2),[0;0],'Epsilon',0.1));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
-                                                          'Substracting mean from each sample.\n'))));
             
             if exist('display','var') && (display == true)
                 figure();
@@ -107,10 +102,6 @@ classdef mean_substract < transforms.reversible
             
             assert(tc.same(s_r,s));
 
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing dataset mean.\n',...
-                                                          'Substracting mean from each sample.\n',...
-                                                          'Adding saved mean to each sample.\n'))));
-            
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,3,1);

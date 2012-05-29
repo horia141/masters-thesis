@@ -1,13 +1,16 @@
 classdef utils
     methods (Static,Access=public)
-        function [o] = rand_range(a,b)
+        function [o] = rand_range(a,b,varargin)
             assert(tc.scalar(a));
             assert(tc.number(a));
             assert(tc.scalar(b));
             assert(tc.scalar(b));
+	    assert(tc.empty(varargin) || tc.vector(varargin));
+	    assert(tc.empty(varargin) || tc.checkf(@tc.scalar,varargin));
+	    assert(tc.empty(varargin) || tc.checkf(@tc.number,varargin));
             assert(a < b);
             
-            o = (b - a) * rand() + a;
+            o = (b - a) * rand(varargin{:}) + a;
         end
         
         function [o_v] = force_row(v)
@@ -236,7 +239,25 @@ classdef utils
             
             fprintf('  Function "rand_range".\n');
             
-            assert(false);
+	    r1 = utils.rand_range(0,1);
+	    r2 = utils.rand_range(-1,1);
+	    r3 = utils.rand_range(0,10,1,10);
+	    r4 = utils.rand_range(-3,3,4,4,5);
+
+	    assert(tc.scalar(r1));
+	    assert(tc.unitreal(r1));
+	    assert(tc.scalar(r2));
+	    assert(tc.unitreal(abs(r2)));
+	    assert(tc.vector(r3));
+	    assert(length(r3) == 10);
+	    assert(tc.check(r3 >= 0));
+	    assert(tc.check(r3 <= 10));
+	    assert(tc.tensor(r4,3));
+	    assert(size(r4,1) == 4);
+	    assert(size(r4,2) == 4);
+	    assert(size(r4,3) == 5);
+	    assert(tc.check(r4 >= -3));
+	    assert(tc.check(r4 <= 3));
             
             fprintf('  Function "force_row".\n');
             

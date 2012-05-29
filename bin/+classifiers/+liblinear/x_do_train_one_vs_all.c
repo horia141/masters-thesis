@@ -25,14 +25,14 @@ enum input_decoder {
 };
 
 struct worker_info {
-    int                id;
-    mwSize             train_sample_count;
-    mwSize             train_sample_geometry;
-    struct problem*    prob;
-    struct parameter*  param;
-    int                task_buffer_count;
-    int*               task_buffer;
-    double*            results_weights_base;
+    int                      id;
+    mwSize                   train_sample_count;
+    mwSize                   train_sample_geometry;
+    const struct problem*    prob;
+    const struct parameter*  param;
+    int                      task_buffer_count;
+    const int*               task_buffer;
+    double*                  results_weights_base;
 };
 
 static void*
@@ -49,6 +49,9 @@ train_worker(
 
     worker_info = (struct worker_info*)worker_info_p;
 
+    /* Build local copy of the problem structure. The labels information will be changed
+       though, to reflect the One-Vs-All type of multiclassification that we're doing. */
+
     local_prob.l = (int)worker_info->train_sample_count;
     local_prob.n = (int)worker_info->train_sample_geometry + 1;
     local_prob.y = (double*)calloc(worker_info->train_sample_count,sizeof(double));
@@ -58,6 +61,8 @@ train_worker(
     memcpy(local_prob.x,worker_info->prob->x,worker_info->train_sample_count * sizeof(struct feature_node*));
 
     for (idx_task = 0; idx_task < worker_info->task_buffer_count; idx_task++) {
+	first_of_one = 0;
+
 	/* Separate instances into "class" and "all" groups. */
 
 	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
@@ -93,12 +98,18 @@ train_worker(
 	result_model = train(&local_prob,worker_info->param);
 	memcpy(worker_info->results_weights_base + idx_task * (worker_info->train_sample_geometry + 1),result_model->w,(worker_info->train_sample_geometry + 1) * sizeof(double));
 
+	/* Revert to original order. */
+
 	temp_features = local_prob.x[0];
 	local_prob.x[0] = local_prob.x[first_of_one];
 	local_prob.x[first_of_one] = temp_features;
 
+	/* Free memory. */
+
 	free_model_content(result_model);
     }
+
+    /* Free working data and return to the "caller" thread. */
 
     free(local_prob.x);
     free(local_prob.y);
@@ -229,6 +240,10 @@ mexFunction(
     check_condition(mxGetScalar(mxGetProperty(input[I_CLASS_INFO],0,"labels_count")) < INT_MAX,
 		    "master:InvalidMEXCall","Too many classes for \"liblinear\".");
 
+    /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
+
+    set_print_string_function(liblinear_mexPrintf_wrapper);
+
     /* Extract relevant information from all inputs. */
 
     train_sample_count = mxGetN(input[I_TRAIN_SAMPLE]);
@@ -243,16 +258,20 @@ mexFunction(
 
     logger_beg_node(local_logger,"Parallel training via \"liblinear\" in One-vs-All fashion");
 
-    logger_beg_node(local_logger,"Configuration");
+    logger_beg_node(local_logger,"Passed configuration");
 
-    logger_message(local_logger,"Train Sample Count: %d",train_sample_count);
-    logger_message(local_logger,"Train Sample Geometry: %d",train_sample_geometry);
-    logger_message(local_logger,"Classes Count: %d",classes_count);
+    logger_message(local_logger,"Train sample count: %d",train_sample_count);
+    logger_message(local_logger,"Train sample geometry: %d",train_sample_geometry);
+    logger_message(local_logger,"Classes count: %d",classes_count);
     logger_message(local_logger,"Method: %s",METHOD_CODE_TO_STRING[method_code]);
-    logger_message(local_logger,"Regularization Parameter: %f",reg_param);
-    logger_message(local_logger,"Number of Worker Threads: %d",num_threads);
+    logger_message(local_logger,"Regularization parameter: %.3f",reg_param);
+    logger_message(local_logger,"Number of worker threads: %d",num_threads);
+
+    logger_end_node(local_logger);
 
     /* Count non-null entries for each instance. */
+
+    logger_message(local_logger,"Computing some sample statistics");
 
     non_null_counts = (mwSize*)mxCalloc(train_sample_count,sizeof(mwSize));
     memset(non_null_counts,0,train_sample_count * sizeof(mwSize));
@@ -269,14 +288,16 @@ mexFunction(
 	}
     }
 
-    logger_message(local_logger,"Average Number of Non-Null Entries: %d",int(double(non_null_full_count) / double(train_sample_count)));
-    logger_message(local_logger,"Total Number of Non-Null Entries: %d",non_null_full_count);
+    logger_beg_node(local_logger,"Sample statistics");
+
+    logger_message(local_logger,"Average number of non-null entries: %d",int(double(non_null_full_count) / double(train_sample_count)));
+    logger_message(local_logger,"Total number of non-null entries: %d",non_null_full_count);
 
     logger_end_node(local_logger);
 
-    logger_message(local_logger,"Building problem info and copying sample to \"liblinear\" format.");
-
     /*  Build "prob" problem structure. */
+
+    logger_message(local_logger,"Building problem info structure.");
 
     prob.l = (int)train_sample_count;
     prob.n = (int)train_sample_geometry + 1;
@@ -291,7 +312,17 @@ mexFunction(
 	prob.x[ii] = prob.x[ii - 1] + non_null_counts[ii - 1] + 2;
     }
 
+    logger_beg_node(local_logger,"Problem structure [Sanity Check]");
+
+    logger_message(local_logger,"Number of instances: %d",prob.l);
+    logger_message(local_logger,"Number of features: %d",prob.n);
+    logger_message(local_logger,"Bias: %.3f",prob.bias);
+
+    logger_end_node(local_logger);
+
     /* Fill sparse array "prob.x" with data from full array "train_sample". */
+
+    logger_message(local_logger,"Copying data to \"liblinear\" format.");
 
     current_feature_counts = (mwSize*)mxCalloc(train_sample_count,sizeof(mwSize));
     memset(current_feature_counts,0,train_sample_count);
@@ -322,9 +353,9 @@ mexFunction(
     	prob.x[ii][current_feature_counts[ii] + 1].value = 0;
     }
 
-    logger_message(local_logger,"Building parameters info.");
-
     /* Build "param" parameter structure. */
+
+    logger_message(local_logger,"Building parameters info structure.");
 
     param.solver_type = method_code;
     param.eps = EPS_DEFAULT[method_code];
@@ -334,20 +365,24 @@ mexFunction(
     param.weight = NULL;
     param.p = 0;
 
-    /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf".
-       Later, we should replace this with calls to the "message" function of a "logger" object. */
+    logger_beg_node(local_logger,"Parameters structure [Sanity Check]");
 
-    set_print_string_function(liblinear_mexPrintf_wrapper);
+    logger_message(local_logger,"Solver type: %s",METHOD_CODE_TO_STRING[param.solver_type]);
+    logger_message(local_logger,"Epsilon: %f",param.eps);
+    logger_message(local_logger,"Regularization param: %.3f",param.C);
+    logger_message(local_logger,"Number of weight biases: %d",param.nr_weight);
+    logger_message(local_logger,"SVR p: %.3f",param.p);
+
+    logger_end_node(local_logger);
 
     /* Call "check_parameter" to validate our problem and parameters structures. */
 
-    logger_message(local_logger,"Checking parameters info.");
+    logger_message(local_logger,"Checking problem and parameters info structures.");
 
     check_error = check_parameter(&prob,&param);
     check_condition(check_error == NULL,"master:NoConvergence",check_error);
 
     /* Build thread pool. */
-
     logger_message(local_logger,"Building worker task allocation.");
 
     worker_task_buffers_t = (int*)mxCalloc(classes_count,sizeof(int));
@@ -400,6 +435,8 @@ mexFunction(
 
     logger_end_node(local_logger);
 
+    /* Starting worker threads. */
+
     logger_message(local_logger,"Starting parallel training of classifiers.");
 
     thread_handles = (pthread_t*)mxCalloc(num_threads,sizeof(pthread_t));
@@ -430,9 +467,9 @@ mexFunction(
     mxFree(thread_handles);
     mxFree(worker_info);
     mxFree(worker_task_buffers_t);
+    mxFree(current_feature_counts);
     mxFree(prob_x_t);
     mxFree(prob.x);
-    mxFree(current_feature_counts);
     mxFree(non_null_counts);
     mxDestroyArray(local_logger);
 }

@@ -8,7 +8,7 @@
 #include "x_common.h"
 
 enum output_decoder {
-    O_CLASSES_DECISIONS  = 0,
+    O_CLASSIFIERS_DECISIONS  = 0,
     OUTPUTS_COUNT
 };
 
@@ -37,7 +37,7 @@ mexFunction(
     int                   method_code;
     double                reg_param;
     mxArray*              local_logger;
-    double*               classes_decisions;
+    double*               classifiers_decisions;
     struct model          local_model;
     struct feature_node*  instance_features;
     mwSize                current_feature_count;
@@ -121,6 +121,10 @@ mexFunction(
     check_condition(mxGetN(input[I_WEIGHTS]) < INT_MAX,
 		    "master:InvalidMEXCall","Too many classifiers.");
 
+    /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
+
+    set_print_string_function(liblinear_mexPrintf_wrapper);
+
     /* Extract relevant information from all inputs. */
 
     sample_count = mxGetN(input[I_SAMPLE]);
@@ -134,26 +138,23 @@ mexFunction(
 
     logger_beg_node(local_logger,"Classification via \"liblinear\"");
 
-    logger_beg_node(local_logger,"Configuration");
+    logger_beg_node(local_logger,"Passed configuration");
 
-    logger_message(local_logger,"Sample Count: %d",sample_count);
-    logger_message(local_logger,"Sample Geometry: %d",sample_geometry);
-    logger_message(local_logger,"Classifiers Count: %d",classifiers_count);
+    logger_message(local_logger,"Sample count: %d",sample_count);
+    logger_message(local_logger,"Sample geometry: %d",sample_geometry);
+    logger_message(local_logger,"Classifiers count: %d",classifiers_count);
     logger_message(local_logger,"Method: %s",METHOD_CODE_TO_STRING[method_code]);
-    logger_message(local_logger,"Regularization Parameter: %f",reg_param);
+    logger_message(local_logger,"Regularization parameter: %.3f",reg_param);
 
     logger_end_node(local_logger);
 
-    /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf".
-       Later, we should replace this with calls to the "message" function of a "logger" object. */
-
-    set_print_string_function(liblinear_mexPrintf_wrapper);
-
     /* Classify with each set of weights supplied. */
 
-    classes_decisions = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
+    logger_message(local_logger,"Rebuilding model.");
+
+    classifiers_decisions = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
     instance_features = (struct feature_node*)mxCalloc(sample_geometry + 2,sizeof(struct feature_node));
-    log_batch_size = sample_count / LOG_BATCH_CONTROL;
+    log_batch_size = (int)ceil((double)sample_count / LOG_BATCH_CONTROL);
 
     local_model.param.solver_type = method_code;
     local_model.param.eps = EPS_DEFAULT[method_code];
@@ -169,6 +170,17 @@ mexFunction(
     local_model.label[0] = 1;
     local_model.label[1] = 2;
     local_model.bias = 1;
+
+    logger_beg_node(local_logger,"Model structure [Sanity Check]");
+
+    logger_message(local_logger,"Solver type: %s",METHOD_CODE_TO_STRING[local_model.param.solver_type]);
+    logger_message(local_logger,"Epsilon: %f",local_model.param.eps);
+    logger_message(local_logger,"Regularization param: %.3f",local_model.param.C);
+    logger_message(local_logger,"Number of weight biases: %d",local_model.param.nr_weight);
+    logger_message(local_logger,"SVR p: %.3f",local_model.param.p);
+    logger_message(local_logger,"Features count: %d",local_model.nr_feature);
+
+    logger_end_node(local_logger);
 
     logger_beg_node(local_logger,"Classifying sample");
 
@@ -198,7 +210,7 @@ mexFunction(
 
 	for (jj_int = 0; jj_int < classifiers_count; jj_int++) {
 	    local_model.w = weights + jj_int * (sample_geometry + 1);
-	    predict_values(&local_model,instance_features,&classes_decisions[idx_base_decisions + jj_int]);
+	    predict_values(&local_model,instance_features,&classifiers_decisions[idx_base_decisions + jj_int]);
 	}
     }
 
@@ -208,13 +220,14 @@ mexFunction(
 
     /* Build "output". */
 
-    output[O_CLASSES_DECISIONS] = mxCreateDoubleMatrix(0,0,mxREAL);
-    mxSetPr(output[O_CLASSES_DECISIONS],classes_decisions);
-    mxSetM(output[O_CLASSES_DECISIONS],classifiers_count);
-    mxSetN(output[O_CLASSES_DECISIONS],sample_count);
+    output[O_CLASSIFIERS_DECISIONS] = mxCreateDoubleMatrix(0,0,mxREAL);
+    mxSetPr(output[O_CLASSIFIERS_DECISIONS],classifiers_decisions);
+    mxSetM(output[O_CLASSIFIERS_DECISIONS],classifiers_count);
+    mxSetN(output[O_CLASSIFIERS_DECISIONS],sample_count);
 
     /* Free memory. */
 
     mxFree(local_model.label);
     mxFree(instance_features);
+    mxDestroyArray(local_logger);
 }

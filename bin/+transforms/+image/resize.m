@@ -77,8 +77,6 @@ classdef resize < transform
             assert(tc.same(t.input_geometry,[192*256*1 192 256 1]));
             assert(tc.same(t.output_geometry,[20*20*1 20 20 1]));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat(''))));
-            
             log.close();
             hnd.close();
             
@@ -97,15 +95,6 @@ classdef resize < transform
             
             assert(tc.check(arrayfun(@(ii)tc.same(s_p(:,:,:,ii),imresize(s(:,:,:,ii),[100 100])),1:7)));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Building resized images:\n',...
-                                                          '  Processing images 1 to 1.\n',...
-                                                          '  Processing images 2 to 2.\n',...
-                                                          '  Processing images 3 to 3.\n',...
-                                                          '  Processing images 4 to 4.\n',...
-                                                          '  Processing images 5 to 5.\n',...
-                                                          '  Processing images 6 to 6.\n',...
-                                                          '  Processing images 7 to 7.\n'))));
-
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
@@ -132,15 +121,6 @@ classdef resize < transform
             
             assert(tc.check(arrayfun(@(ii)tc.same(s_p(:,:,:,ii),imresize(s(:,:,:,ii),[100 100])),1:7)));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Building resized images:\n',...
-                                                          '  Processing images 1 to 1.\n',...
-                                                          '  Processing images 2 to 2.\n',...
-                                                          '  Processing images 3 to 3.\n',...
-                                                          '  Processing images 4 to 4.\n',...
-                                                          '  Processing images 5 to 5.\n',...
-                                                          '  Processing images 6 to 6.\n',...
-                                                          '  Processing images 7 to 7.\n'))));
-            
             if exist('display','var') && (display == true)
                 figure();
                 subplot(1,2,1);
@@ -166,8 +146,6 @@ classdef resize < transform
             s_p = t.code(s,log);
 
             assert(tc.check(arrayfun(@(ii)tc.same(s_p(:,:,:,ii),s(1:2:end,1:2:end,:,ii)),1:7)));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Building resized images (fast because new size is a sub-multiple of old size).\n'))));
             
             if exist('display','var') && (display == true)
                 figure();

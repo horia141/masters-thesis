@@ -47,8 +47,6 @@ classdef normalize < transform
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,2));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing sample mean.\n'))));
-            
             log.close();
             hnd.close();
             
@@ -67,9 +65,6 @@ classdef normalize < transform
             assert(tc.same(s_p,(s - repmat(mean(s,2),1,10000)) ./ repmat(sqrt(sum((s - repmat(mean(s,2),1,10000)) .^ 2,1)),2,1),'Epsilon',0.1));
             assert(tc.same(mean(s_p,2),[0;0],'Epsilon',0.1));
             assert(tc.same(sqrt(sum(s_p .^ 2,1)),ones(1,10000),'Epsilon',0.1));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Computing sample mean.\n',...
-                                                          'Normalizing sample.\n'))));
             
             if exist('display','var') && (display == true)
                 figure();

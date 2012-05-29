@@ -61,8 +61,6 @@ classdef window < transform
             assert(tc.same(t.input_geometry,[192*192*1 192 192 1]));
             assert(tc.same(t.output_geometry,[192*192*1 192 192 1]));
             
-            assert(tc.same(hnd.logged_data,sprintf(strcat(''))));
-
             log.close();
             hnd.close();
             
@@ -82,8 +80,6 @@ classdef window < transform
             assert(tc.tensor(s_p,4));
             assert(tc.same(size(s_p),[192 192 1 7]));
             assert(tc.unitreal(s_p));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Applying filter.\n'))));
             
             if exist('display','var') && (display == true)
                 figure();
@@ -112,8 +108,6 @@ classdef window < transform
             assert(tc.tensor(s_p,4));
             assert(tc.same(size(s_p),[192 192 3 7]));
             assert(tc.unitreal(s_p));
-            
-            assert(tc.same(hnd.logged_data,sprintf(strcat('Applying filter.\n'))));
             
             if exist('display','var') && (display == true)
                 figure();
