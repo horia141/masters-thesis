@@ -10,7 +10,7 @@ classdef logistic < classifier
         multiclass_form;
         num_threads;
     end
-    
+   
     methods (Access=public)
         function [obj] = logistic(train_sample,class_info,problem_form,reg_type,reg_param,multiclass_form,num_threads,logger)
             assert(tc.dataset_record(train_sample));
@@ -104,22 +104,22 @@ classdef logistic < classifier
             logger.message('Determining most probable class.');
             
             if obj.saved_labels_count == 2
-                classifiers_probs_t1 = 1 ./ (1 + 2.71314 .^ (-classifiers_decisions));
+                classifiers_probs_t1 = 1 ./ (1 + 2.71828183 .^ (-classifiers_decisions));
                 classifiers_probs = [classifiers_probs_t1; 1 - classifiers_probs_t1];
                 
-                [max_probs,max_probs_idx] = max(classifiers_probs,[],1);
+                [~,max_probs_idx] = max(classifiers_probs,[],1);
                 
                 labels_idx_hat = max_probs_idx;
-                labels_confidence = bsxfun(@rdivide,classifiers_probs,max_probs);
+                labels_confidence = bsxfun(@rdivide,classifiers_probs,sum(classifiers_probs,1));
             elseif tc.same(obj.multiclass_form,'1va')
-                classifiers_probs = 1 ./ (1 + 2.718281 .^ (-classifiers_decisions));
+                classifiers_probs = 1 ./ (1 + 2.71828183 .^ (-classifiers_decisions));
             
-                [max_probs,max_probs_idx] = max(classifiers_probs,[],1);
+                [~,max_probs_idx] = max(classifiers_probs,[],1);
 
                 labels_idx_hat = max_probs_idx;
-                labels_confidence = bsxfun(@rdivide,classifiers_probs,max_probs);
+                labels_confidence = bsxfun(@rdivide,classifiers_probs,sum(classifiers_probs,1));
             else
-                classifiers_probs = 1 ./ (1 + 2.718281 .^ (-classifiers_decisions));
+                classifiers_probs = 1 ./ (1 + 2.71828183 .^ (-classifiers_decisions));
                 pair_labels_idx = (classifiers_probs < 0.5) + 1;
                 full_probs = zeros(obj.saved_labels_count,N);
                 
@@ -134,10 +134,10 @@ classdef logistic < classifier
                     end
                 end
                 
-                [max_probs,max_probs_idx] = max(full_probs,[],1);
+                [~,max_probs_idx] = max(full_probs,[],1);
 
                 labels_idx_hat = max_probs_idx;
-                labels_confidence = bsxfun(@rdivide,full_probs,max_probs);
+                labels_confidence = bsxfun(@rdivide,full_probs,sum(full_probs,1));
             end
         end
     end
@@ -518,11 +518,15 @@ classdef logistic < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[3 60]));
-            assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
-            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -548,11 +552,15 @@ classdef logistic < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[3 60]));
-            assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
-            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -578,11 +586,15 @@ classdef logistic < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[3 60]));
-            assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
-            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -608,11 +620,15 @@ classdef logistic < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[3 60]));
-            assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
-            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -638,11 +654,15 @@ classdef logistic < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[3 60]));
-            assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
-            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -668,11 +688,15 @@ classdef logistic < classifier
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
             assert(tc.matrix(labels_confidence));
-            assert(tc.same(size(labels_confidence),[3 60]));
-            assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
-            assert(tc.same(labels_confidence(3,41:60),ones(1,20)));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -685,7 +709,6 @@ classdef logistic < classifier
             hnd.close();
             
             clearvars -except display;
-            
             
             fprintf('    On clearly separated data with only two classes.\n');
             
@@ -703,8 +726,9 @@ classdef logistic < classifier
             assert(tc.matrix(labels_confidence));
             assert(tc.same(size(labels_confidence),[2 40]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(sum(labels_confidence,1),ones(1,40)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -732,8 +756,9 @@ classdef logistic < classifier
             assert(tc.matrix(labels_confidence));
             assert(tc.same(size(labels_confidence),[2 40]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(sum(labels_confidence,1),ones(1,40)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -761,8 +786,9 @@ classdef logistic < classifier
             assert(tc.matrix(labels_confidence));
             assert(tc.same(size(labels_confidence),[2 40]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(sum(labels_confidence,1),ones(1,40)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -790,8 +816,9 @@ classdef logistic < classifier
             assert(tc.matrix(labels_confidence));
             assert(tc.same(size(labels_confidence),[2 40]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(sum(labels_confidence,1),ones(1,40)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -819,8 +846,9 @@ classdef logistic < classifier
             assert(tc.matrix(labels_confidence));
             assert(tc.same(size(labels_confidence),[2 40]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(sum(labels_confidence,1),ones(1,40)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -848,8 +876,9 @@ classdef logistic < classifier
             assert(tc.matrix(labels_confidence));
             assert(tc.same(size(labels_confidence),[2 40]));
             assert(tc.unitreal(labels_confidence));
-            assert(tc.same(labels_confidence(1,1:20),ones(1,20)));
-            assert(tc.same(labels_confidence(2,21:40),ones(1,20)));
+            assert(tc.same(sum(labels_confidence,1),ones(1,40)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -884,15 +913,28 @@ classdef logistic < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
-            assert(tc.same(labels_confidence(2,19),1));
-            assert(tc.same(labels_confidence(3,20),1));
-            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
-            assert(tc.same(labels_confidence(1,39),1));
-            assert(tc.same(labels_confidence(3,40),1));
-            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
-            assert(tc.same(labels_confidence(1,59),1));
-            assert(tc.same(labels_confidence(2,60),1));
+            assert(tc.matrix(labels_confidence));
+	        assert(tc.same(size(labels_confidence),[3 60]));
+	        assert(tc.unitreal(labels_confidence));
+	        assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
@@ -925,15 +967,28 @@ classdef logistic < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
-            assert(tc.same(labels_confidence(2,19),1));
-            assert(tc.same(labels_confidence(3,20),1));
-            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
-            assert(tc.same(labels_confidence(1,39),1));
-            assert(tc.same(labels_confidence(3,40),1));
-            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
-            assert(tc.same(labels_confidence(1,59),1));
-            assert(tc.same(labels_confidence(2,60),1));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
@@ -966,15 +1021,28 @@ classdef logistic < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
-            assert(tc.same(labels_confidence(2,19),1));
-            assert(tc.same(labels_confidence(3,20),1));
-            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
-            assert(tc.same(labels_confidence(1,39),1));
-            assert(tc.same(labels_confidence(3,40),1));
-            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
-            assert(tc.same(labels_confidence(1,59),1));
-            assert(tc.same(labels_confidence(2,60),1));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
@@ -1007,15 +1075,28 @@ classdef logistic < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
-            assert(tc.same(labels_confidence(2,19),1));
-            assert(tc.same(labels_confidence(3,20),1));
-            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
-            assert(tc.same(labels_confidence(1,39),1));
-            assert(tc.same(labels_confidence(3,40),1));
-            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
-            assert(tc.same(labels_confidence(1,59),1));
-            assert(tc.same(labels_confidence(2,60),1));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
@@ -1048,15 +1129,28 @@ classdef logistic < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
-            assert(tc.same(labels_confidence(2,19),1));
-            assert(tc.same(labels_confidence(3,20),1));
-            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
-            assert(tc.same(labels_confidence(1,39),1));
-            assert(tc.same(labels_confidence(3,40),1));
-            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
-            assert(tc.same(labels_confidence(1,59),1));
-            assert(tc.same(labels_confidence(2,60),1));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));
@@ -1089,15 +1183,28 @@ classdef logistic < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence(1,1:18),ones(1,18)));
-            assert(tc.same(labels_confidence(2,19),1));
-            assert(tc.same(labels_confidence(3,20),1));
-            assert(tc.same(labels_confidence(2,21:38),ones(1,18)));
-            assert(tc.same(labels_confidence(1,39),1));
-            assert(tc.same(labels_confidence(3,40),1));
-            assert(tc.same(labels_confidence(3,41:58),ones(1,18)));
-            assert(tc.same(labels_confidence(1,59),1));
-            assert(tc.same(labels_confidence(2,60),1));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+	        assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));

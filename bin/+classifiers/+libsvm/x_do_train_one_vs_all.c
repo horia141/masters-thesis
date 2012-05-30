@@ -13,6 +13,8 @@ enum output_decoder {
     O_SUPPORT_VECTORS           = 1,
     O_COEFFS                    = 2,
     O_RHOS                      = 3,
+    O_PROB_AS                   = 4,
+    O_PROB_BS                   = 5,
     OUTPUTS_COUNT
 };
 
@@ -42,6 +44,8 @@ struct worker_info {
     struct svm_node***           results_sv_base;
     double**                     results_sv_coeff_base;
     double*                      results_sv_rho_base;
+    double*                      results_sv_prob_a_base;
+    double*                      results_sv_prob_b_base;
 };
 
 static void*
@@ -108,6 +112,8 @@ train_worker(
 	worker_info->results_sv_coeff_base[idx_task] = (double*)calloc(result_model->l,sizeof(double));
 	memcpy(worker_info->results_sv_coeff_base[idx_task],result_model->sv_coef[0],result_model->l * sizeof(double));
 	worker_info->results_sv_rho_base[idx_task] = result_model->rho[0];
+	worker_info->results_sv_prob_a_base[idx_task] = result_model->probA[0];
+	worker_info->results_sv_prob_b_base[idx_task] = result_model->probB[0];
 
 	/* Revert to original order. */
 
@@ -157,6 +163,8 @@ mexFunction(
     struct svm_node***    worker_results_sv_t;
     double**              worker_results_sv_coeff_t;
     double*               worker_results_sv_rho_t;
+    double*               worker_results_sv_prob_a_t;
+    double*               worker_results_sv_prob_b_t;
     struct worker_info*   worker_info;
     pthread_t*            thread_handles;
     int                   pthread_op_res;
@@ -170,6 +178,8 @@ mexFunction(
     double*               o_coeffs_buf;
     mxArray*              o_coeffs;
     mxArray*              o_rhos;
+    mxArray*              o_prob_as;
+    mxArray*              o_prob_bs;
     mwSize                ii;
     mwSize                jj;
     mwSize                idx_base;
@@ -407,7 +417,7 @@ mexFunction(
     param.nu = 0;
     param.p = 0;
     param.shrinking = 0;
-    param.probability = 0;
+    param.probability = 1;
 
     logger_beg_node(local_logger,"Parameters structure [Sanity Check]");
 
@@ -450,6 +460,8 @@ mexFunction(
     worker_results_sv_t = (struct svm_node***)mxCalloc(classes_count,sizeof(struct svm_node**));
     worker_results_sv_coeff_t = (double**)mxCalloc(classes_count,sizeof(double*));
     worker_results_sv_rho_t = (double*)mxCalloc(classes_count,sizeof(double));
+    worker_results_sv_prob_a_t = (double*)mxCalloc(classes_count,sizeof(double));
+    worker_results_sv_prob_b_t = (double*)mxCalloc(classes_count,sizeof(double));
 
     worker_info = (struct worker_info*)mxCalloc(num_threads,sizeof(struct worker_info));
 
@@ -467,6 +479,8 @@ mexFunction(
 	worker_info[ii_int].results_sv_base = NULL;
 	worker_info[ii_int].results_sv_coeff_base = NULL;
 	worker_info[ii_int].results_sv_rho_base = NULL;
+	worker_info[ii_int].results_sv_prob_a_base = NULL;
+	worker_info[ii_int].results_sv_prob_b_base = NULL;
     }
 
     for (ii_int = 0; ii_int < classes_count; ii_int++) {
@@ -480,6 +494,8 @@ mexFunction(
     worker_info[0].results_sv_base = &worker_results_sv_t[0];
     worker_info[0].results_sv_coeff_base = &worker_results_sv_coeff_t[0];
     worker_info[0].results_sv_rho_base = &worker_results_sv_rho_t[0];
+    worker_info[0].results_sv_prob_a_base = &worker_results_sv_prob_a_t[0];
+    worker_info[0].results_sv_prob_b_base = &worker_results_sv_prob_b_t[0];
 
     for (ii_int = 1; ii_int < num_threads; ii_int++) {
 	worker_info[ii_int].task_buffer = worker_info[ii_int - 1].task_buffer + worker_info[ii_int - 1].task_buffer_count;
@@ -489,6 +505,8 @@ mexFunction(
 	worker_info[ii_int].results_sv_base = worker_info[ii_int - 1].results_sv_base + worker_info[ii_int - 1].task_buffer_count;
 	worker_info[ii_int].results_sv_coeff_base = worker_info[ii_int - 1].results_sv_coeff_base + worker_info[ii_int - 1].task_buffer_count;
 	worker_info[ii_int].results_sv_rho_base = worker_info[ii_int - 1].results_sv_rho_base + worker_info[ii_int - 1].task_buffer_count;
+	worker_info[ii_int].results_sv_prob_a_base = worker_info[ii_int - 1].results_sv_prob_a_base + worker_info[ii_int - 1].task_buffer_count;
+	worker_info[ii_int].results_sv_prob_b_base = worker_info[ii_int - 1].results_sv_prob_b_base + worker_info[ii_int - 1].task_buffer_count;
     }
 
     logger_beg_node(local_logger,"Worker task allocation");
@@ -608,7 +626,23 @@ mexFunction(
 	o_rhos = mxCreateDoubleScalar(worker_results_sv_rho_t[ii_int]);
 
 	mxSetCell(output[O_RHOS],ii_int,o_rhos);
-    }	
+    }
+
+    output[O_PROB_AS] = mxCreateCellMatrix(1,classes_count);
+
+    for (ii_int = 0; ii_int < classes_count; ii_int++) {
+	o_prob_as = mxCreateDoubleScalar(worker_results_sv_prob_a_t[ii_int]);
+
+	mxSetCell(output[O_PROB_AS],ii_int,o_prob_as);
+    }
+
+    output[O_PROB_BS] = mxCreateCellMatrix(1,classes_count);
+
+    for (ii_int = 0; ii_int < classes_count; ii_int++) {
+	o_prob_bs = mxCreateDoubleScalar(worker_results_sv_prob_b_t[ii_int]);
+
+	mxSetCell(output[O_PROB_BS],ii_int,o_prob_bs);
+    }
 
     /* Free memory. */
 
@@ -619,6 +653,8 @@ mexFunction(
 
     mxFree(thread_handles);
     mxFree(worker_info);
+    mxFree(worker_results_sv_prob_b_t);
+    mxFree(worker_results_sv_prob_a_t);
     mxFree(worker_results_sv_rho_t);
     mxFree(worker_results_sv_coeff_t);
     mxFree(worker_results_sv_t);

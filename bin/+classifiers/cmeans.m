@@ -47,10 +47,11 @@ classdef cmeans < classifier
             
             logger.message('Selecting class for each sample.');
             
-            [min_distance,min_index] = min(distances,[],1);
+            reciproc_distances = 1 ./ distances;
+            [~,min_index] = max(reciproc_distances,[],1);
 
             labels_idx_hat = min_index;
-            labels_confidence = 1 ./ bsxfun(@rdivide,distances,min_distance);
+            labels_confidence = bsxfun(@rdivide,reciproc_distances,sum(reciproc_distances,1));
         end
     end
     
@@ -87,16 +88,20 @@ classdef cmeans < classifier
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_3();
             
-            t_centers = cell2mat(arrayfun(@(ii)mean(s_tr(:,ci_tr.labels_idx == ii),2),1:3,'UniformOutput',false));
-            dists = cell2mat(arrayfun(@(ii)sum((s_ts - repmat(t_centers(:,ii),1,60)) .^ 2,1)',1:3,'UniformOutput',false))';
-            min_dists = min(dists,[],1);
-            distsn = 1 ./ bsxfun(@rdivide,dists,min_dists);
-            
             cl = classifiers.cmeans(s_tr,ci_tr,log);            
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
-            assert(tc.same(labels_confidence,distsn));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
+            assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(3,1:20)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(2,21:40)));
+            assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(3,21:40)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(2,41:60)));
+            assert(tc.check(labels_confidence(3,41:60) >= labels_confidence(3,41:60)));
             assert(score == 100);
             assert(tc.same(conf_matrix,[20 0 0; 0 20 0; 0 0 20]));
             assert(tc.empty(misclassified));
@@ -117,11 +122,6 @@ classdef cmeans < classifier
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_mostly_clear_data_3();
             
-            t_centers = cell2mat(arrayfun(@(ii)mean(s_tr(:,ci_tr.labels_idx == ii),2),1:3,'UniformOutput',false));
-            dists = cell2mat(arrayfun(@(ii)sum((s_ts - repmat(t_centers(:,ii),1,60)) .^ 2,1)',1:3,'UniformOutput',false))';
-            min_dists = min(dists,[],1);
-            distsn = 1 ./ bsxfun(@rdivide,dists,min_dists);
-            
             cl = classifiers.cmeans(s_tr,ci_tr,log);            
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
@@ -134,7 +134,28 @@ classdef cmeans < classifier
             assert(labels_idx_hat(40) == 3);
             assert(labels_idx_hat(59) == 1);
             assert(labels_idx_hat(60) == 2);
-            assert(tc.same(labels_confidence,distsn));
+            assert(tc.matrix(labels_confidence));
+            assert(tc.same(size(labels_confidence),[3 60]));
+            assert(tc.unitreal(labels_confidence));
+            assert(tc.same(sum(labels_confidence,1),ones(1,60)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(2,1:18)));
+            assert(tc.check(labels_confidence(1,1:18) >= labels_confidence(3,1:18)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(1,19)));
+            assert(tc.check(labels_confidence(2,19) >= labels_confidence(3,19)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(1,20)));
+            assert(tc.check(labels_confidence(3,20) >= labels_confidence(2,20)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(2,21:38)));
+            assert(tc.check(labels_confidence(2,21:38) >= labels_confidence(3,21:38)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(2,39)));
+            assert(tc.check(labels_confidence(1,39) >= labels_confidence(3,39)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(1,40)));
+            assert(tc.check(labels_confidence(3,40) >= labels_confidence(2,40)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(2,41:58)));
+            assert(tc.check(labels_confidence(3,41:58) >= labels_confidence(3,41:58)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(2,59)));
+            assert(tc.check(labels_confidence(1,59) >= labels_confidence(3,59)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(1,60)));
+            assert(tc.check(labels_confidence(2,60) >= labels_confidence(3,60)));
             assert(score == 90);
             assert(tc.same(conf_matrix,[18 1 1; 1 18 1; 1 1 18]));
             assert(tc.same(misclassified,[19 20 39 40 59 60]));

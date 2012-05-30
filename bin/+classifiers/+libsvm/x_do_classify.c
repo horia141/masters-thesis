@@ -7,7 +7,7 @@
 #include "x_common.h"
 
 enum output_decoder {
-    O_CLASSIFIERS_DECISIONS  = 0,
+    O_CLASSIFIERS_PROBS  = 0,
     OUTPUTS_COUNT
 };
 
@@ -17,11 +17,13 @@ enum input_decoder {
     I_SUPPORT_VECTORS        = 2,
     I_COEFFS                 = 3,
     I_RHOS                   = 4,
-    I_KERNEL_CODE            = 5,
-    I_KERNEL_PARAM1          = 6,
-    I_KERNEL_PARAM2          = 7,
-    I_REG_PARAM              = 8,
-    I_LOGGER                 = 9,
+    I_PROB_AS                = 5,
+    I_PROB_BS                = 6,
+    I_KERNEL_CODE            = 7,
+    I_KERNEL_PARAM1          = 8,
+    I_KERNEL_PARAM2          = 9,
+    I_REG_PARAM              = 10,
+    I_LOGGER                 = 11,
     INPUTS_COUNT
 };
 
@@ -42,6 +44,8 @@ void mexFunction(
     double**           sv;
     double**           sv_coeffs;
     double*            sv_rhos;
+    double*            sv_prob_as;
+    double*            sv_prob_bs;
     int                kernel_code;
     double             kernel_param1;
     double             kernel_param2;
@@ -52,8 +56,10 @@ void mexFunction(
     mwSize*            current_feature_counts;
     struct svm_model*  local_models;
     struct svm_node**  local_models_SV_t;
+    int                check_prob;
     struct svm_node*   instance_features;
-    double*            classifiers_decisions;
+    double             decision_value;
+    double*            classifiers_probs;
     mwSize             current_feature_count;
     mwSize             log_batch_size;
     mwSize             ii;
@@ -157,7 +163,7 @@ void mexFunction(
     check_condition(mxGetN(input[I_RHOS]) >= 1,
 		    "master:InvalidMEXCall","Parameter \"rhos\" is not a tc.vector.");
     check_condition(mxIsCell(input[I_RHOS]),
-		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell.");
     for (ii = 0; ii < mxGetN(input[I_RHOS]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_RHOS],ii)) == 2,
 			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.scalar components.");
@@ -167,6 +173,42 @@ void mexFunction(
 			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.scalar components.");
 	check_condition(mxIsDouble(mxGetCell(input[I_RHOS],ii)),
 			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.number components.");
+    }
+    check_condition(mxGetNumberOfDimensions(input[I_PROB_AS]) == 2,
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.vector.");
+    check_condition(mxGetM(input[I_PROB_AS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.vector.");
+    check_condition(mxGetN(input[I_PROB_AS]) >= 1,
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.vector.");
+    check_condition(mxIsCell(input[I_PROB_AS]),
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell.");
+    for (ii = 0; ii < mxGetN(input[I_PROB_AS]); ii++) {
+	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_PROB_AS],ii)) == 2,
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.scalar components.");
+	check_condition(mxGetM(mxGetCell(input[I_PROB_AS],ii)) == 1,
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.scalar components.");
+	check_condition(mxGetN(mxGetCell(input[I_PROB_AS],ii)) == 1,
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.scalar components.");
+	check_condition(mxIsDouble(mxGetCell(input[I_PROB_AS],ii)),
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.number components.");
+    }
+    check_condition(mxGetNumberOfDimensions(input[I_PROB_BS]) == 2,
+		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.vector.");
+    check_condition(mxGetM(input[I_PROB_BS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.vector.");
+    check_condition(mxGetN(input[I_PROB_BS]) >= 1,
+		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.vector.");
+    check_condition(mxIsCell(input[I_PROB_BS]),
+		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell.");
+    for (ii = 0; ii < mxGetN(input[I_PROB_BS]); ii++) {
+	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_PROB_BS],ii)) == 2,
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.scalar components.");
+	check_condition(mxGetM(mxGetCell(input[I_PROB_BS],ii)) == 1,
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.scalar components.");
+	check_condition(mxGetN(mxGetCell(input[I_PROB_BS],ii)) == 1,
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.scalar components.");
+	check_condition(mxIsDouble(mxGetCell(input[I_PROB_BS],ii)),
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.number components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_KERNEL_CODE]) == 2,
 		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.scalar.");
@@ -237,6 +279,10 @@ void mexFunction(
 		    "master:InvalidMEXCall","Different number of support vector coefficients and support vector counts.");
     check_condition(mxGetN(input[I_SUPPORT_VECTORS_COUNT]) == mxGetN(input[I_RHOS]),
 		    "master:InvalidMEXCall","Different number of support vector rhos and support vector counts.");
+    check_condition(mxGetN(input[I_SUPPORT_VECTORS_COUNT]) == mxGetN(input[I_PROB_AS]),
+		    "master:InvalidMEXCall","Different number of support vector prob_as and support vector counts.");
+    check_condition(mxGetN(input[I_SUPPORT_VECTORS_COUNT]) == mxGetN(input[I_PROB_BS]),
+		    "master:InvalidMEXCall","Different number of support vector prob_bs and support vector counts.");
     for (ii = 0; ii < mxGetN(input[I_SUPPORT_VECTORS]); ii++) {
 	check_condition(mxGetN(mxGetCell(input[I_SUPPORT_VECTORS],ii)) < INT_MAX,
 			"master:InvalidMEXCall","Too many support vectors for \"libsvm\".");
@@ -268,6 +314,8 @@ void mexFunction(
     sv = (double**)mxCalloc(classifiers_count,sizeof(double*));
     sv_coeffs = (double**)mxCalloc(classifiers_count,sizeof(double*));
     sv_rhos = (double*)mxCalloc(classifiers_count,sizeof(double));
+    sv_prob_as = (double*)mxCalloc(classifiers_count,sizeof(double));
+    sv_prob_bs = (double*)mxCalloc(classifiers_count,sizeof(double));
     kernel_code = (int)mxGetScalar(input[I_KERNEL_CODE]);
     kernel_param1 = mxGetScalar(input[I_KERNEL_PARAM1]);
     kernel_param2 = mxGetScalar(input[I_KERNEL_PARAM2]);
@@ -281,6 +329,8 @@ void mexFunction(
 	sv[ii_int] = mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS],ii_int));
 	sv_coeffs[ii_int] = mxGetPr(mxGetCell(input[I_COEFFS],ii_int));
 	sv_rhos[ii_int] = mxGetScalar(mxGetCell(input[I_RHOS],ii_int));
+	sv_prob_as[ii_int] = mxGetScalar(mxGetCell(input[I_PROB_AS],ii_int));
+	sv_prob_bs[ii_int] = mxGetScalar(mxGetCell(input[I_PROB_BS],ii_int));
     }
 
     logger_beg_node(local_logger,"Classification via \"libsvm\"");
@@ -299,7 +349,7 @@ void mexFunction(
 
     /* Rebuild model structures. */
 
-    logger_message(local_logger,"Rebuilding models.");
+    logger_beg_node(local_logger,"Rebuilding models");
 
     local_models = (struct svm_model*)mxCalloc(classifiers_count,sizeof(struct svm_model));
     local_models_SV_t = (struct svm_node**)mxCalloc(classifiers_count,sizeof(struct svm_node*));
@@ -338,7 +388,7 @@ void mexFunction(
 	local_models[ii_int].param.nu = 0;
 	local_models[ii_int].param.p = 0;
 	local_models[ii_int].param.shrinking = 0;
-	local_models[ii_int].param.probability = 0;
+	local_models[ii_int].param.probability = 1;
 	local_models[ii_int].nr_class = 2;
 	local_models[ii_int].l = sv_count[ii_int];
 	local_models[ii_int].SV = (struct svm_node**)mxCalloc(sv_count[ii_int],sizeof(struct svm_node*));
@@ -348,8 +398,10 @@ void mexFunction(
 	memcpy(local_models[ii_int].sv_coef[0],sv_coeffs[ii_int],sv_count[ii_int] * sizeof(double));
 	local_models[ii_int].rho = (double*)mxCalloc(1,sizeof(double));
 	local_models[ii_int].rho[0] = sv_rhos[ii_int];
-	local_models[ii_int].probA = NULL;
-	local_models[ii_int].probB = NULL;
+	local_models[ii_int].probA = (double*)mxCalloc(1,sizeof(double));
+	local_models[ii_int].probA[0] = sv_prob_as[ii_int];
+	local_models[ii_int].probB = (double*)mxCalloc(1,sizeof(double));
+	local_models[ii_int].probB[0] = sv_prob_bs[ii_int];
 	local_models[ii_int].label = (int*)mxCalloc(2,sizeof(int));
 	local_models[ii_int].label[0] = 1;
 	local_models[ii_int].label[1] = 2;
@@ -387,11 +439,18 @@ void mexFunction(
 	    local_models[ii_int].SV[jj_int][current_feature_counts[jj_int]].value = 0;
 	}
 
+	/* Check probability model. */
+
+	check_prob = svm_check_probability_model(&local_models[ii_int]);
+	check_condition(check_prob == 1,"master:InvalidMEXCall","This should not happen!");
+
 	/* Free loop-locally needed data. */
 
 	mxFree(current_feature_counts);
 	mxFree(non_null_counts);
     }
+
+    logger_end_node(local_logger);
 
     logger_beg_node(local_logger,"Models structure [Sanity Check]");
 
@@ -425,13 +484,11 @@ void mexFunction(
 
     logger_end_node(local_logger);
 
-    logger_message(local_logger,"CHECK PROBABILITY MODEL");
-
     /* Classify with each set of support vectors/coeffs/rhos supplied. */
 
     logger_beg_node(local_logger,"Classifying sample");
 
-    classifiers_decisions = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
+    classifiers_probs = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
     instance_features = (struct svm_node*)mxCalloc(sample_geometry + 1,sizeof(struct svm_node));
     log_batch_size = (int)ceil((double)sample_count / LOG_BATCH_CONTROL);
 
@@ -457,7 +514,8 @@ void mexFunction(
 	instance_features[current_feature_count].value = 0;
 
 	for (jj_int = 0; jj_int < classifiers_count; jj_int++) {
-	    svm_predict_values(&local_models[jj_int],instance_features,&classifiers_decisions[idx_base_decisions + jj_int]);
+	    svm_predict_values(&local_models[jj_int],instance_features,&decision_value);
+	    classifiers_probs[idx_base_decisions + jj_int] = sigmoid_predict(decision_value,local_models[jj_int].probA[0],local_models[jj_int].probB[0]);
 	}
     }
 
@@ -467,16 +525,18 @@ void mexFunction(
 
     /* Build "output". */
 
-    output[O_CLASSIFIERS_DECISIONS] = mxCreateDoubleMatrix(0,0,mxREAL);
-    mxSetPr(output[O_CLASSIFIERS_DECISIONS],classifiers_decisions);
-    mxSetM(output[O_CLASSIFIERS_DECISIONS],classifiers_count);
-    mxSetN(output[O_CLASSIFIERS_DECISIONS],sample_count);
+    output[O_CLASSIFIERS_PROBS] = mxCreateDoubleMatrix(0,0,mxREAL);
+    mxSetPr(output[O_CLASSIFIERS_PROBS],classifiers_probs);
+    mxSetM(output[O_CLASSIFIERS_PROBS],classifiers_count);
+    mxSetN(output[O_CLASSIFIERS_PROBS],sample_count);
 
     /* Free memory. */
 
     for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
 	mxFree(local_models[ii_int].nSV);
 	mxFree(local_models[ii_int].label);
+	mxFree(local_models[ii_int].probB);
+	mxFree(local_models[ii_int].probA);
 	mxFree(local_models[ii_int].rho);
 	mxFree(local_models[ii_int].sv_coef[0]);
 	mxFree(local_models[ii_int].sv_coef);

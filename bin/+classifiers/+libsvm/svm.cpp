@@ -1815,7 +1815,7 @@ static void sigmoid_train(
 	free(t);
 }
 
-static double sigmoid_predict(double decision_value, double A, double B)
+double sigmoid_predict(double decision_value, double A, double B)
 {
 	double fApB = decision_value*A+B;
 	// 1-p used later; avoid catastrophic cancellation

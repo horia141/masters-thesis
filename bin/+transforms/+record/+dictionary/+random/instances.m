@@ -18,6 +18,7 @@ classdef instances < transforms.record.dictionary
             assert(tc.scalar(logger));
             assert(tc.logging_logger(logger));
             assert(logger.active);
+            assert(dataset.count(train_sample_plain) >= word_count);
             
             N = dataset.count(train_sample_plain);
             dict = dataset.subsample(train_sample_plain,randi(N,1,word_count))';
