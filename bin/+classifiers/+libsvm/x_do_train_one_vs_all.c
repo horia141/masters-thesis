@@ -1,4 +1,5 @@
 #include <string.h>
+#include <math.h>
 
 #include <pthread.h>
 
@@ -6,6 +7,7 @@
 
 #include "svm.h"
 
+#include "x_defines.h"
 #include "x_common.h"
 
 enum output_decoder {
@@ -30,106 +32,85 @@ enum input_decoder {
     INPUTS_COUNT
 };
 
-struct worker_info {
-    int                          id;
+struct task_info{
+    int                          class_all;
     mwSize                       train_sample_count;
     mwSize                       train_sample_geometry;
     const struct svm_problem*    prob;
     const struct svm_parameter*  param;
-    int                          task_buffer_count;
-    const int*                   task_buffer;
-    int*                         results_sv_count_base;
-    int*                         results_sv_count_c1_base;
-    int*                         results_sv_count_c2_base;
-    struct svm_node***           results_sv_base;
-    double**                     results_sv_coeff_base;
-    double*                      results_sv_rho_base;
-    double*                      results_sv_prob_a_base;
-    double*                      results_sv_prob_b_base;
+    int                          results_sv_count;
+    int                          results_sv_count_c1;
+    int                          results_sv_count_c2;
+    struct svm_node**            results_sv;
+    double*                      results_sv_coeff;
+    double                       results_sv_rho;
+    double                       results_sv_prob_a;
+    double                       results_sv_prob_b;
 };
 
-static void*
-train_worker(
-    void*  worker_info_p) {
-    struct worker_info*   worker_info;
+static void
+do_task(
+    struct task_info*  task_info) {
     struct svm_problem    local_prob;
-    struct svm_model*     result_model;
     struct svm_node*      temp_features;
+    struct svm_model*     result_model;
     double                temp_label;
-    mwSize                first_of_one;
-    int                   idx_task;
     mwSize                ii;
 
-    worker_info = (struct worker_info*)worker_info_p;
+    local_prob.l = (int)task_info->train_sample_count;
+    local_prob.y = (double*)calloc(task_info->train_sample_count,sizeof(double));
+    local_prob.x = (struct svm_node**)calloc(task_info->train_sample_count,sizeof(struct svm_node*));
 
-    local_prob.l = (int)worker_info->train_sample_count;
-    local_prob.y = (double*)calloc(worker_info->train_sample_count,sizeof(double));
-    local_prob.x = (struct svm_node**)calloc(worker_info->train_sample_count,sizeof(struct svm_node*));
+    memcpy(local_prob.x,task_info->prob->x,task_info->train_sample_count * sizeof(struct svm_node*));
 
-    memcpy(local_prob.x,worker_info->prob->x,worker_info->train_sample_count * sizeof(struct svm_node*));
+    /* Separate instances into "class" and "all" groups. */
 
-    for (idx_task = 0; idx_task < worker_info->task_buffer_count; idx_task++) {
-	first_of_one = 0;
-
-	/* Separate instances into "class" and "all" groups. */
-
-	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
-	    if (worker_info->prob->y[ii] == worker_info->task_buffer[idx_task] + 1) {
-		local_prob.y[ii] = +1;
-	    } else {
-		local_prob.y[ii] = -1;
-	    }
+    for (ii = 0; ii < task_info->train_sample_count; ii++) {
+	if (task_info->prob->y[ii] == task_info->class_all) {
+	    local_prob.y[ii] = +1;
+	} else {
+	    local_prob.y[ii] = -1;
 	}
-
-	/* Make sure the first instance is of the "+1" class. This is needed so that the surface normal
-	   points "towards" the "class" instances and we get sane prediction in "x_do_classify". */
-
-	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
-	    if (worker_info->prob->y[ii] == worker_info->task_buffer[idx_task] + 1) {
-		temp_features = local_prob.x[0];
-		local_prob.x[0] = local_prob.x[ii];
-		local_prob.x[ii] = temp_features;
-
-		temp_label = local_prob.y[0];
-		local_prob.y[0] = local_prob.y[ii];
-		local_prob.y[ii] = temp_label;
-
-		first_of_one = ii;
-
-		break;
-	    }
-	}
-
-	/* Train the binary classifier and copy the model information into "worker_info". */
-
-	result_model = svm_train(&local_prob,worker_info->param);
-
-	worker_info->results_sv_count_base[idx_task] = result_model->l;
-	worker_info->results_sv_count_c1_base[idx_task] = result_model->nSV[0];
-	worker_info->results_sv_count_c2_base[idx_task] = result_model->nSV[1];
-        worker_info->results_sv_base[idx_task] = (struct svm_node**)calloc(result_model->l,sizeof(struct svm_node**));
-	memcpy(worker_info->results_sv_base[idx_task],result_model->SV,result_model->l * sizeof(struct svm_node**));
-	worker_info->results_sv_coeff_base[idx_task] = (double*)calloc(result_model->l,sizeof(double));
-	memcpy(worker_info->results_sv_coeff_base[idx_task],result_model->sv_coef[0],result_model->l * sizeof(double));
-	worker_info->results_sv_rho_base[idx_task] = result_model->rho[0];
-	worker_info->results_sv_prob_a_base[idx_task] = result_model->probA[0];
-	worker_info->results_sv_prob_b_base[idx_task] = result_model->probB[0];
-
-	/* Revert to original order. */
-
-	temp_features = local_prob.x[0];
-	local_prob.x[0] = local_prob.x[first_of_one];
-	local_prob.x[first_of_one] = temp_features;
-
-	/* Free memory. */
-
-	svm_free_model_content(result_model);
     }
+
+    /* Make sure the first instance is of the "+1" class. This is needed so that the surface normal
+       points "towards" the "class" instances and we get sane prediction in "x_do_classify". */
+
+    for (ii = 0; ii < task_info->train_sample_count; ii++) {
+	if (task_info->prob->y[ii] == task_info->class_all) {
+	    temp_features = local_prob.x[0];
+	    local_prob.x[0] = local_prob.x[ii];
+	    local_prob.x[ii] = temp_features;
+
+	    temp_label = local_prob.y[0];
+	    local_prob.y[0] = local_prob.y[ii];
+	    local_prob.y[ii] = temp_label;
+
+	    break;
+	}
+    }
+
+    /* Train the binary classifier and copy the model information into "task_info". */
+
+    result_model = svm_train(&local_prob,task_info->param);
+
+    task_info->results_sv_count = result_model->l;
+    task_info->results_sv_count_c1 = result_model->nSV[0];
+    task_info->results_sv_count_c2 = result_model->nSV[1];
+    task_info->results_sv = (struct svm_node**)calloc(result_model->l,sizeof(struct svm_node*));
+    memcpy(task_info->results_sv,result_model->SV,result_model->l * sizeof(struct svm_node*));
+    task_info->results_sv_coeff = (double*)calloc(result_model->l,sizeof(double));
+    memcpy(task_info->results_sv_coeff,result_model->sv_coef[0],result_model->l * sizeof(double));
+    task_info->results_sv_rho = result_model->rho[0];
+    task_info->results_sv_prob_a = result_model->probA[0];
+    task_info->results_sv_prob_b = result_model->probB[0];
+
+    /* Free memory. */
+
+    svm_free_model_content(result_model);
 
     free(local_prob.x);
     free(local_prob.y);
-
-    pthread_exit(NULL);
 }
 
 void
@@ -149,6 +130,7 @@ mexFunction(
     double                reg_param;
     int                   num_threads;
     mxArray*              local_logger;
+    int                   classifiers_count;
     mwSize*               non_null_counts;
     mwSize                non_null_full_count;
     mwSize*               current_feature_counts;
@@ -156,18 +138,7 @@ mexFunction(
     struct svm_node*      prob_x_t;
     struct svm_parameter  param;
     const char*           check_error;
-    int*                  worker_task_buffers_t;
-    int*                  worker_results_sv_count_t;
-    int*                  worker_results_sv_count_c1_t;
-    int*                  worker_results_sv_count_c2_t;
-    struct svm_node***    worker_results_sv_t;
-    double**              worker_results_sv_coeff_t;
-    double*               worker_results_sv_rho_t;
-    double*               worker_results_sv_prob_a_t;
-    double*               worker_results_sv_prob_b_t;
-    struct worker_info*   worker_info;
-    pthread_t*            thread_handles;
-    int                   pthread_op_res;
+    struct task_info*     task_info;
     char*                 class_string;
     double*               o_support_vectors_count_buf;
     mxArray*              o_support_vectors_count;
@@ -295,7 +266,7 @@ mexFunction(
 
     /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
 
-    svm_set_print_string_function(libsvm_mexPrintf_wrapper);
+    svm_set_print_string_function(printf_wrapper);
 
     /* Extract relevant information from all inputs. */
 
@@ -311,6 +282,8 @@ mexFunction(
     num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
+    classifiers_count = classes_count;
+
     logger_beg_node(local_logger,"Parallel training via \"libsvm\" in One-vs-All fashion");
 
     logger_beg_node(local_logger,"Passed configuration");
@@ -323,6 +296,7 @@ mexFunction(
     logger_message(local_logger,"%s: %f",KERNEL_PARAM2_TO_STRING[kernel_code],kernel_param2);
     logger_message(local_logger,"Regularization parameter: %f",reg_param);
     logger_message(local_logger,"Number of worker threads: %d",num_threads);
+    logger_message(local_logger,"Classifiers count: %d",classifiers_count);
 
     logger_end_node(local_logger);
 
@@ -448,98 +422,28 @@ mexFunction(
 
     logger_message(local_logger,"Building worker task allocation.");
 
-    worker_task_buffers_t = (int*)mxCalloc(classes_count,sizeof(int));
+    task_info = (struct task_info*)mxCalloc(classifiers_count,sizeof(struct task_info));
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	worker_task_buffers_t[ii_int] = (unsigned int)ii_int;
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	task_info[ii_int].class_all = ii_int + 1;
+	task_info[ii_int].train_sample_count = train_sample_count;
+	task_info[ii_int].train_sample_geometry = train_sample_geometry;
+	task_info[ii_int].prob = &prob;
+	task_info[ii_int].param = &param;
+	task_info[ii_int].results_sv_count = -1;
+	task_info[ii_int].results_sv_count_c1 = -1;
+	task_info[ii_int].results_sv_count_c2 = -1;
+	task_info[ii_int].results_sv = NULL;
+	task_info[ii_int].results_sv_coeff = NULL;
+	task_info[ii_int].results_sv_prob_a = 0;
+	task_info[ii_int].results_sv_prob_b = 0;
     }
-
-    worker_results_sv_count_t = (int*)mxCalloc(classes_count,sizeof(int));
-    worker_results_sv_count_c1_t = (int*)mxCalloc(classes_count,sizeof(int));
-    worker_results_sv_count_c2_t = (int*)mxCalloc(classes_count,sizeof(int));
-    worker_results_sv_t = (struct svm_node***)mxCalloc(classes_count,sizeof(struct svm_node**));
-    worker_results_sv_coeff_t = (double**)mxCalloc(classes_count,sizeof(double*));
-    worker_results_sv_rho_t = (double*)mxCalloc(classes_count,sizeof(double));
-    worker_results_sv_prob_a_t = (double*)mxCalloc(classes_count,sizeof(double));
-    worker_results_sv_prob_b_t = (double*)mxCalloc(classes_count,sizeof(double));
-
-    worker_info = (struct worker_info*)mxCalloc(num_threads,sizeof(struct worker_info));
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-	worker_info[ii_int].id = ii_int;
-	worker_info[ii_int].train_sample_count = train_sample_count;
-	worker_info[ii_int].train_sample_geometry = train_sample_geometry;
-	worker_info[ii_int].prob = &prob;
-	worker_info[ii_int].param = &param;
-	worker_info[ii_int].task_buffer_count = 0;
-	worker_info[ii_int].task_buffer = NULL;
-	worker_info[ii_int].results_sv_count_base = NULL;
-	worker_info[ii_int].results_sv_count_c1_base = NULL;
-	worker_info[ii_int].results_sv_count_c2_base = NULL;
-	worker_info[ii_int].results_sv_base = NULL;
-	worker_info[ii_int].results_sv_coeff_base = NULL;
-	worker_info[ii_int].results_sv_rho_base = NULL;
-	worker_info[ii_int].results_sv_prob_a_base = NULL;
-	worker_info[ii_int].results_sv_prob_b_base = NULL;
-    }
-
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	worker_info[ii_int % num_threads].task_buffer_count += 1;
-    }
-
-    worker_info[0].task_buffer = &worker_task_buffers_t[0];
-    worker_info[0].results_sv_count_base = &worker_results_sv_count_t[0];
-    worker_info[0].results_sv_count_c1_base = &worker_results_sv_count_c1_t[0];
-    worker_info[0].results_sv_count_c2_base = &worker_results_sv_count_c2_t[0];
-    worker_info[0].results_sv_base = &worker_results_sv_t[0];
-    worker_info[0].results_sv_coeff_base = &worker_results_sv_coeff_t[0];
-    worker_info[0].results_sv_rho_base = &worker_results_sv_rho_t[0];
-    worker_info[0].results_sv_prob_a_base = &worker_results_sv_prob_a_t[0];
-    worker_info[0].results_sv_prob_b_base = &worker_results_sv_prob_b_t[0];
-
-    for (ii_int = 1; ii_int < num_threads; ii_int++) {
-	worker_info[ii_int].task_buffer = worker_info[ii_int - 1].task_buffer + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_count_base = worker_info[ii_int - 1].results_sv_count_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_count_c1_base = worker_info[ii_int - 1].results_sv_count_c1_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_count_c2_base = worker_info[ii_int - 1].results_sv_count_c2_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_base = worker_info[ii_int - 1].results_sv_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_coeff_base = worker_info[ii_int - 1].results_sv_coeff_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_rho_base = worker_info[ii_int - 1].results_sv_rho_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_prob_a_base = worker_info[ii_int - 1].results_sv_prob_a_base + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_sv_prob_b_base = worker_info[ii_int - 1].results_sv_prob_b_base + worker_info[ii_int - 1].task_buffer_count;
-    }
-
-    logger_beg_node(local_logger,"Worker task allocation");
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-	logger_beg_node(local_logger,"Worker %02d",ii_int);
-
-	for (jj_int = 0; jj_int < worker_info[ii_int].task_buffer_count; jj_int++) {
-	    class_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),worker_info[ii_int].task_buffer[jj_int]));
-	    logger_message(local_logger,"%s-vs-All",class_string);
-	    mxFree(class_string);
-	}
-
-	logger_end_node(local_logger);
-    }
-
-    logger_end_node(local_logger);
 
     /* Starting worker threads. */
 
     logger_message(local_logger,"Starting parallel training of classifiers.");
 
-    thread_handles = (pthread_t*)mxCalloc(num_threads,sizeof(pthread_t));
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	pthread_op_res = pthread_create(&thread_handles[ii_int],NULL,train_worker,&(worker_info[ii_int]));
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not create thread.");
-    }
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	pthread_op_res = pthread_join(thread_handles[ii_int],NULL);
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not join thread.");
-    }
+    run_workers(num_threads,(task_fn_t)do_task,classifiers_count,task_info,sizeof(struct task_info));
 
     logger_message(local_logger,"Finished parallel training of classifiers.");
 
@@ -547,13 +451,13 @@ mexFunction(
 
     logger_beg_node(local_logger,"Solution summary");
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
 	class_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),ii_int));
 	logger_beg_node(local_logger,"%s-vs-All",class_string);
 
-	logger_message(local_logger,"Number of support vectors: %d",worker_results_sv_count_t[ii_int]);
-	logger_message(local_logger,"Number of support vectors for \"%s\": %d",class_string,worker_results_sv_count_c1_t[ii_int]);
-	logger_message(local_logger,"Number of support vectors for \"All\": %d",worker_results_sv_count_c2_t[ii_int]);
+	logger_message(local_logger,"Number of support vectors: %d",task_info[ii_int].results_sv_count);
+	logger_message(local_logger,"Number of support vectors for \"%s\": %d",class_string,task_info[ii_int].results_sv_count_c1);
+	logger_message(local_logger,"Number of support vectors for \"All\": %d",task_info[ii_int].results_sv_count_c2);
 
 	logger_end_node(local_logger);
 
@@ -566,12 +470,12 @@ mexFunction(
 
     /* Build "output". */
 
-    output[O_SUPPORT_VECTORS_COUNT] = mxCreateCellMatrix(1,classes_count);
+    output[O_SUPPORT_VECTORS_COUNT] = mxCreateCellMatrix(1,classifiers_count);
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
 	o_support_vectors_count_buf = (double*)mxCalloc(2,sizeof(double));
-	o_support_vectors_count_buf[0] = worker_results_sv_count_c1_t[ii_int];
-	o_support_vectors_count_buf[1] = worker_results_sv_count_c2_t[ii_int];
+	o_support_vectors_count_buf[0] = task_info[ii_int].results_sv_count_c1;
+	o_support_vectors_count_buf[1] = task_info[ii_int].results_sv_count_c2;
 
 	o_support_vectors_count = mxCreateDoubleMatrix(0,0,mxREAL);
 	mxSetPr(o_support_vectors_count,o_support_vectors_count_buf);
@@ -581,17 +485,17 @@ mexFunction(
 	mxSetCell(output[O_SUPPORT_VECTORS_COUNT],ii_int,o_support_vectors_count);
     }
 
-    output[O_SUPPORT_VECTORS] = mxCreateCellMatrix(1,classes_count);
+    output[O_SUPPORT_VECTORS] = mxCreateCellMatrix(1,classifiers_count);
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	o_support_vectors_buf = (double*)mxCalloc(train_sample_geometry * worker_results_sv_count_t[ii_int],sizeof(double));
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	o_support_vectors_buf = (double*)mxCalloc(train_sample_geometry * task_info[ii_int].results_sv_count,sizeof(double));
 
-	for (jj_int = 0; jj_int < worker_results_sv_count_t[ii_int]; jj_int++) {
+	for (jj_int = 0; jj_int < task_info[ii_int].results_sv_count; jj_int++) {
 	    kk_int = 0;
 
-	    while (worker_results_sv_t[ii_int][jj_int][kk_int].index != -1) {
-		o_index = worker_results_sv_t[ii_int][jj_int][kk_int].index - 1;
-		o_value = worker_results_sv_t[ii_int][jj_int][kk_int].value;
+	    while (task_info[ii_int].results_sv[jj_int][kk_int].index != -1) {
+		o_index = task_info[ii_int].results_sv[jj_int][kk_int].index - 1;
+		o_value = task_info[ii_int].results_sv[jj_int][kk_int].value;
 
 		o_support_vectors_buf[jj_int * train_sample_geometry + o_index] = o_value;
 		kk_int = kk_int + 1;
@@ -601,67 +505,57 @@ mexFunction(
 	o_support_vectors = mxCreateDoubleMatrix(0,0,mxREAL);
 	mxSetPr(o_support_vectors,o_support_vectors_buf);
 	mxSetM(o_support_vectors,train_sample_geometry);
-	mxSetN(o_support_vectors,worker_results_sv_count_t[ii_int]);
+	mxSetN(o_support_vectors,task_info[ii_int].results_sv_count);
 
 	mxSetCell(output[O_SUPPORT_VECTORS],ii_int,o_support_vectors);
     }
 
-    output[O_COEFFS] = mxCreateCellMatrix(1,classes_count);
+    output[O_COEFFS] = mxCreateCellMatrix(1,classifiers_count);
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	o_coeffs_buf = (double*)mxCalloc(worker_results_sv_count_t[ii_int],sizeof(double));
-	memcpy(o_coeffs_buf,worker_results_sv_coeff_t[ii_int],worker_results_sv_count_t[ii_int] * sizeof(double));
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	o_coeffs_buf = (double*)mxCalloc(task_info[ii_int].results_sv_count,sizeof(double));
+	memcpy(o_coeffs_buf,task_info[ii_int].results_sv_coeff,task_info[ii_int].results_sv_count * sizeof(double));
 
 	o_coeffs = mxCreateDoubleMatrix(0,0,mxREAL);
 	mxSetPr(o_coeffs,o_coeffs_buf);
 	mxSetM(o_coeffs,1);
-	mxSetN(o_coeffs,worker_results_sv_count_t[ii_int]);
+	mxSetN(o_coeffs,task_info[ii_int].results_sv_count);
 
 	mxSetCell(output[O_COEFFS],ii_int,o_coeffs);
     }
 
-    output[O_RHOS] = mxCreateCellMatrix(1,classes_count);
+    output[O_RHOS] = mxCreateCellMatrix(1,classifiers_count);
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	o_rhos = mxCreateDoubleScalar(worker_results_sv_rho_t[ii_int]);
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	o_rhos = mxCreateDoubleScalar(task_info[ii_int].results_sv_rho);
 
 	mxSetCell(output[O_RHOS],ii_int,o_rhos);
     }
 
-    output[O_PROB_AS] = mxCreateCellMatrix(1,classes_count);
+    output[O_PROB_AS] = mxCreateCellMatrix(1,classifiers_count);
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	o_prob_as = mxCreateDoubleScalar(worker_results_sv_prob_a_t[ii_int]);
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	o_prob_as = mxCreateDoubleScalar(task_info[ii_int].results_sv_prob_a);
 
 	mxSetCell(output[O_PROB_AS],ii_int,o_prob_as);
     }
 
-    output[O_PROB_BS] = mxCreateCellMatrix(1,classes_count);
+    output[O_PROB_BS] = mxCreateCellMatrix(1,classifiers_count);
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	o_prob_bs = mxCreateDoubleScalar(worker_results_sv_prob_b_t[ii_int]);
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	o_prob_bs = mxCreateDoubleScalar(task_info[ii_int].results_sv_prob_b);
 
 	mxSetCell(output[O_PROB_BS],ii_int,o_prob_bs);
     }
 
     /* Free memory. */
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	free(worker_results_sv_t[ii_int]);
-	free(worker_results_sv_coeff_t[ii_int]);
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	free(task_info[ii_int].results_sv);
+	free(task_info[ii_int].results_sv_coeff);
     }
 
-    mxFree(thread_handles);
-    mxFree(worker_info);
-    mxFree(worker_results_sv_prob_b_t);
-    mxFree(worker_results_sv_prob_a_t);
-    mxFree(worker_results_sv_rho_t);
-    mxFree(worker_results_sv_coeff_t);
-    mxFree(worker_results_sv_t);
-    mxFree(worker_results_sv_count_c2_t);
-    mxFree(worker_results_sv_count_c1_t);
-    mxFree(worker_results_sv_count_t);
-    mxFree(worker_task_buffers_t);
+    mxFree(task_info);
     mxFree(current_feature_counts);
     mxFree(prob_x_t);
     mxFree(prob.x);

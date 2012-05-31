@@ -5,6 +5,7 @@
 
 #include "linear.h"
 
+#include "x_defines.h"
 #include "x_common.h"
 
 enum output_decoder {
@@ -17,11 +18,51 @@ enum input_decoder {
     I_WEIGHTS      = 1,
     I_METHOD_CODE  = 2,
     I_REG_PARAM    = 3,
-    I_LOGGER       = 4,
+    I_NUM_THREADS  = 4,
+    I_LOGGER       = 5,
     INPUTS_COUNT
 };
 
-const mwSize  LOG_BATCH_CONTROL = 10;
+struct task_info {
+    mwSize         instance_idx;
+    mwSize         sample_geometry;
+    const double*  instance;
+    int            classifiers_count;
+    const model*   local_models;
+    double*        results_decisions;
+};
+
+static void
+do_task(
+    struct task_info*  task_info) {
+    mwSize                current_feature_count;
+    struct feature_node*  instance_features;
+    mwSize                ii;
+    int                   ii_int;
+
+    current_feature_count = 0;
+    instance_features = (struct feature_node*)calloc(task_info->sample_geometry + 2,sizeof(struct feature_node));
+
+    for (ii = 0; ii < task_info->sample_geometry; ii++) {
+	if (task_info->instance[ii] != 0) {
+	    instance_features[current_feature_count].index = (int)ii + 1;
+	    instance_features[current_feature_count].value = task_info->instance[ii];
+	    current_feature_count = current_feature_count + 1;
+	}
+    }
+
+    instance_features[current_feature_count].index = (int)task_info->sample_geometry + 1;
+    instance_features[current_feature_count].value = 1;
+
+    instance_features[current_feature_count + 1].index = -1;
+    instance_features[current_feature_count + 1].value = 0;
+
+    for (ii_int = 0; ii_int < task_info->classifiers_count; ii_int++) {
+	predict_values(&task_info->local_models[ii_int],instance_features,&task_info->results_decisions[ii_int]);
+    }
+
+    free(instance_features);
+}
 
 void
 mexFunction(
@@ -36,17 +77,14 @@ mexFunction(
     double*               weights;
     int                   method_code;
     double                reg_param;
+    int                   num_threads;
     mxArray*              local_logger;
     double*               classifiers_decisions;
-    struct model          local_model;
-    struct feature_node*  instance_features;
-    mwSize                current_feature_count;
-    mwSize                log_batch_size;
+    int                   local_model_stub[] = {1,2};
+    struct model*         local_models;
+    struct task_info*     task_info;
     mwSize                ii;
-    mwSize                jj;
-    mwSize                idx_base_features;
-    mwSize                idx_base_decisions;
-    int                   jj_int;
+    int                   ii_int;
 
     /* Validate "input" and "output" parameter. */
 
@@ -102,6 +140,22 @@ mexFunction(
 		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.number.");
     check_condition(mxGetScalar(input[I_REG_PARAM]) > 0,
 		    "master:InvalidMEXCall","Parameter \"reg_param\" is not strictly positive.");
+    check_condition(mxGetNumberOfDimensions(input[I_NUM_THREADS]) == 2,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+    check_condition(mxGetM(input[I_NUM_THREADS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+    check_condition(mxGetN(input[I_NUM_THREADS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+    check_condition(mxIsDouble(input[I_NUM_THREADS]),
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(fabs(mxGetScalar(input[I_NUM_THREADS]) - floor(mxGetScalar(input[I_NUM_THREADS]))) == 0,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_NUM_THREADS]) >= 0,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_NUM_THREADS]) < INT_MAX,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(input[I_NUM_THREADS] > 0,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_LOGGER]) == 2,
 		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
     check_condition(mxGetM(input[I_LOGGER]) == 1,
@@ -123,7 +177,7 @@ mexFunction(
 
     /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
 
-    set_print_string_function(liblinear_mexPrintf_wrapper);
+    set_print_string_function(printf_wrapper);
 
     /* Extract relevant information from all inputs. */
 
@@ -134,6 +188,7 @@ mexFunction(
     weights = mxGetPr(input[I_WEIGHTS]);
     method_code = (int)mxGetScalar(input[I_METHOD_CODE]);
     reg_param = mxGetScalar(input[I_REG_PARAM]);
+    num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
     logger_beg_node(local_logger,"Classification via \"liblinear\"");
@@ -145,76 +200,71 @@ mexFunction(
     logger_message(local_logger,"Classifiers count: %d",classifiers_count);
     logger_message(local_logger,"Method: %s",METHOD_CODE_TO_STRING[method_code]);
     logger_message(local_logger,"Regularization parameter: %.3f",reg_param);
+    logger_message(local_logger,"Number of worker threads: %d",num_threads);
 
     logger_end_node(local_logger);
 
-    /* Classify with each set of weights supplied. */
+    /* Rebuild model structures. */
 
-    logger_message(local_logger,"Rebuilding model.");
+    logger_beg_node(local_logger,"Rebuilding models");
 
-    classifiers_decisions = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
-    instance_features = (struct feature_node*)mxCalloc(sample_geometry + 2,sizeof(struct feature_node));
-    log_batch_size = (int)ceil((double)sample_count / LOG_BATCH_CONTROL);
+    local_models = (struct model*)mxCalloc(classifiers_count,sizeof(struct model));
 
-    local_model.param.solver_type = method_code;
-    local_model.param.eps = EPS_DEFAULT[method_code];
-    local_model.param.C = reg_param;
-    local_model.param.nr_weight = 0;
-    local_model.param.weight_label = NULL;
-    local_model.param.weight = NULL;
-    local_model.param.p = 0;
-    local_model.nr_class = 2;
-    local_model.nr_feature = (int)sample_geometry + 1;
-    local_model.w = NULL;
-    local_model.label = (int*)mxCalloc(2,sizeof(int));
-    local_model.label[0] = 1;
-    local_model.label[1] = 2;
-    local_model.bias = 1;
-
-    logger_beg_node(local_logger,"Model structure [Sanity Check]");
-
-    logger_message(local_logger,"Solver type: %s",METHOD_CODE_TO_STRING[local_model.param.solver_type]);
-    logger_message(local_logger,"Epsilon: %f",local_model.param.eps);
-    logger_message(local_logger,"Regularization param: %.3f",local_model.param.C);
-    logger_message(local_logger,"Number of weight biases: %d",local_model.param.nr_weight);
-    logger_message(local_logger,"SVR p: %.3f",local_model.param.p);
-    logger_message(local_logger,"Features count: %d",local_model.nr_feature);
-
-    logger_end_node(local_logger);
-
-    logger_beg_node(local_logger,"Classifying sample");
-
-    for (ii = 0; ii < sample_count; ii++) {
-	if (ii % log_batch_size == 0) {
-	    logger_message(local_logger,"Instance %d to %d.",(int)ii + 1,(int)fmin((double)ii + (double)log_batch_size - 1,(double)sample_count) + 1);
-	}
-
-	idx_base_decisions = ii * classifiers_count;
-	current_feature_count = 0;
-
-	for (jj = 0; jj < sample_geometry; jj++) {
-	    idx_base_features = ii * sample_geometry;
-
-	    if (sample[idx_base_features + jj] != 0) {
-		instance_features[current_feature_count].index = (int)jj + 1;
-		instance_features[current_feature_count].value = sample[idx_base_features + jj];
-		current_feature_count = current_feature_count + 1;
-	    }
-	}
-
-	instance_features[current_feature_count].index = (int)sample_geometry + 1;
-	instance_features[current_feature_count].value = 1;
-
-	instance_features[current_feature_count + 1].index = -1;
-	instance_features[current_feature_count + 1].value = 0;
-
-	for (jj_int = 0; jj_int < classifiers_count; jj_int++) {
-	    local_model.w = weights + jj_int * (sample_geometry + 1);
-	    predict_values(&local_model,instance_features,&classifiers_decisions[idx_base_decisions + jj_int]);
-	}
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	local_models[ii_int].param.solver_type = method_code;
+	local_models[ii_int].param.eps = EPS_DEFAULT[method_code];
+	local_models[ii_int].param.C = reg_param;
+	local_models[ii_int].param.nr_weight = 0;
+	local_models[ii_int].param.weight_label = NULL;
+	local_models[ii_int].param.weight = NULL;
+	local_models[ii_int].param.p = 0;
+	local_models[ii_int].nr_class = 2;
+	local_models[ii_int].nr_feature = (int)sample_geometry + 1;
+	local_models[ii_int].w = weights + ii_int * (sample_geometry + 1);
+	local_models[ii_int].label = local_model_stub;
+	local_models[ii_int].bias = 1;
     }
 
     logger_end_node(local_logger);
+
+    logger_beg_node(local_logger,"Models structure [Sanity Check]");
+
+    logger_beg_node(local_logger,"Common");
+
+    logger_message(local_logger,"Solver type: %s",METHOD_CODE_TO_STRING[local_models[0].param.solver_type]);
+    logger_message(local_logger,"Epsilon: %f",local_models[0].param.eps);
+    logger_message(local_logger,"Regularization param: %f",local_models[0].param.C);
+    logger_message(local_logger,"Number of weight biases: %d",local_models[0].param.nr_weight);
+    logger_message(local_logger,"SVR p: %f",local_models[0].param.p);
+    logger_message(local_logger,"Number of features: %d",local_models[0].nr_feature);
+
+    logger_end_node(local_logger);
+
+    logger_end_node(local_logger);
+
+    /* Build thread pool. */
+
+    logger_message(local_logger,"Building worker task allocation.");
+
+    task_info = (struct task_info*)mxCalloc(sample_count,sizeof(struct task_info));
+    classifiers_decisions = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
+
+    for (ii = 0; ii < sample_count; ii++) {
+	task_info[ii].instance_idx = ii;
+	task_info[ii].sample_geometry = sample_geometry;
+	task_info[ii].instance = sample + ii * sample_geometry;
+	task_info[ii].classifiers_count = classifiers_count;
+	task_info[ii].local_models = local_models;
+	task_info[ii].results_decisions = classifiers_decisions + ii * classifiers_count;
+    }
+
+    /* Start worker threads. */
+
+    logger_message(local_logger,"Starting parallel classification.");
+
+    run_workers(num_threads,(task_fn_t)do_task,(int)sample_count,task_info,sizeof(struct task_info));
+
+    logger_message(local_logger,"Finished parallel classification.");
 
     logger_end_node(local_logger);
 
@@ -227,7 +277,5 @@ mexFunction(
 
     /* Free memory. */
 
-    mxFree(local_model.label);
-    mxFree(instance_features);
     mxDestroyArray(local_logger);
 }

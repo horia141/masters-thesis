@@ -1,12 +1,11 @@
 #include <string.h>
 #include <math.h>
 
-#include <pthread.h>
-
 #include "mex.h"
 
 #include "linear.h"
 
+#include "x_defines.h"
 #include "x_common.h"
 
 enum output_decoder {
@@ -24,97 +23,74 @@ enum input_decoder {
     INPUTS_COUNT
 };
 
-struct worker_info {
-    int                      id;
+struct task_info {
+    int                      class_all;
     mwSize                   train_sample_count;
     mwSize                   train_sample_geometry;
     const struct problem*    prob;
     const struct parameter*  param;
-    int                      task_buffer_count;
-    const int*               task_buffer;
-    double*                  results_weights_base;
+    double*                  results_weights;
 };
 
-static void*
-train_worker(
-    void*  worker_info_p) {
-    struct worker_info*   worker_info;
+static void
+do_task(
+    struct task_info*  task_info) {
     struct problem        local_prob;
-    struct model*         result_model;
     struct feature_node*  temp_features;
+    struct model*         result_model;
     double                temp_label;
-    mwSize                first_of_one;
-    int                   idx_task;
     mwSize                ii;
-
-    worker_info = (struct worker_info*)worker_info_p;
 
     /* Build local copy of the problem structure. The labels information will be changed
        though, to reflect the One-Vs-All type of multiclassification that we're doing. */
 
-    local_prob.l = (int)worker_info->train_sample_count;
-    local_prob.n = (int)worker_info->train_sample_geometry + 1;
-    local_prob.y = (double*)calloc(worker_info->train_sample_count,sizeof(double));
-    local_prob.x = (struct feature_node**)calloc(worker_info->train_sample_count,sizeof(struct feature_node*));
-    local_prob.bias = worker_info->prob->bias;
+    local_prob.l = (int)task_info->train_sample_count;
+    local_prob.n = (int)task_info->train_sample_geometry + 1;
+    local_prob.y = (double*)calloc(task_info->train_sample_count,sizeof(double));
+    local_prob.x = (struct feature_node**)calloc(task_info->train_sample_count,sizeof(struct feature_node*));
+    local_prob.bias = task_info->prob->bias;
 
-    memcpy(local_prob.x,worker_info->prob->x,worker_info->train_sample_count * sizeof(struct feature_node*));
+    memcpy(local_prob.x,task_info->prob->x,task_info->train_sample_count * sizeof(struct feature_node*));
 
-    for (idx_task = 0; idx_task < worker_info->task_buffer_count; idx_task++) {
-	first_of_one = 0;
+    /* Separate instances into "class" and "all" groups. */
 
-	/* Separate instances into "class" and "all" groups. */
-
-	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
-	    if (worker_info->prob->y[ii] == worker_info->task_buffer[idx_task] + 1) {
-		local_prob.y[ii] = +1;
-	    } else {
-		local_prob.y[ii] = -1;
-	    }
+    for (ii = 0; ii < task_info->train_sample_count; ii++) {
+	if (task_info->prob->y[ii] == task_info->class_all) {
+	    local_prob.y[ii] = +1;
+	} else {
+	    local_prob.y[ii] = -1;
 	}
-
-	/* Make sure the first instance is of the "+1" class. This is needed so that the surface normal
-	   points "towards" the "class" instances and we get sane prediction in "x_do_classify". */
-
-	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
-	    if (worker_info->prob->y[ii] == worker_info->task_buffer[idx_task] + 1) {
-		temp_features = local_prob.x[0];
-		local_prob.x[0] = local_prob.x[ii];
-		local_prob.x[ii] = temp_features;
-
-		temp_label = local_prob.y[0];
-		local_prob.y[0] = local_prob.y[ii];
-		local_prob.y[ii] = temp_label;
-
-		first_of_one = ii;
-
-		break;
-	    }
-	}
-
-	/* Train the binary classifier and copy the resulting surface normal ("weights") into the results
-	   buffer. */
-
-	result_model = train(&local_prob,worker_info->param);
-	memcpy(worker_info->results_weights_base + idx_task * (worker_info->train_sample_geometry + 1),result_model->w,(worker_info->train_sample_geometry + 1) * sizeof(double));
-
-	/* Revert to original order. */
-
-	temp_features = local_prob.x[0];
-	local_prob.x[0] = local_prob.x[first_of_one];
-	local_prob.x[first_of_one] = temp_features;
-
-	/* Free memory. */
-
-	free_model_content(result_model);
     }
 
-    /* Free working data and return to the "caller" thread. */
+    /* Make sure the first instance is of the "+1" class. This is needed so that the surface normal
+       points "towards" the "class" instances and we get sane prediction in "x_do_classify". */
 
+    for (ii = 0; ii < task_info->train_sample_count; ii++) {
+	if (task_info->prob->y[ii] == task_info->class_all) {
+	    temp_features = local_prob.x[0];
+	    local_prob.x[0] = local_prob.x[ii];
+	    local_prob.x[ii] = temp_features;
+
+	    temp_label = local_prob.y[0];
+	    local_prob.y[0] = local_prob.y[ii];
+	    local_prob.y[ii] = temp_label;
+
+	    break;
+	}
+    }
+
+    /* Train the binary classifier and copy the resulting surface normal ("weights") into the results
+       buffer. */
+
+    result_model = train(&local_prob,task_info->param);
+
+    memcpy(task_info->results_weights,result_model->w,(task_info->train_sample_geometry + 1) * sizeof(double));
+
+    /* Free memory. */
+
+    free_model_content(result_model);
     free(local_prob.x);
     free(local_prob.y);
-
-    pthread_exit(NULL);
 }
 
 void
@@ -132,6 +108,7 @@ mexFunction(
     double                reg_param;
     int                   num_threads;
     mxArray*              local_logger;
+    int                   classifiers_count;
     mwSize*               non_null_counts;
     mwSize                non_null_full_count;
     mwSize*               current_feature_counts;
@@ -139,17 +116,12 @@ mexFunction(
     struct feature_node*  prob_x_t;
     struct parameter      param;
     const char*           check_error;
-    int*                  worker_task_buffers_t;
-    double*               worker_results_weights_t;
-    struct worker_info*   worker_info;
-    pthread_t*            thread_handles;
-    int                   pthread_op_res;
-    char*                 class_string;
+    struct task_info*     task_info;
+    double*               task_info_results_weights_t;
     mwSize                ii;
     mwSize                jj;
     mwSize                idx_base;
     int                   ii_int;
-    int                   jj_int;
 
     /* Validate "input" and "output" parameters. */
 
@@ -242,7 +214,7 @@ mexFunction(
 
     /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
 
-    set_print_string_function(liblinear_mexPrintf_wrapper);
+    set_print_string_function(printf_wrapper);
 
     /* Extract relevant information from all inputs. */
 
@@ -256,6 +228,8 @@ mexFunction(
     num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
+    classifiers_count = classes_count;
+
     logger_beg_node(local_logger,"Parallel training via \"liblinear\" in One-vs-All fashion");
 
     logger_beg_node(local_logger,"Passed configuration");
@@ -266,6 +240,7 @@ mexFunction(
     logger_message(local_logger,"Method: %s",METHOD_CODE_TO_STRING[method_code]);
     logger_message(local_logger,"Regularization parameter: %.3f",reg_param);
     logger_message(local_logger,"Number of worker threads: %d",num_threads);
+    logger_message(local_logger,"Classifiers count: %d",classifiers_count);
 
     logger_end_node(local_logger);
 
@@ -383,73 +358,26 @@ mexFunction(
     check_condition(check_error == NULL,"master:NoConvergence",check_error);
 
     /* Build thread pool. */
+
     logger_message(local_logger,"Building worker task allocation.");
 
-    worker_task_buffers_t = (int*)mxCalloc(classes_count,sizeof(int));
+    task_info = (struct task_info*)mxCalloc(classifiers_count,sizeof(struct task_info));
+    task_info_results_weights_t = (double*)mxCalloc(classifiers_count * (train_sample_geometry + 1),sizeof(double));
 
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	worker_task_buffers_t[ii_int] = (unsigned int)ii_int;
+    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
+	task_info[ii_int].class_all = ii_int + 1;
+	task_info[ii_int].train_sample_count = train_sample_count;
+	task_info[ii_int].train_sample_geometry = train_sample_geometry;
+	task_info[ii_int].prob = &prob;
+	task_info[ii_int].param = &param;
+	task_info[ii_int].results_weights = task_info_results_weights_t + ii_int * (train_sample_geometry + 1);
     }
 
-    worker_results_weights_t = (double*)mxCalloc(classes_count * (train_sample_geometry + 1),sizeof(double));
-
-    worker_info = (struct worker_info*)mxCalloc(num_threads,sizeof(struct worker_info));
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-	worker_info[ii_int].id = ii_int;
-	worker_info[ii_int].train_sample_count = train_sample_count;
-	worker_info[ii_int].train_sample_geometry = train_sample_geometry;
-	worker_info[ii_int].prob = &prob;
-	worker_info[ii_int].param = &param;
-	worker_info[ii_int].task_buffer_count = 0;
-	worker_info[ii_int].task_buffer = NULL;
-	worker_info[ii_int].results_weights_base = NULL;
-    }
-
-    for (ii_int = 0; ii_int < classes_count; ii_int++) {
-	worker_info[ii_int % num_threads].task_buffer_count += 1;
-    }
-
-    worker_info[0].task_buffer = &worker_task_buffers_t[0];
-    worker_info[0].results_weights_base = &worker_results_weights_t[0];
-
-    for (ii_int = 1; ii_int < num_threads; ii_int++) {
-	worker_info[ii_int].task_buffer = worker_info[ii_int - 1].task_buffer + worker_info[ii_int - 1].task_buffer_count;
-	worker_info[ii_int].results_weights_base = worker_info[ii_int - 1].results_weights_base + 
-                                                   worker_info[ii_int - 1].task_buffer_count * (train_sample_geometry + 1);
-    }
-
-    logger_beg_node(local_logger,"Worker task allocation");
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-	logger_beg_node(local_logger,"Worker %02d",ii_int);
-
-	for (jj_int = 0; jj_int < worker_info[ii_int].task_buffer_count; jj_int++) {
-	    class_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),worker_info[ii_int].task_buffer[jj_int]));
-	    logger_message(local_logger,"%s-vs-All",class_string);
-	    mxFree(class_string);
-	}
-
-	logger_end_node(local_logger);
-    }
-
-    logger_end_node(local_logger);
-
-    /* Starting worker threads. */
+    /* Start worker threads. */
 
     logger_message(local_logger,"Starting parallel training of classifiers.");
 
-    thread_handles = (pthread_t*)mxCalloc(num_threads,sizeof(pthread_t));
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	pthread_op_res = pthread_create(&thread_handles[ii_int],NULL,train_worker,&(worker_info[ii_int]));
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not create thread.");
-    }
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	pthread_op_res = pthread_join(thread_handles[ii_int],NULL);
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not join thread.");
-    }
+    run_workers(num_threads,(task_fn_t)do_task,classifiers_count,task_info,sizeof(struct task_info));
 
     logger_message(local_logger,"Finished parallel training of classifiers.");
 
@@ -458,15 +386,13 @@ mexFunction(
     /* Build "output". */
 
     output[O_WEIGHTS] = mxCreateDoubleMatrix(0,0,mxREAL);
-    mxSetPr(output[O_WEIGHTS],worker_results_weights_t);
+    mxSetPr(output[O_WEIGHTS],task_info_results_weights_t);
     mxSetM(output[O_WEIGHTS],train_sample_geometry + 1);
-    mxSetN(output[O_WEIGHTS],classes_count);
+    mxSetN(output[O_WEIGHTS],classifiers_count);
 
     /* Free memory. */
 
-    mxFree(thread_handles);
-    mxFree(worker_info);
-    mxFree(worker_task_buffers_t);
+    mxFree(task_info);
     mxFree(current_feature_counts);
     mxFree(prob_x_t);
     mxFree(prob.x);

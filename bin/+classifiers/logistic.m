@@ -8,7 +8,8 @@ classdef logistic < classifier
         reg_type;
         reg_param;
         multiclass_form;
-        num_threads;
+        train_num_threads;
+        classify_num_threads;
     end
    
     methods (Access=public)
@@ -29,9 +30,9 @@ classdef logistic < classifier
             assert(tc.scalar(multiclass_form));
             assert(tc.string(multiclass_form));
             assert(tc.one_of(multiclass_form,'1va','1v1'));
-            assert(tc.scalar(num_threads));
+            assert(tc.scalar(num_threads) || (tc.vector(num_threads) && (length(num_threads) == 2)));
             assert(tc.natural(num_threads));
-            assert(num_threads >= 1);
+            assert(tc.check(num_threads >= 1));
             assert(tc.scalar(logger));
             assert(tc.logging_logger(logger));
             assert(logger.active);
@@ -72,12 +73,20 @@ classdef logistic < classifier
                 method_code_t = 7;
             end
             
-            if class_info.labels_count == 2
-                model_weights_t = classifiers.liblinear.x_do_train_one_vs_one(train_sample,class_info,method_code_t,reg_param,num_threads,logger.new_classifier('Training each classifier'));
-            elseif tc.same(multiclass_form,'1va')
-                model_weights_t = classifiers.liblinear.x_do_train_one_vs_all(train_sample,class_info,method_code_t,reg_param,num_threads,logger.new_classifier('Training each classifier'));
+            if length(num_threads) == 2
+                train_num_threads_t = num_threads(1);
+                classify_num_threads_t = num_threads(2);
             else
-                model_weights_t = classifiers.liblinear.x_do_train_one_vs_one(train_sample,class_info,method_code_t,reg_param,num_threads,logger.new_classifier('Training each classifier'));
+                train_num_threads_t = num_threads;
+                classify_num_threads_t = num_threads;
+            end
+            
+            if class_info.labels_count == 2
+                model_weights_t = classifiers.liblinear.x_do_train_one_vs_one(train_sample,class_info,method_code_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
+            elseif tc.same(multiclass_form,'1va')
+                model_weights_t = classifiers.liblinear.x_do_train_one_vs_all(train_sample,class_info,method_code_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
+            else
+                model_weights_t = classifiers.liblinear.x_do_train_one_vs_one(train_sample,class_info,method_code_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
             end
             
             input_geometry = dataset.geometry(train_sample);
@@ -91,7 +100,8 @@ classdef logistic < classifier
             obj.reg_type = reg_type;
             obj.reg_param = reg_param;
             obj.multiclass_form = multiclass_form;
-            obj.num_threads = num_threads;
+            obj.train_num_threads = train_num_threads_t;
+            obj.classify_num_threads = classify_num_threads_t;
         end
     end
     
@@ -99,7 +109,7 @@ classdef logistic < classifier
         function [labels_idx_hat,labels_confidence] = do_classify(obj,sample,logger)
             N = dataset.count(sample);
             
-            classifiers_decisions = classifiers.liblinear.x_do_classify(sample,obj.model_weights,obj.method_code,obj.reg_param,logger.new_classifier('Classifying with each classifier'));
+            classifiers_decisions = classifiers.liblinear.x_do_classify(sample,obj.model_weights,obj.method_code,obj.reg_param,obj.classify_num_threads,logger.new_classifier('Classifying with each classifier'));
             
             logger.message('Determining most probable class.');
             
@@ -176,7 +186,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L1'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -211,7 +222,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L1'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -249,7 +261,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L2'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -284,7 +297,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L2'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -322,7 +336,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L2'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -357,7 +372,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L2'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -395,7 +411,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L1'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 3);
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 3);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -430,7 +447,83 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L1'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 3);
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 3);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
+
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With multiple train and classify threads and One-vs-All multiclass handling.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = utilstest.classifier_data_3();
+            
+            cl = classifiers.logistic(s,ci,'Primal','L1',1,'1va',[3 2],log);
+
+            assert(cl.classifiers_count == 3);
+            assert(tc.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
+            assert(cl.method_code == 6);
+            assert(tc.matrix(cl.model_weights));
+            assert(tc.same(size(cl.model_weights),[3 3]));
+            assert(tc.number(cl.model_weights));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,201:300));
+            assert(tc.same(cl.problem_form,'Primal'));
+            assert(tc.same(cl.reg_type,'L1'));
+            assert(cl.reg_param == 1);
+            assert(tc.same(cl.multiclass_form,'1va'));
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 2);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With multiple train and classify threads and One-vs-One multiclass handling.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = utilstest.classifier_data_3();
+            
+            cl = classifiers.logistic(s,ci,'Primal','L1',1,'1v1',[3 2],log);
+
+            assert(cl.classifiers_count == 3);
+            assert(tc.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
+            assert(cl.method_code == 6);
+            assert(tc.matrix(cl.model_weights));
+            assert(tc.same(size(cl.model_weights),[3 3]));
+            assert(tc.number(cl.model_weights));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,1) < 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) >= 0,1:100));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,2) < 0,201:300));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) >= 0,101:200));
+            assert(tc.checkf(@(ii)[s(:,ii);1]' * cl.model_weights(:,3) < 0,201:300));
+            assert(tc.same(cl.problem_form,'Primal'));
+            assert(tc.same(cl.reg_type,'L1'));
+            assert(cl.reg_param == 1);
+            assert(tc.same(cl.multiclass_form,'1v1'));
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 2);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
@@ -461,7 +554,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L1'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2'}));
             assert(cl.saved_labels_count == 2);
@@ -492,7 +586,8 @@ classdef logistic < classifier
             assert(tc.same(cl.reg_type,'L1'));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
             assert(tc.same(cl.input_geometry,2));
             assert(tc.same(cl.saved_labels,{'1' '2'}));
             assert(cl.saved_labels_count == 2);

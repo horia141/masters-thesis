@@ -1,9 +1,11 @@
 #include <string.h>
+#include <math.h>
 
 #include "mex.h"
 
 #include "svm.h"
 
+#include "x_defines.h"
 #include "x_common.h"
 
 enum output_decoder {
@@ -23,11 +25,50 @@ enum input_decoder {
     I_KERNEL_PARAM1          = 8,
     I_KERNEL_PARAM2          = 9,
     I_REG_PARAM              = 10,
-    I_LOGGER                 = 11,
+    I_NUM_THREADS            = 11,
+    I_LOGGER                 = 12,
     INPUTS_COUNT
 };
 
-const mwSize  LOG_BATCH_CONTROL = 10;
+struct task_info {
+    mwSize                   instance_idx;
+    mwSize                   sample_geometry;
+    const double*            instance;
+    int                      classifiers_count;
+    const struct svm_model*  local_models;
+    double*                  results_probs;
+};
+
+static void
+do_task(
+    struct task_info*  task_info) {
+    mwSize            current_feature_count;
+    struct svm_node*  instance_features;
+    double            decision_value;
+    mwSize            ii;
+    int               ii_int;
+
+    current_feature_count = 0;
+    instance_features = (struct svm_node*)calloc(task_info->sample_geometry + 2,sizeof(struct svm_node));
+
+    for (ii = 0; ii < task_info->sample_geometry; ii++) {
+	if (task_info->instance[ii] != 0) {
+	    instance_features[current_feature_count].index = (int)ii + 1;
+	    instance_features[current_feature_count].value = task_info->instance[ii];
+	    current_feature_count = current_feature_count + 1;
+	}
+    }
+
+    instance_features[current_feature_count].index = -1;
+    instance_features[current_feature_count].value = 0;
+
+    for (ii_int = 0; ii_int < task_info->classifiers_count; ii_int++) {
+	svm_predict_values(&task_info->local_models[ii_int],instance_features,&decision_value);
+	task_info->results_probs[ii_int] = sigmoid_predict(decision_value,task_info->local_models[ii_int].probA[0],task_info->local_models[ii_int].probB[0]);
+    }
+
+    free(instance_features);
+}
 
 void mexFunction(
     int             output_count,
@@ -50,6 +91,7 @@ void mexFunction(
     double             kernel_param1;
     double             kernel_param2;
     double             reg_param;
+    int                num_threads;
     mxArray*           local_logger;
     mwSize*            non_null_counts;
     mwSize             non_null_full_count;
@@ -57,16 +99,10 @@ void mexFunction(
     struct svm_model*  local_models;
     struct svm_node**  local_models_SV_t;
     int                check_prob;
-    struct svm_node*   instance_features;
-    double             decision_value;
+    struct task_info*  task_info;
     double*            classifiers_probs;
-    mwSize             current_feature_count;
-    mwSize             log_batch_size;
     mwSize             ii;
-    mwSize             jj;
     mwSize             idx_base;
-    mwSize             idx_base_features;
-    mwSize             idx_base_decisions;
     int                ii_int;
     int                jj_int;
 
@@ -259,6 +295,22 @@ void mexFunction(
 		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.number.");
     check_condition(mxGetScalar(input[I_REG_PARAM]) > 0,
 		    "master:InvalidMEXCall","Parameter \"reg_param\" is not strictly positive.");
+    check_condition(mxGetNumberOfDimensions(input[I_NUM_THREADS]) == 2,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+    check_condition(mxGetM(input[I_NUM_THREADS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+    check_condition(mxGetN(input[I_NUM_THREADS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+    check_condition(mxIsDouble(input[I_NUM_THREADS]),
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(fabs(mxGetScalar(input[I_NUM_THREADS]) - floor(mxGetScalar(input[I_NUM_THREADS]))) == 0,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_NUM_THREADS]) >= 0,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_NUM_THREADS]) < INT_MAX,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+    check_condition(input[I_NUM_THREADS] > 0,
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_LOGGER]) == 2,
 		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
     check_condition(mxGetM(input[I_LOGGER]) == 1,
@@ -300,7 +352,7 @@ void mexFunction(
 
     /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
 
-    svm_set_print_string_function(libsvm_mexPrintf_wrapper);
+    svm_set_print_string_function(printf_wrapper);
 
     /* Extract relevant information from all inputs. */
 
@@ -320,6 +372,7 @@ void mexFunction(
     kernel_param1 = mxGetScalar(input[I_KERNEL_PARAM1]);
     kernel_param2 = mxGetScalar(input[I_KERNEL_PARAM2]);
     reg_param = mxGetScalar(input[I_REG_PARAM]);
+    num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
     for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
@@ -344,6 +397,7 @@ void mexFunction(
     logger_message(local_logger,"%s: %f",KERNEL_PARAM1_TO_STRING[kernel_code],kernel_param1);
     logger_message(local_logger,"%s: %f",KERNEL_PARAM2_TO_STRING[kernel_code],kernel_param1);
     logger_message(local_logger,"Regularization parameter: %f",reg_param);
+    logger_message(local_logger,"Number of worker threads: %d",num_threads);
 
     logger_end_node(local_logger);
 
@@ -484,42 +538,29 @@ void mexFunction(
 
     logger_end_node(local_logger);
 
-    /* Classify with each set of support vectors/coeffs/rhos supplied. */
+    /* Build thread pool. */
 
-    logger_beg_node(local_logger,"Classifying sample");
+    logger_message(local_logger,"Building worker task allocation.");
 
+    task_info = (struct task_info*)mxCalloc(sample_count,sizeof(struct task_info));
     classifiers_probs = (double*)mxCalloc(sample_count * classifiers_count,sizeof(double));
-    instance_features = (struct svm_node*)mxCalloc(sample_geometry + 1,sizeof(struct svm_node));
-    log_batch_size = (int)ceil((double)sample_count / LOG_BATCH_CONTROL);
 
     for (ii = 0; ii < sample_count; ii++) {
-	if (ii % log_batch_size == 0) {
-	    logger_message(local_logger,"Instance %d to %d.",(int)ii + 1,(int)fmin((double)ii + (double)log_batch_size - 1,(double)sample_count) + 1);
-	}
-
-	idx_base_decisions = ii * classifiers_count;
-	current_feature_count = 0;
-
-	for (jj = 0; jj < sample_geometry; jj++) {
-	    idx_base_features = ii * sample_geometry;
-
-	    if (sample[idx_base_features + jj] != 0) {
-		instance_features[current_feature_count].index = (int)jj + 1;
-		instance_features[current_feature_count].value = sample[idx_base_features + jj];
-		current_feature_count = current_feature_count + 1;
-	    }
-	}
-
-	instance_features[current_feature_count].index = -1;
-	instance_features[current_feature_count].value = 0;
-
-	for (jj_int = 0; jj_int < classifiers_count; jj_int++) {
-	    svm_predict_values(&local_models[jj_int],instance_features,&decision_value);
-	    classifiers_probs[idx_base_decisions + jj_int] = sigmoid_predict(decision_value,local_models[jj_int].probA[0],local_models[jj_int].probB[0]);
-	}
+	task_info[ii].instance_idx = ii;
+	task_info[ii].sample_geometry = sample_geometry;
+	task_info[ii].instance = sample + ii * sample_geometry;
+	task_info[ii].classifiers_count = classifiers_count;
+	task_info[ii].local_models = local_models;
+	task_info[ii].results_probs = classifiers_probs + ii * classifiers_count;
     }
 
-    logger_end_node(local_logger);
+    /* Start worker threads. */
+
+    logger_message(local_logger,"Starting parallel classification.");
+
+    run_workers(num_threads,(task_fn_t)do_task,(int)sample_count,task_info,sizeof(struct task_info));
+
+    logger_message(local_logger,"Finished parallel classification.");
 
     logger_end_node(local_logger);
 
@@ -544,7 +585,6 @@ void mexFunction(
 	mxFree(local_models[ii_int].SV);
     }
 
-    mxFree(instance_features);
     mxFree(local_models_SV_t);
     mxFree(local_models);
     mxDestroyArray(local_logger);

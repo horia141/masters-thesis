@@ -15,7 +15,8 @@ classdef svm_kernel < classifier
         kernel_param;
         reg_param;
         multiclass_form;
-        num_threads;
+        train_num_threads;
+        classify_num_threads;
     end
     
     methods (Access=public)
@@ -44,9 +45,9 @@ classdef svm_kernel < classifier
             assert(tc.scalar(multiclass_form));
             assert(tc.string(multiclass_form));
             assert(tc.one_of(multiclass_form,'1va','1v1'));
-            assert(tc.scalar(num_threads));
+            assert(tc.scalar(num_threads) || (tc.vector(num_threads) && (length(num_threads) == 2)));
             assert(tc.natural(num_threads));
-            assert(num_threads >= 1);
+            assert(tc.check(num_threads >= 1));
             assert(tc.scalar(logger));
             assert(tc.logging_logger(logger));
             assert(logger.active);
@@ -95,12 +96,20 @@ classdef svm_kernel < classifier
                 kernel_param2_t = kernel_param(2);
             end
             
-            if class_info.labels_count == 2
-                [support_vectors_count_t,support_vectors_t,coeffs_t,rhos_t,prob_as_t,prob_bs_t] = classifiers.libsvm.x_do_train_one_vs_one(train_sample,class_info,kernel_code_t,kernel_param1_t,kernel_param2_t,reg_param,num_threads,logger.new_classifier('Training each classifier'));
-            elseif tc.same(multiclass_form,'1va')
-                [support_vectors_count_t,support_vectors_t,coeffs_t,rhos_t,prob_as_t,prob_bs_t] = classifiers.libsvm.x_do_train_one_vs_all(train_sample,class_info,kernel_code_t,kernel_param1_t,kernel_param2_t,reg_param,num_threads,logger.new_classifier('Training each classifier'));
+            if length(num_threads) == 2
+                train_num_threads_t = num_threads(1);
+                classify_num_threads_t = num_threads(2);
             else
-                [support_vectors_count_t,support_vectors_t,coeffs_t,rhos_t,prob_as_t,prob_bs_t] = classifiers.libsvm.x_do_train_one_vs_one(train_sample,class_info,kernel_code_t,kernel_param1_t,kernel_param2_t,reg_param,num_threads,logger.new_classifier('Training each classifier'));
+                train_num_threads_t = num_threads;
+                classify_num_threads_t = num_threads;
+            end
+            
+            if class_info.labels_count == 2
+                [support_vectors_count_t,support_vectors_t,coeffs_t,rhos_t,prob_as_t,prob_bs_t] = classifiers.libsvm.x_do_train_one_vs_one(train_sample,class_info,kernel_code_t,kernel_param1_t,kernel_param2_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
+            elseif tc.same(multiclass_form,'1va')
+                [support_vectors_count_t,support_vectors_t,coeffs_t,rhos_t,prob_as_t,prob_bs_t] = classifiers.libsvm.x_do_train_one_vs_all(train_sample,class_info,kernel_code_t,kernel_param1_t,kernel_param2_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
+            else
+                [support_vectors_count_t,support_vectors_t,coeffs_t,rhos_t,prob_as_t,prob_bs_t] = classifiers.libsvm.x_do_train_one_vs_one(train_sample,class_info,kernel_code_t,kernel_param1_t,kernel_param2_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
             end
             
             input_geometry = dataset.geometry(train_sample);
@@ -121,7 +130,8 @@ classdef svm_kernel < classifier
             obj.kernel_param = kernel_param;
             obj.reg_param = reg_param;
             obj.multiclass_form = multiclass_form;
-            obj.num_threads = num_threads;
+            obj.train_num_threads = train_num_threads_t;
+            obj.classify_num_threads = classify_num_threads_t;
         end
     end
     
@@ -129,7 +139,7 @@ classdef svm_kernel < classifier
         function [labels_idx_hat,labels_confidence] = do_classify(obj,sample,logger)
             N = dataset.count(sample);
             
-            classifiers_probs = classifiers.libsvm.x_do_classify(sample,obj.support_vectors_count,obj.support_vectors,obj.coeffs,obj.rhos,obj.prob_as,obj.prob_bs,obj.kernel_code,obj.kernel_param1,obj.kernel_param2,obj.reg_param,logger.new_classifier('Classifying with each classifier'));
+            classifiers_probs = classifiers.libsvm.x_do_classify(sample,obj.support_vectors_count,obj.support_vectors,obj.coeffs,obj.rhos,obj.prob_as,obj.prob_bs,obj.kernel_code,obj.kernel_param1,obj.kernel_param2,obj.reg_param,obj.classify_num_threads,logger.new_classifier('Classifying with each classifier'));
             
             logger.message('Determining most probable class.');
 
@@ -226,7 +236,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,0));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -286,7 +300,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,0));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -346,7 +364,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,[2 3.5]));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -406,7 +428,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,[2 3.5]));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -466,7 +492,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,3.4));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -526,7 +556,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,3.4));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -586,7 +620,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,[0.05 0]));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -646,7 +684,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,[0.05 0]));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -706,7 +748,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,0));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 3);
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 3);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -766,7 +812,139 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,0));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 3);
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 3);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With multiple train and classify threads and One-vs-All multiclass handling.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = utilstest.classifier_data_3();
+            
+            cl = classifiers.svm_kernel(s,ci,'Linear',0,1,'1va',[3 2],log);
+            
+            assert(cl.classifiers_count == 3);
+            assert(tc.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
+            assert(tc.vector(cl.support_vectors_count));
+            assert(length(cl.support_vectors_count) == 3);
+            assert(tc.cell(cl.support_vectors_count));
+            assert(tc.checkf(@tc.vector,cl.support_vectors_count));
+            assert(tc.checkf(@(a)length(a) == 2,cl.support_vectors_count));
+            assert(tc.checkf(@tc.natural,cl.support_vectors_count));
+            assert(tc.checkf(@(a)tc.check(a > 0),cl.support_vectors_count));
+            assert(tc.vector(cl.support_vectors));
+            assert(length(cl.support_vectors) == 3);
+            assert(tc.cell(cl.support_vectors));
+            assert(tc.checkf(@tc.matrix,cl.support_vectors));
+            assert(tc.checkf(@(a)size(a,1) == 2,cl.support_vectors));
+            assert(tc.checkf(@(ii)size(cl.support_vectors{ii},2) == sum(cl.support_vectors_count{ii}),1:3));
+            assert(tc.checkf(@tc.number,cl.support_vectors));
+            assert(tc.vector(cl.coeffs));
+            assert(length(cl.coeffs) == 3);
+            assert(tc.cell(cl.coeffs));
+            assert(tc.checkf(@tc.vector,cl.coeffs));
+            assert(tc.checkf(@(ii)length(cl.coeffs{ii}) == sum(cl.support_vectors_count{ii}),1:3));
+            assert(tc.checkf(@tc.number,cl.coeffs));
+            assert(tc.vector(cl.rhos));
+            assert(length(cl.rhos) == 3);
+            assert(tc.cell(cl.rhos));
+            assert(tc.checkf(@tc.scalar,cl.rhos));
+            assert(tc.checkf(@tc.number,cl.rhos));
+            assert(tc.vector(cl.prob_as));
+            assert(length(cl.prob_as) == 3);
+            assert(tc.cell(cl.prob_as));
+            assert(tc.checkf(@tc.scalar,cl.prob_as));
+            assert(tc.checkf(@tc.number,cl.prob_as));
+            assert(tc.vector(cl.prob_bs));
+            assert(length(cl.prob_bs) == 3);
+            assert(tc.cell(cl.prob_bs));
+            assert(tc.checkf(@tc.scalar,cl.prob_bs));
+            assert(tc.checkf(@tc.number,cl.prob_bs));
+            assert(cl.kernel_code == 0);
+            assert(cl.kernel_param1 == 0);
+            assert(cl.kernel_param2 == 0);
+            assert(tc.same(cl.kernel_type,'Linear'));
+            assert(tc.same(cl.kernel_param,0));
+            assert(cl.reg_param == 1);
+            assert(tc.same(cl.multiclass_form,'1va'));
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 2);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    With multiple train and classify threads and One-vs-One multiclass handling.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = utilstest.classifier_data_3();
+            
+            cl = classifiers.svm_kernel(s,ci,'Linear',0,1,'1v1',[3 2],log);
+            
+            assert(cl.classifiers_count == 3);
+            assert(tc.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
+            assert(tc.vector(cl.support_vectors_count));
+            assert(length(cl.support_vectors_count) == 3);
+            assert(tc.cell(cl.support_vectors_count));
+            assert(tc.checkf(@tc.vector,cl.support_vectors_count));
+            assert(tc.checkf(@(a)length(a) == 2,cl.support_vectors_count));
+            assert(tc.checkf(@tc.natural,cl.support_vectors_count));
+            assert(tc.checkf(@(a)tc.check(a > 0),cl.support_vectors_count));
+            assert(tc.vector(cl.support_vectors));
+            assert(length(cl.support_vectors) == 3);
+            assert(tc.cell(cl.support_vectors));
+            assert(tc.checkf(@tc.matrix,cl.support_vectors));
+            assert(tc.checkf(@(a)size(a,1) == 2,cl.support_vectors));
+            assert(tc.checkf(@(ii)size(cl.support_vectors{ii},2) == sum(cl.support_vectors_count{ii}),1:3));
+            assert(tc.checkf(@tc.number,cl.support_vectors));
+            assert(tc.vector(cl.coeffs));
+            assert(length(cl.coeffs) == 3);
+            assert(tc.cell(cl.coeffs));
+            assert(tc.checkf(@tc.vector,cl.coeffs));
+            assert(tc.checkf(@(ii)length(cl.coeffs{ii}) == sum(cl.support_vectors_count{ii}),1:3));
+            assert(tc.checkf(@tc.number,cl.coeffs));
+            assert(tc.vector(cl.rhos));
+            assert(length(cl.rhos) == 3);
+            assert(tc.cell(cl.rhos));
+            assert(tc.checkf(@tc.scalar,cl.rhos));
+            assert(tc.checkf(@tc.number,cl.rhos));
+            assert(tc.vector(cl.prob_as));
+            assert(length(cl.prob_as) == 3);
+            assert(tc.cell(cl.prob_as));
+            assert(tc.checkf(@tc.scalar,cl.prob_as));
+            assert(tc.checkf(@tc.number,cl.prob_as));
+            assert(tc.vector(cl.prob_bs));
+            assert(length(cl.prob_bs) == 3);
+            assert(tc.cell(cl.prob_bs));
+            assert(tc.checkf(@tc.scalar,cl.prob_bs));
+            assert(tc.checkf(@tc.number,cl.prob_bs));
+            assert(cl.kernel_code == 0);
+            assert(cl.kernel_param1 == 0);
+            assert(cl.kernel_param2 == 0);
+            assert(tc.same(cl.kernel_type,'Linear'));
+            assert(tc.same(cl.kernel_param,0));
+            assert(cl.reg_param == 1);
+            assert(tc.same(cl.multiclass_form,'1v1'));
+            assert(cl.train_num_threads == 3);
+            assert(cl.classify_num_threads == 2);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2' '3'}));
+            assert(cl.saved_labels_count == 3);
             
             log.close();
             hnd.close();
@@ -819,7 +997,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,0));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2'}));
+            assert(cl.saved_labels_count == 2);
             
             log.close();
             hnd.close();
@@ -872,7 +1054,11 @@ classdef svm_kernel < classifier
             assert(tc.same(cl.kernel_param,0));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
-            assert(cl.num_threads == 1);
+            assert(cl.train_num_threads == 1);
+            assert(cl.classify_num_threads == 1);
+            assert(tc.same(cl.input_geometry,2));
+            assert(tc.same(cl.saved_labels,{'1' '2'}));
+            assert(cl.saved_labels_count == 2);
             
             log.close();
             hnd.close();

@@ -1,12 +1,11 @@
 #include <string.h>
 #include <math.h>
 
-#include <pthread.h>
-
 #include "mex.h"
 
 #include "linear.h"
 
+#include "x_defines.h"
 #include "x_common.h"
 
 enum output_decoder {
@@ -24,23 +23,20 @@ enum input_decoder {
     INPUTS_COUNT
 };
 
-struct worker_info {
-    int                      id;
+struct task_info {
+    int                      class_1;
+    int                      class_2;
     mwSize                   train_sample_count;
     mwSize                   train_sample_geometry;
     const double*            train_sample;
     const double*            labels_idx;
     const struct parameter*  param;
-    int                      task_buffer_count;
-    const int*               task_buffer1;
-    const int*               task_buffer2;
-    double*                  results_weights_base;
+    double*                  results_weights;
 };
 
-static void*
-train_worker(
-    void*  worker_info_p) {
-    struct worker_info*   worker_info;
+static void
+do_task(
+    struct task_info*  task_info) {
     struct problem        local_prob;
     struct feature_node*  local_prob_x_t;
     struct model*         result_model;
@@ -57,182 +53,174 @@ train_worker(
     mwSize*               class2_non_null_counts;
     mwSize                class2_non_null_full_count;
     mwSize*               class2_current_feature_counts;
-    int                   idx_task;
     mwSize                ii;
     mwSize                jj;
     mwSize                idx_base;
 
-    worker_info = (struct worker_info*)worker_info_p;
+    /* Determine number of instances of each class. */
 
-    for (idx_task = 0; idx_task < worker_info->task_buffer_count; idx_task++) {
-    	/* Determine number of instances of each class. */
+    class1_count = 0;
+    class2_count = 0;
 
-    	class1_count = 0;
-    	class2_count = 0;
-
-    	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
-    	    if (worker_info->labels_idx[ii] == worker_info->task_buffer1[idx_task] + 1) {
-    		class1_count = class1_count + 1;
-    	    }
-
-    	    if (worker_info->labels_idx[ii] == worker_info->task_buffer2[idx_task] + 1) {
-    		class2_count = class2_count + 1;
-    	    }
-    	}
-
-    	/* Determine which instances belong to each class. */
-
-    	class1_found_index = (mwSize*)calloc(class1_count,sizeof(mwSize));
-    	class1_current_index = 0;
-    	class2_found_index = (mwSize*)calloc(class2_count,sizeof(mwSize));
-    	class2_current_index = 0;
-
-    	for (ii = 0; ii < worker_info->train_sample_count; ii++) {
-    	    if (worker_info->labels_idx[ii] == worker_info->task_buffer1[idx_task] + 1) {
-    		class1_found_index[class1_current_index] = ii;
-    		class1_current_index = class1_current_index + 1;
-    	    }
-
-    	    if (worker_info->labels_idx[ii] == worker_info->task_buffer2[idx_task] + 1) {
-    		class2_found_index[class2_current_index] = ii;
-    		class2_current_index = class2_current_index + 1;
-    	    }
-    	}
-
-    	/* Determine which features from each class instance are non-null. */
-
-    	class1_non_null_counts = (mwSize*)calloc(class1_count,sizeof(mwSize));
-    	memset(class1_non_null_counts,0,class1_count * sizeof(mwSize));
-    	class1_non_null_full_count = 0;
-    	class2_non_null_counts = (mwSize*)calloc(class2_count,sizeof(mwSize));
-    	memset(class2_non_null_counts,0,class2_count * sizeof(mwSize));
-    	class2_non_null_full_count = 0;
-
-	for (ii = 0; ii < class1_count; ii++) {
-	    idx_base = class1_found_index[ii] * worker_info->train_sample_geometry;
-
-	    for (jj = 0; jj < worker_info->train_sample_geometry; jj++) {
-    		if (worker_info->train_sample[idx_base + jj] != 0) {
-    		    class1_non_null_counts[ii] = class1_non_null_counts[ii] + 1;
-    		    class1_non_null_full_count = class1_non_null_full_count + 1;
-    		}
-    	    }
+    for (ii = 0; ii < task_info->train_sample_count; ii++) {
+	if (task_info->labels_idx[ii] == task_info->class_1) {
+	    class1_count = class1_count + 1;
 	}
 
-	for (ii = 0; ii < class2_count; ii++) {
-	    idx_base = class2_found_index[ii] * worker_info->train_sample_geometry;
-
-	    for (jj = 0; jj < worker_info->train_sample_geometry; jj++) {
-    		if (worker_info->train_sample[idx_base + jj] != 0) {
-    		    class2_non_null_counts[ii] = class2_non_null_counts[ii] + 1;
-    		    class2_non_null_full_count = class2_non_null_full_count + 1;
-    		}
-    	    }
-    	}
-
-    	/* Build "prob" problem structure. */
-
-    	local_prob.l = (int)class1_count + (int)class2_count;
-    	local_prob.n = (int)worker_info->train_sample_geometry + 1;
-    	local_prob.y = (double*)calloc(class1_count + class2_count,sizeof(double));
-    	local_prob.x = (struct feature_node**)calloc(class1_count + class2_count,sizeof(struct feature_node*));
-    	local_prob.bias = 1;
-    	local_prob_x_t = (struct feature_node*)calloc(class1_non_null_full_count + 2 * class1_count +
-                                                      class2_non_null_full_count + 2 * class2_count,sizeof(struct feature_node));
-
-    	local_prob.y[0] = +1;
-    	local_prob.x[0] = &local_prob_x_t[0];
-
-    	for (ii = 1; ii < class1_count; ii++) {
-    	    local_prob.y[ii] = +1;
-    	    local_prob.x[ii] = local_prob.x[ii - 1] + class1_non_null_counts[ii - 1] + 2;
-    	}
-
-	local_prob.y[class1_count] = -1;
-	local_prob.x[class1_count] = local_prob.x[class1_count - 1] + class1_non_null_counts[class1_count - 1] + 2;
-
-    	for (ii = 1; ii < class2_count; ii++) {
-    	    local_prob.y[class1_count + ii] = -1;
-    	    local_prob.x[class1_count + ii] = local_prob.x[class1_count + ii - 1] + class2_non_null_counts[ii - 1] + 2;
-    	}
-
-    	class1_current_feature_counts = (mwSize*)calloc(class1_count,sizeof(mwSize));
-    	memset(class1_current_feature_counts,0,class1_count * sizeof(mwSize));
-    	class2_current_feature_counts = (mwSize*)calloc(class2_count,sizeof(mwSize));
-    	memset(class2_current_feature_counts,0,class2_count * sizeof(mwSize));
-
-	for (ii = 0; ii < class1_count; ii++) {
-	    idx_base = class1_found_index[ii] * worker_info->train_sample_geometry;
-
-	    for (jj = 0; jj < worker_info->train_sample_geometry; jj++) {
-    		if (worker_info->train_sample[idx_base + jj] != 0) {
-    		    local_prob.x[ii][class1_current_feature_counts[ii]].index = (int)jj + 1;
-    		    local_prob.x[ii][class1_current_feature_counts[ii]].value = worker_info->train_sample[idx_base + jj];
-    		    class1_current_feature_counts[ii] = class1_current_feature_counts[ii] + 1;
-    		}
-    	    }
+	if (task_info->labels_idx[ii] == task_info->class_2) {
+	    class2_count = class2_count + 1;
 	}
-
-	for (ii = 0; ii < class2_count; ii++) {
-	    idx_base = class2_found_index[ii] * worker_info->train_sample_geometry;
-
-	    for (jj = 0; jj < worker_info->train_sample_geometry; jj++) {
-    		if (worker_info->train_sample[idx_base + jj] != 0) {
-    		    local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].index = (int)jj + 1;
-    		    local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].value = worker_info->train_sample[idx_base + jj];
-    		    class2_current_feature_counts[ii] = class2_current_feature_counts[ii] + 1;
-    		}
-    	    }
-    	}
-
-    	for (ii = 0; ii < class1_count; ii++) {
-    	    local_prob.x[ii][class1_current_feature_counts[ii]].index = (int)worker_info->train_sample_geometry + 1;
-    	    local_prob.x[ii][class1_current_feature_counts[ii]].value = 1;
-    	}
-
-    	for (ii = 0; ii < class1_count; ii++) {
-    	    local_prob.x[ii][class1_current_feature_counts[ii] + 1].index = -1;
-    	    local_prob.x[ii][class1_current_feature_counts[ii] + 1].value = 0;
-    	}
-
-    	for (ii = 0; ii < class2_count; ii++) {
-    	    local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].index = (int)worker_info->train_sample_geometry + 1;
-    	    local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].value = 1;
-    	}
-
-    	for (ii = 0; ii < class2_count; ii++) {
-    	    local_prob.x[class1_count + ii][class2_current_feature_counts[ii] + 1].index = -1;
-    	    local_prob.x[class1_count + ii][class2_current_feature_counts[ii] + 1].value = 0;
-    	}
-
-    	/* Call "check_parameter" to validate our problem and parameters structures. */
-
-    	check_error = check_parameter(&local_prob,worker_info->param);
-    	check_condition(check_error == NULL,"master:NoConvergence",check_error);
-
-    	/* Train with local problem. */
-
-    	result_model = train(&local_prob,worker_info->param);
-    	memcpy(worker_info->results_weights_base + idx_task * (worker_info->train_sample_geometry + 1),result_model->w,(worker_info->train_sample_geometry + 1) * sizeof(double));
-
-    	/* Free memory. */
-
-    	free_model_content(result_model);
-
-    	free(class2_current_feature_counts);
-    	free(class1_current_feature_counts);
-    	free(local_prob_x_t);
-    	free(local_prob.x);
-    	free(local_prob.y);
-    	free(class2_non_null_counts);
-    	free(class1_non_null_counts);
-    	free(class2_found_index);
-    	free(class1_found_index);
     }
 
-    /* Return to the "caller" thread. */
+    /* Determine which instances belong to each class. */
 
-    pthread_exit(NULL);
+    class1_found_index = (mwSize*)calloc(class1_count,sizeof(mwSize));
+    class1_current_index = 0;
+    class2_found_index = (mwSize*)calloc(class2_count,sizeof(mwSize));
+    class2_current_index = 0;
+
+    for (ii = 0; ii < task_info->train_sample_count; ii++) {
+	if (task_info->labels_idx[ii] == task_info->class_1) {
+	    class1_found_index[class1_current_index] = ii;
+	    class1_current_index = class1_current_index + 1;
+	}
+
+	if (task_info->labels_idx[ii] == task_info->class_2) {
+	    class2_found_index[class2_current_index] = ii;
+	    class2_current_index = class2_current_index + 1;
+	}
+    }
+
+    /* Determine which features from each class instance are non-null. */
+
+    class1_non_null_counts = (mwSize*)calloc(class1_count,sizeof(mwSize));
+    memset(class1_non_null_counts,0,class1_count * sizeof(mwSize));
+    class1_non_null_full_count = 0;
+    class2_non_null_counts = (mwSize*)calloc(class2_count,sizeof(mwSize));
+    memset(class2_non_null_counts,0,class2_count * sizeof(mwSize));
+    class2_non_null_full_count = 0;
+
+    for (ii = 0; ii < class1_count; ii++) {
+	idx_base = class1_found_index[ii] * task_info->train_sample_geometry;
+
+	for (jj = 0; jj < task_info->train_sample_geometry; jj++) {
+	    if (task_info->train_sample[idx_base + jj] != 0) {
+		class1_non_null_counts[ii] = class1_non_null_counts[ii] + 1;
+		class1_non_null_full_count = class1_non_null_full_count + 1;
+	    }
+	}
+    }
+
+    for (ii = 0; ii < class2_count; ii++) {
+	idx_base = class2_found_index[ii] * task_info->train_sample_geometry;
+
+	for (jj = 0; jj < task_info->train_sample_geometry; jj++) {
+	    if (task_info->train_sample[idx_base + jj] != 0) {
+		class2_non_null_counts[ii] = class2_non_null_counts[ii] + 1;
+		class2_non_null_full_count = class2_non_null_full_count + 1;
+	    }
+	}
+    }
+
+    /* Build "prob" problem structure. */
+
+    local_prob.l = (int)class1_count + (int)class2_count;
+    local_prob.n = (int)task_info->train_sample_geometry + 1;
+    local_prob.y = (double*)calloc(class1_count + class2_count,sizeof(double));
+    local_prob.x = (struct feature_node**)calloc(class1_count + class2_count,sizeof(struct feature_node*));
+    local_prob.bias = 1;
+    local_prob_x_t = (struct feature_node*)calloc(class1_non_null_full_count + 2 * class1_count +
+						  class2_non_null_full_count + 2 * class2_count,sizeof(struct feature_node));
+
+    local_prob.y[0] = +1;
+    local_prob.x[0] = &local_prob_x_t[0];
+
+    for (ii = 1; ii < class1_count; ii++) {
+	local_prob.y[ii] = +1;
+	local_prob.x[ii] = local_prob.x[ii - 1] + class1_non_null_counts[ii - 1] + 2;
+    }
+
+    local_prob.y[class1_count] = -1;
+    local_prob.x[class1_count] = local_prob.x[class1_count - 1] + class1_non_null_counts[class1_count - 1] + 2;
+
+    for (ii = 1; ii < class2_count; ii++) {
+	local_prob.y[class1_count + ii] = -1;
+	local_prob.x[class1_count + ii] = local_prob.x[class1_count + ii - 1] + class2_non_null_counts[ii - 1] + 2;
+    }
+
+    class1_current_feature_counts = (mwSize*)calloc(class1_count,sizeof(mwSize));
+    memset(class1_current_feature_counts,0,class1_count * sizeof(mwSize));
+    class2_current_feature_counts = (mwSize*)calloc(class2_count,sizeof(mwSize));
+    memset(class2_current_feature_counts,0,class2_count * sizeof(mwSize));
+
+    for (ii = 0; ii < class1_count; ii++) {
+	idx_base = class1_found_index[ii] * task_info->train_sample_geometry;
+
+	for (jj = 0; jj < task_info->train_sample_geometry; jj++) {
+	    if (task_info->train_sample[idx_base + jj] != 0) {
+		local_prob.x[ii][class1_current_feature_counts[ii]].index = (int)jj + 1;
+		local_prob.x[ii][class1_current_feature_counts[ii]].value = task_info->train_sample[idx_base + jj];
+		class1_current_feature_counts[ii] = class1_current_feature_counts[ii] + 1;
+	    }
+	}
+    }
+
+    for (ii = 0; ii < class2_count; ii++) {
+	idx_base = class2_found_index[ii] * task_info->train_sample_geometry;
+
+	for (jj = 0; jj < task_info->train_sample_geometry; jj++) {
+	    if (task_info->train_sample[idx_base + jj] != 0) {
+		local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].index = (int)jj + 1;
+		local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].value = task_info->train_sample[idx_base + jj];
+		class2_current_feature_counts[ii] = class2_current_feature_counts[ii] + 1;
+	    }
+	}
+    }
+
+    for (ii = 0; ii < class1_count; ii++) {
+	local_prob.x[ii][class1_current_feature_counts[ii]].index = (int)task_info->train_sample_geometry + 1;
+	local_prob.x[ii][class1_current_feature_counts[ii]].value = 1;
+    }
+
+    for (ii = 0; ii < class1_count; ii++) {
+	local_prob.x[ii][class1_current_feature_counts[ii] + 1].index = -1;
+	local_prob.x[ii][class1_current_feature_counts[ii] + 1].value = 0;
+    }
+
+    for (ii = 0; ii < class2_count; ii++) {
+	local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].index = (int)task_info->train_sample_geometry + 1;
+	local_prob.x[class1_count + ii][class2_current_feature_counts[ii]].value = 1;
+    }
+
+    for (ii = 0; ii < class2_count; ii++) {
+	local_prob.x[class1_count + ii][class2_current_feature_counts[ii] + 1].index = -1;
+	local_prob.x[class1_count + ii][class2_current_feature_counts[ii] + 1].value = 0;
+    }
+
+    /* Call "check_parameter" to validate our problem and parameters structures. */
+
+    check_error = check_parameter(&local_prob,task_info->param);
+    check_condition(check_error == NULL,"master:NoConvergence",check_error);
+
+    /* Train with local problem. */
+
+    result_model = train(&local_prob,task_info->param);
+
+    memcpy(task_info->results_weights,result_model->w,(task_info->train_sample_geometry + 1) * sizeof(double));
+
+    /* Free memory. */
+
+    free_model_content(result_model);
+
+    free(class2_current_feature_counts);
+    free(class1_current_feature_counts);
+    free(local_prob_x_t);
+    free(local_prob.x);
+    free(local_prob.y);
+    free(class2_non_null_counts);
+    free(class1_non_null_counts);
+    free(class2_found_index);
+    free(class1_found_index);
 }
 
 void
@@ -252,15 +240,9 @@ mexFunction(
     mxArray*              local_logger;
     int                   classifiers_count;
     struct parameter      param;
-    int*                  worker_task_buffers1_t;
-    int*                  worker_task_buffers2_t;
+    struct task_info*     task_info;
+    double*               task_info_results_weights_t;
     int                   classifier_index;
-    double*               worker_results_weights_t;
-    struct worker_info*   worker_info;
-    pthread_t*            thread_handles;
-    int                   pthread_op_res;
-    char*                 class1_string;
-    char*                 class2_string;
     int                   ii_int;
     int                   jj_int;
 
@@ -355,7 +337,7 @@ mexFunction(
 
     /* For proper output in MATLAB we set this to a correct-type wrapper around "mexPrintf". */
 
-    set_print_string_function(liblinear_mexPrintf_wrapper);
+    set_print_string_function(printf_wrapper);
 
     /* Extract relevant information from all inputs. */
 
@@ -411,101 +393,42 @@ mexFunction(
 
     logger_message(local_logger,"Building worker task allocation.");
 
-    worker_task_buffers1_t = (int*)mxCalloc(classifiers_count,sizeof(int));
-    worker_task_buffers2_t = (int*)mxCalloc(classifiers_count,sizeof(int));
+    task_info = (struct task_info*)mxCalloc(classifiers_count,sizeof(struct task_info));
+    task_info_results_weights_t = (double*)mxCalloc(classifiers_count * (train_sample_geometry + 1),sizeof(double));
 
     classifier_index = 0;
 
     for (ii_int = 0; ii_int < classes_count; ii_int++) {
-    	for (jj_int = ii_int + 1; jj_int < classes_count; jj_int++) {
-    	    worker_task_buffers1_t[classifier_index] = ii_int;
-    	    worker_task_buffers2_t[classifier_index] = jj_int;
-    	    classifier_index = classifier_index + 1;
-    	}
+	for (jj_int = ii_int + 1; jj_int < classes_count; jj_int++) {
+	    task_info[classifier_index].class_1 = ii_int + 1;
+	    task_info[classifier_index].class_2 = jj_int + 1;
+	    task_info[classifier_index].train_sample_count = train_sample_count;
+	    task_info[classifier_index].train_sample_geometry = train_sample_geometry;
+	    task_info[classifier_index].train_sample = train_sample;
+	    task_info[classifier_index].labels_idx = labels_idx;
+	    task_info[classifier_index].param = &param;
+	    task_info[classifier_index].results_weights = task_info_results_weights_t + classifier_index * (train_sample_geometry + 1);
+	    classifier_index = classifier_index + 1;
+	}
     }
 
-    worker_results_weights_t = (double*)mxCalloc(classifiers_count * (train_sample_geometry + 1),sizeof(double));
-
-    worker_info = (struct worker_info*)mxCalloc(num_threads,sizeof(struct worker_info));
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	worker_info[ii_int].id = ii_int;
-    	worker_info[ii_int].train_sample_count = train_sample_count;
-    	worker_info[ii_int].train_sample_geometry = train_sample_geometry;
-    	worker_info[ii_int].train_sample = train_sample;
-    	worker_info[ii_int].labels_idx = labels_idx;
-    	worker_info[ii_int].param = &param;
-    	worker_info[ii_int].task_buffer_count = 0;
-    	worker_info[ii_int].task_buffer1 = NULL;
-    	worker_info[ii_int].task_buffer2 = NULL;
-    	worker_info[ii_int].results_weights_base = NULL;
-    }
-
-    for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
-    	worker_info[ii_int % num_threads].task_buffer_count += 1;
-    }
-
-    worker_info[0].task_buffer1 = &worker_task_buffers1_t[0];
-    worker_info[0].task_buffer2 = &worker_task_buffers2_t[0];
-    worker_info[0].results_weights_base = &worker_results_weights_t[0];
-
-    for (ii_int = 1; ii_int < num_threads; ii_int++) {
-    	worker_info[ii_int].task_buffer1 = worker_info[ii_int - 1].task_buffer1 + worker_info[ii_int - 1].task_buffer_count;
-    	worker_info[ii_int].task_buffer2 = worker_info[ii_int - 1].task_buffer2 + worker_info[ii_int - 1].task_buffer_count;
-    	worker_info[ii_int].results_weights_base = worker_info[ii_int - 1].results_weights_base +
-                                                   worker_info[ii_int - 1].task_buffer_count * (train_sample_geometry + 1);
-    }
-
-    logger_beg_node(local_logger,"Worker task allocation");
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	logger_beg_node(local_logger,"Worker %02d",ii_int);
-
-    	for (jj_int = 0; jj_int < worker_info[ii_int].task_buffer_count; jj_int++) {
-    	    class1_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),worker_info[ii_int].task_buffer1[jj_int]));
-    	    class2_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),worker_info[ii_int].task_buffer2[jj_int]));
-    	    logger_message(local_logger,"%s-vs-%s",class1_string,class2_string);
-    	    mxFree(class2_string);
-    	    mxFree(class1_string);
-    	}
-
-    	logger_end_node(local_logger);
-    }
-
-    logger_end_node(local_logger);
-
-    /* Starting worker threads. */
+    /* Start worker threads. */
 
     logger_message(local_logger,"Starting parallel training of classifiers.");
 
-    thread_handles = (pthread_t*)mxCalloc(num_threads,sizeof(pthread_t));
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	pthread_op_res = pthread_create(&thread_handles[ii_int],NULL,train_worker,&(worker_info[ii_int]));
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not create thread.");
-    }
-
-    for (ii_int = 0; ii_int < num_threads; ii_int++) {
-    	pthread_op_res = pthread_join(thread_handles[ii_int],NULL);
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not join thread.");
-    }
-
-    logger_message(local_logger,"Finished parallel training of classifiers.");
+    run_workers(num_threads,(task_fn_t)do_task,classifiers_count,task_info,sizeof(struct task_info));
 
     logger_end_node(local_logger);
 
     /* Build "output". */
 
     output[O_WEIGHTS] = mxCreateDoubleMatrix(0,0,mxREAL);
-    mxSetPr(output[O_WEIGHTS],worker_results_weights_t);
+    mxSetPr(output[O_WEIGHTS],task_info_results_weights_t);
     mxSetM(output[O_WEIGHTS],train_sample_geometry + 1);
     mxSetN(output[O_WEIGHTS],classifiers_count);
 
     /* Free memory. */
 
-    mxFree(thread_handles);
-    mxFree(worker_info);
-    mxFree(worker_task_buffers2_t);
-    mxFree(worker_task_buffers1_t);
+    mxFree(task_info);
     mxDestroyArray(local_logger);
 }

@@ -6,14 +6,14 @@ MEXFLAGS = -g CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -
 
 all: x_do_train_one_vs_all.mexa64 x_do_train_one_vs_one.mexa64 x_do_classify.mexa64
 
-x_do_train_one_vs_all.mexa64: x_do_train_one_vs_all.c x_common.h svm.o
-	$(MEX) $(MEXFLAGS) x_do_train_one_vs_all.c svm.o
+x_do_train_one_vs_all.mexa64: x_do_train_one_vs_all.c x_common.c x_defines.h x_common.h svm.o
+	$(MEX) $(MEXFLAGS) x_do_train_one_vs_all.c x_common.c svm.o
 
-x_do_train_one_vs_one.mexa64: x_do_train_one_vs_one.c x_common.h svm.o
-	$(MEX) $(MEXFLAGS) x_do_train_one_vs_one.c svm.o
+x_do_train_one_vs_one.mexa64: x_do_train_one_vs_one.c x_common.c x_defines.h x_common.h svm.o
+	$(MEX) $(MEXFLAGS) x_do_train_one_vs_one.c x_common.c svm.o
 
-x_do_classify.mexa64: x_do_classify.c x_common.h svm.o
-	$(MEX) $(MEXFLAGS) x_do_classify.c svm.o
+x_do_classify.mexa64: x_do_classify.c x_common.c x_common.h x_defines.h svm.o
+	$(MEX) $(MEXFLAGS) x_do_classify.c x_common.c svm.o
 
 svm.o: svm.cpp svm.h
 	$(CXX) $(CFLAGS) -c -o svm.o svm.cpp
