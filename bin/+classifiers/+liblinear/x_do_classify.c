@@ -206,7 +206,7 @@ mexFunction(
 
     /* Rebuild model structures. */
 
-    logger_beg_node(local_logger,"Rebuilding models");
+    logger_message(local_logger,"Rebuilding models.");
 
     local_models = (struct model*)mxCalloc(classifiers_count,sizeof(struct model));
 
@@ -224,8 +224,6 @@ mexFunction(
 	local_models[ii_int].label = local_model_stub;
 	local_models[ii_int].bias = 1;
     }
-
-    logger_end_node(local_logger);
 
     logger_beg_node(local_logger,"Models structure [Sanity Check]");
 

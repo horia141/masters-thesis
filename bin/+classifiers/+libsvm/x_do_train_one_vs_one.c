@@ -292,7 +292,8 @@ mexFunction(
     struct svm_parameter  param;
     struct task_info*     task_info;
     int                   classifier_index;
-    char*                 class_string;
+    char*                 class1_string;
+    char*                 class2_string;
     double*               o_support_vectors_count_buf;
     mxArray*              o_support_vectors_count;
     double*               o_support_vectors_buf;
@@ -533,16 +534,18 @@ mexFunction(
     logger_beg_node(local_logger,"Solution summary");
 
     for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
-	class_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),ii_int));
-	logger_beg_node(local_logger,"%s-vs-All",class_string);
+	class1_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),task_info[ii_int].class_1 - 1));
+	class2_string = mxArrayToString(mxGetCell(mxGetProperty(input[I_CLASS_INFO],0,"labels"),task_info[ii_int].class_2 - 1));
+	logger_beg_node(local_logger,"%s-vs-%s",class1_string,class2_string);
 
 	logger_message(local_logger,"Number of support vectors: %d",task_info[ii_int].results_sv_count);
-	logger_message(local_logger,"Number of support vectors for \"%s\": %d",class_string,task_info[ii_int].results_sv_count_c1);
-	logger_message(local_logger,"Number of support vectors for \"All\": %d",task_info[ii_int].results_sv_count_c2);
+	logger_message(local_logger,"Number of support vectors for \"%s\": %d",class1_string,task_info[ii_int].results_sv_count_c1);
+	logger_message(local_logger,"Number of support vectors for \"%s\": %d",class2_string,task_info[ii_int].results_sv_count_c2);
 
 	logger_end_node(local_logger);
 
-	mxFree(class_string);
+	mxFree(class2_string);
+	mxFree(class1_string);
     }
 
     logger_end_node(local_logger);

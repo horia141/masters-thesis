@@ -403,7 +403,7 @@ void mexFunction(
 
     /* Rebuild model structures. */
 
-    logger_beg_node(local_logger,"Rebuilding models");
+    logger_message(local_logger,"Rebuilding models.");
 
     local_models = (struct svm_model*)mxCalloc(classifiers_count,sizeof(struct svm_model));
     local_models_SV_t = (struct svm_node**)mxCalloc(classifiers_count,sizeof(struct svm_node*));
@@ -503,8 +503,6 @@ void mexFunction(
 	mxFree(current_feature_counts);
 	mxFree(non_null_counts);
     }
-
-    logger_end_node(local_logger);
 
     logger_beg_node(local_logger,"Models structure [Sanity Check]");
 
