@@ -44,7 +44,7 @@ classdef patch_extract < transform
             [~,dr,dc,dl] = dataset.geometry(sample_plain);
             
             log_batch_size = ceil(obj.patches_count / 10);
-            sample_coded = zeros(obj.patch_row_count,obj.patch_col_count,dl,N);
+            sample_coded = zeros(obj.patch_row_count,obj.patch_col_count,dl,obj.patches_count);
             
             curr_patches_count = 1;
             

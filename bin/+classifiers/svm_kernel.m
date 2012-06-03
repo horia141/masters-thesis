@@ -2,15 +2,15 @@ classdef svm_kernel < classifier
     properties (GetAccess=public,SetAccess=immutable)
         classifiers_count;
         saved_class_pair;
-	    support_vectors_count;
-	    support_vectors;
-	    coeffs;
-	    rhos;
+        support_vectors_count;
+        support_vectors;
+        coeffs;
+        rhos;
         prob_as;
         prob_bs;
-	    kernel_code;
-	    kernel_param1;
-	    kernel_param2;
+        kernel_code;
+        kernel_param1;
+        kernel_param2;
         kernel_type;
         kernel_param;
         reg_param;
@@ -26,7 +26,7 @@ classdef svm_kernel < classifier
             assert(tc.classification_info(class_info));
             assert(tc.scalar(kernel_type));
             assert(tc.string(kernel_type));
-            assert(tc.one_of(kernel_type,'Linear','Polynomial','Gaussian','Sigmoid'));
+            assert(tc.one_of(kernel_type,'Linear','Polynomial','Gaussian','Logistic'));
             assert(tc.vector(kernel_param));
             assert(tc.number(kernel_param));
             assert((tc.same(kernel_type,'Linear') && tc.same(kernel_param,0)) || ...
@@ -36,7 +36,7 @@ classdef svm_kernel < classifier
                                                          (kernel_param(2) >= 0)) || ...
                    (tc.same(kernel_type,'Gaussian') && (length(kernel_param) == 1) && ...
                                                        (kernel_param > 0)) || ...
-                   (tc.same(kernel_type,'Sigmoid') && (length(kernel_param) == 2) && ...
+                   (tc.same(kernel_type,'Logistic') && (length(kernel_param) == 2) && ...
                                                       (kernel_param(1) > 0) && ...
                                                       (kernel_param(2) >= 0)));
             assert(tc.scalar(reg_param));
@@ -567,14 +567,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('    Sigmoid kernel and One-vs-All multiclass handling.\n');
+            fprintf('    Logistic kernel and One-vs-All multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s,ci] = utilstest.classifier_data_3();
             
-            cl = classifiers.svm_kernel(s,ci,'Sigmoid',[0.05 0],1,'1va',1,log);
+            cl = classifiers.svm_kernel(s,ci,'Logistic',[0.05 0],1,'1va',1,log);
             
             assert(cl.classifiers_count == 3);
             assert(tc.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -616,7 +616,7 @@ classdef svm_kernel < classifier
             assert(cl.kernel_code == 3);
             assert(cl.kernel_param1 == 0.05);
             assert(cl.kernel_param2 == 0);
-            assert(tc.same(cl.kernel_type,'Sigmoid'));
+            assert(tc.same(cl.kernel_type,'Logistic'));
             assert(tc.same(cl.kernel_param,[0.05 0]));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1va'));
@@ -631,14 +631,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('    Sigmoid kernel and One-vs-One multiclass handling.\n');
+            fprintf('    Logistic kernel and One-vs-One multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s,ci] = utilstest.classifier_data_3();
             
-            cl = classifiers.svm_kernel(s,ci,'Sigmoid',[0.05 0],1,'1v1',1,log);
+            cl = classifiers.svm_kernel(s,ci,'Logistic',[0.05 0],1,'1v1',1,log);
             
             assert(cl.classifiers_count == 3);
             assert(tc.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -680,7 +680,7 @@ classdef svm_kernel < classifier
             assert(cl.kernel_code == 3);
             assert(cl.kernel_param1 == 0.05);
             assert(cl.kernel_param2 == 0);
-            assert(tc.same(cl.kernel_type,'Sigmoid'));
+            assert(tc.same(cl.kernel_type,'Logistic'));
             assert(tc.same(cl.kernel_param,[0.05 0]));
             assert(cl.reg_param == 1);
             assert(tc.same(cl.multiclass_form,'1v1'));
@@ -1273,14 +1273,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-All multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-All multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_3();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1va',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1va',1,log);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
@@ -1307,14 +1307,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-One multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-One multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_3();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1v1',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1v1',1,log);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
@@ -1359,7 +1359,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1389,7 +1389,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1419,7 +1419,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1449,7 +1449,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1479,7 +1479,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1509,7 +1509,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1523,14 +1523,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-All multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-All multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_2();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1va',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1va',1,log);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
@@ -1539,7 +1539,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1553,14 +1553,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-One multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-One multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_clear_data_2();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1v1',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1v1',1,log);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat,ci_ts.labels_idx));
@@ -1569,7 +1569,7 @@ classdef svm_kernel < classifier
             assert(tc.unitreal(labels_confidence));
             assert(tc.same(sum(labels_confidence,1),ones(1,40)));
             assert(tc.check(labels_confidence(1,1:20) >= labels_confidence(2,1:20)));
-	        assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
+                assert(tc.check(labels_confidence(2,21:40) >= labels_confidence(1,21:40)));
             assert(score == 100);
             assert(tc.check(conf_matrix == [20 0; 0 20]));
             assert(tc.empty(misclassified));
@@ -1891,14 +1891,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-All multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-All multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_mostly_clear_data_3();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1va',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1va',1,log);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
@@ -1942,14 +1942,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-One multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-One multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_mostly_clear_data_3();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1va',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1va',1,log);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,log);
             
             assert(tc.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
@@ -2103,14 +2103,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-All multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-All multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_unclear_data_3();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1va',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1va',1,log);
             
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
@@ -2121,14 +2121,14 @@ classdef svm_kernel < classifier
             
             clearvars -except display;
             
-            fprintf('      Sigmoid kernel and One-vs-One multiclass handling.\n');
+            fprintf('      Logistic kernel and One-vs-One multiclass handling.\n');
             
             hnd = logging.handlers.testing(logging.level.All);
             log = logging.logger({hnd});
             
             [s_tr,s_ts,ci_tr,ci_ts] = utilstest.classifier_unclear_data_3();
             
-            cl = classifiers.svm_kernel(s_tr,ci_tr,'Sigmoid',[0.05 0],1,'1v1',1,log);
+            cl = classifiers.svm_kernel(s_tr,ci_tr,'Logistic',[0.05 0],1,'1v1',1,log);
             
             if exist('display','var') && (display == true)
                 utilstest.show_classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);

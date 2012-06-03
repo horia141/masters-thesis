@@ -16,7 +16,7 @@ KERNEL_CODE_TO_STRING[] = {
     /* 0: LINEAR */   "Linear",
     /* 1: POLY */     "Polynomial",
     /* 2: RBF */      "Gaussian",
-    /* 3: SIGMOID */  "Sigmoid"
+    /* 3: SIGMOID */  "Logistic"
 };
 
 static const char*
