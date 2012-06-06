@@ -70,9 +70,9 @@ classdef grad < transforms.record.dictionary
                 mean_error = sum(mean((diff .^ 2)));
                 saved_mse_t(iter) = mean_error;
                 logger.message('Mean error: %.0f',mean_error);
-%                 sz = sqrt(size(dict,2));
-%                 utils.display_sparse_basis(dict,sz,sz);
-%                 pause;
+                sz = sqrt(size(dict,2));
+                utils.display_sparse_basis(dict,sz,sz);
+                pause;
             end
             
             logger.end_node();

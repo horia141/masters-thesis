@@ -1,6 +1,6 @@
 CXX ?= g++
 CC ?= gcc
-CFLAGS = -g -Wall -Wconversion -fPIC -lpthread
+CFLAGS = -g -Wall -Wconversion -fPIC -lpthread -D_GNU_SOURCE
 MEX = /opt/local-ubuntu/MATLAB/R2011a/bin/mex
 MEXFLAGS = -g CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -largeArrayDims
 LIBS = blas/blas.a

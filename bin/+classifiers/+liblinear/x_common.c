@@ -1,11 +1,4 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
 #include <stdio.h>
-#undef _GNU_SOURCE
-#else
-#include <stdio.h>
-#endif
-
 #include <stdarg.h>
 #include <pthread.h>
 

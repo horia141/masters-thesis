@@ -13,6 +13,6 @@ extern void  logger_beg_node(mxArray* logger,const char* fmt_message,...);
 extern void  logger_end_node(mxArray* logger);
 extern void  logger_message(mxArray* logger,const char* fmt_message,...);
 
-extern void  run_workers(int num_workers,void (*task_fn)(void*),int task_buffer_count,void* task_buffer,int task_buffer_el_size);
+extern void  run_workers(int num_workers,void (*task_fn)(void*),int task_buffer_count,void* task_buffer,int task_buffer_el_size, unsigned int max_wait_seconds);
 
 #endif

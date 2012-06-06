@@ -1,13 +1,9 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
 #include <stdio.h>
-#undef _GNU_SOURCE
-#else
-#include <stdio.h>
-#endif
-
 #include <stdarg.h>
+#include <errno.h>
+
 #include <pthread.h>
+#include <unistd.h>
 
 #include "x_common.h"
 
@@ -66,6 +62,7 @@ logger_message(
     mxArray*  message_array;
     mxArray*  call_input[2];
 
+
     va_start(extra_list,fmt_message);
     print_op_res = vasprintf(&extra_message,fmt_message,extra_list);
     va_end(extra_list);
@@ -93,7 +90,14 @@ static void*
 do_work(
     void*  worker_info_p) {
     struct worker_info*  worker_info;
+    int                  unused;
+    int                  pthread_op_res;
     int                  ii;
+
+    pthread_op_res = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&unused);
+    check_condition(pthread_op_res == 0,"master:SystemError","Could not set thread cancel state!");
+    pthread_op_res = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&unused);
+    check_condition(pthread_op_res == 0,"master:SystemError","Could not set thread cancel type!");
 
     worker_info = (struct worker_info*)worker_info_p;
 
@@ -106,14 +110,17 @@ do_work(
 
 void
 run_workers(
-    int     num_workers,
-    void  (*task_fn)(void*),
-    int     task_buffer_count,
-    void*   task_buffer,
-    int     task_buffer_el_size) {
+    int           num_workers,
+    void        (*task_fn)(void*),
+    int           task_buffer_count,
+    void*         task_buffer,
+    int           task_buffer_el_size,
+    unsigned int  max_wait_seconds) {
     struct worker_info*  worker_info;
     pthread_t*           thread_handles;
+    int                  sleep_res;
     int                  pthread_op_res;
+    int                  finished_workers;
     int                  ii_int;
 
     worker_info = (struct worker_info*)calloc(num_workers,sizeof(struct worker_info));
@@ -143,11 +150,28 @@ run_workers(
     	check_condition(pthread_op_res == 0,"master:SystemError","Could not create thread.");
     }
 
+    sleep_res = max_wait_seconds;
+
+    while (sleep_res != 0) {
+	sleep_res = sleep(sleep_res);
+    }
+
+    finished_workers = 0;
+
     for (ii_int = 0; ii_int < num_workers; ii_int++) {
-    	pthread_op_res = pthread_join(thread_handles[ii_int],NULL);
-    	check_condition(pthread_op_res == 0,"master:SystemError","Could not join thread.");
+    	pthread_op_res = pthread_tryjoin_np(thread_handles[ii_int],NULL);
+    	check_condition(pthread_op_res == 0 || pthread_op_res == EBUSY,"master:SystemError","Could not join thread.");
+
+	if (pthread_op_res == 0) {
+	    finished_workers = finished_workers + 1;
+	} else {
+	    pthread_op_res = pthread_cancel(thread_handles[ii_int]);
+	    check_condition(pthread_op_res == 0,"master:SystemError","Could not cancel thread.");
+	}
     }
 
     free(thread_handles);
     free(worker_info);
+
+    check_condition(finished_workers == num_workers,"master:NoConvergence","Could not converge to proper solution in alloted time.");
 }

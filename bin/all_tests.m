@@ -7,8 +7,8 @@ tic;
 %% Tests for basic classes.
 
 tc.test(DISPLAY);
-utils.test(DISPLAY);
 params.test(DISPLAY);
+utils.test(DISPLAY);
 logging.level.test(DISPLAY);
 logging.handlers.zero.test(DISPLAY);
 logging.handlers.stdout.test(DISPLAY);
@@ -46,6 +46,7 @@ transforms.image.resize.test(DISPLAY);
 transforms.image.window.test(DISPLAY);
 transforms.image.patch_extract.test(DISPLAY);
 transforms.image.remove_pinknoise.test(DISPLAY);
+% transforms.image.digit.center(DISPLAY);
 % transforms.image.digit.deform(DISPLAY);
 % transforms.image.digit.normalize_width(DISPLAY);
 transforms.image.window_sparse_recoder.test(DISPLAY);

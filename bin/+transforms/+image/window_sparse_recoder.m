@@ -6,8 +6,8 @@ classdef window_sparse_recoder < transform
         patch_count_col;
         t_zca;
         t_dictionary;
-	dictionary_ctor_fn;
-	nonlinear_fn;
+        dictionary_ctor_fn;
+        nonlinear_fn;
         reduce_fn;
         features_mult_factor;
         initial_value;
@@ -15,11 +15,11 @@ classdef window_sparse_recoder < transform
         patch_row_count;
         patch_col_count;
         patch_required_variance;
-	dictionary_type;
+        dictionary_type;
         dictionary_params;
         window_step;
-	nonlinear_type;
-	nonlinear_params;
+        nonlinear_type;
+        nonlinear_params;
         reduce_type;
         reduce_spread;
     end
@@ -46,20 +46,20 @@ classdef window_sparse_recoder < transform
             assert(patch_required_variance >= 0);
             assert(tc.scalar(dictionary_type));
             assert(tc.string(dictionary_type));
-	    assert(tc.one_of(dictionary_type,'Dict','Learn:Grad','Random:Filters','Random:Instances'));
+            assert(tc.one_of(dictionary_type,'Dict','Learn:Grad','Random:Filters','Random:Instances'));
             assert(tc.empty(dictionary_params) || tc.vector(dictionary_params));
             assert(tc.empty(dictionary_params) || tc.cell(dictionary_params));
             assert(tc.scalar(window_step));
             assert(tc.natural(window_step));
             assert(window_step >= 1);
-	    assert(tc.scalar(nonlinear_type));
-	    assert(tc.string(nonlinear_type));
-	    assert(tc.one_of(nonlinear_type,'Linear','Logistic'));
-	    assert(tc.empty(nonlinear_params) || tc.vector(nonlinear_params));
-	    assert(tc.empty(nonlinear_params) || tc.cell(nonlinear_params));
+            assert(tc.scalar(nonlinear_type));
+            assert(tc.string(nonlinear_type));
+            assert(tc.one_of(nonlinear_type,'Linear','Logistic'));
+            assert(tc.empty(nonlinear_params) || tc.vector(nonlinear_params));
+            assert(tc.empty(nonlinear_params) || tc.cell(nonlinear_params));
             assert(tc.scalar(reduce_type));
             assert(tc.string(reduce_type));
-            assert(tc.one_of(reduce_type,'Sqr','Max','MinMax'));
+            assert(tc.one_of(reduce_type,'Subsample','Sqr','Max','MinMax'));
             assert(tc.scalar(reduce_spread));
             assert(tc.natural(reduce_spread));
             assert(reduce_spread >= 1);
@@ -77,24 +77,28 @@ classdef window_sparse_recoder < transform
             patch_count_col_t = (dc - 1) / window_step + 1;
             pooled_patch_row_count_t = patch_count_row_t / reduce_spread;
             pooled_patch_col_count_t = patch_count_col_t / reduce_spread;
-
-	    if tc.same(dictionary_type,'Dict')
-	        dictionary_ctor_fn_t = @transforms.record.dictionary;
+            
+            if tc.same(dictionary_type,'Dict')
+                dictionary_ctor_fn_t = @transforms.record.dictionary;
             elseif tc.same(dictionary_type,'Learn:Grad')
-	        dictionary_ctor_fn_t = @transforms.record.dictionary.learn.grad;
+                dictionary_ctor_fn_t = @transforms.record.dictionary.learn.grad;
             elseif tc.same(dictionary_type,'Random:Filters')
-	        dictionary_ctor_fn_t = @transforms.record.dictionary.random.filters;
-	    else
-	        dictionary_ctor_fn_t = @transforms.record.dictionary.random.instances;
+                dictionary_ctor_fn_t = @transforms.record.dictionary.random.filters;
+            else
+                dictionary_ctor_fn_t = @transforms.record.dictionary.random.instances;
             end
-
-	    if tc.same(nonlinear_type,'Linear')
+            
+            if tc.same(nonlinear_type,'Linear')
                 nonlinear_fn_t = @transforms.image.window_sparse_recoder.linear;
             else
                 nonlinear_fn_t = @transforms.image.window_sparse_recoder.logistic;
             end
 
-            if tc.same(reduce_type,'Sqr')
+            if tc.same(reduce_type,'Subsample')
+                reduce_fn_t = @transforms.image.window_sparse_recoder.subsample;
+                features_mult_factor_t = 1;
+                initial_value_t = 0;
+            elseif tc.same(reduce_type,'Sqr')
                 reduce_fn_t = @transforms.image.window_sparse_recoder.sqr;
                 features_mult_factor_t = 1;
                 initial_value_t = 0;
@@ -112,8 +116,9 @@ classdef window_sparse_recoder < transform
             patches_1 = t_patches.code(train_sample_plain,logger.new_transform('Extracting patches'));
             patches_2 = dataset.flatten_image(patches_1);
             patches_3 = bsxfun(@minus,patches_2,mean(patches_2,1));
-            t_zca_t = transforms.record.zca(patches_3,logger.new_transform('Building ZCA transform'));
-            patches_4 = t_zca_t.code(patches_3,logger.new_transform('Applying ZCA transform'));
+%             t_zca_t = transforms.record.zca(patches_3,logger.new_transform('Building ZCA transform'));
+%             patches_4 = t_zca_t.code(patches_3,logger.new_transform('Applying ZCA transform'));
+            patches_4 = patches_3;
             t_dictionary_t = dictionary_ctor_fn_t(patches_4,dictionary_params{:},logger.new_transform('Building patches dictionary'));
             
             input_geometry = [d,dr,dc,1];
@@ -124,10 +129,10 @@ classdef window_sparse_recoder < transform
             obj.pooled_patch_col_count = pooled_patch_col_count_t;
             obj.patch_count_row = patch_count_row_t;
             obj.patch_count_col = patch_count_col_t;
-            obj.t_zca = t_zca_t;
+            obj.t_zca = 0; %t_zca_t;
             obj.t_dictionary = t_dictionary_t;
-	    obj.dictionary_ctor_fn = dictionary_ctor_fn_t;
-	    obj.nonlinear_fn = nonlinear_fn_t;
+            obj.dictionary_ctor_fn = dictionary_ctor_fn_t;
+            obj.nonlinear_fn = nonlinear_fn_t;
             obj.reduce_fn = reduce_fn_t;
             obj.features_mult_factor = features_mult_factor_t;
             obj.initial_value = initial_value_t;
@@ -135,11 +140,11 @@ classdef window_sparse_recoder < transform
             obj.patch_row_count = patch_row_count;
             obj.patch_col_count = patch_col_count;
             obj.patch_required_variance = patch_required_variance;
-	    obj.dictionary_type = dictionary_type;
-	    obj.dictionary_params = dictionary_params;
+            obj.dictionary_type = dictionary_type;
+            obj.dictionary_params = dictionary_params;
             obj.window_step = window_step;
-	    obj.nonlinear_type = nonlinear_type;
-	    obj.nonlinear_params = nonlinear_params;
+            obj.nonlinear_type = nonlinear_type;
+            obj.nonlinear_params = nonlinear_params;
             obj.reduce_type = reduce_type;
             obj.reduce_spread = reduce_spread;
         end
@@ -174,7 +179,8 @@ classdef window_sparse_recoder < transform
                                                                     ((jj_1 - 1) * obj.window_step + 1):((jj_1 - 1) * obj.window_step + obj.patch_col_count));
                             local_sample_2 = reshape(local_sample_1,N,obj.patch_row_count * obj.patch_col_count)'; 
                             local_sample_3 = bsxfun(@minus,local_sample_2,mean(local_sample_2,1));
-                            local_sample_4 = obj.t_zca.code(local_sample_3,logger);
+%                             local_sample_4 = obj.t_zca.code(local_sample_3,logger);
+                            local_sample_4 = local_sample_3;
                             local_sample_5 = obj.t_dictionary.code(local_sample_4,logger);
                             local_sample_6 = obj.nonlinear_fn(local_sample_5,obj.nonlinear_params{:});
 
@@ -196,13 +202,21 @@ classdef window_sparse_recoder < transform
     
     methods (Static,Access=protected)
         function [o] = linear(i)
-	    o = i;
-	end
-
-	function [o] = logistic(i)
-	    o = 1 ./ (1 + 2.71828183.^ (-i)) - 0.5;
+            o = i;
+        end
+        
+        function [o] = logistic(i)
+            o = 1 ./ (1 + 2.71828183.^ (-i)) - 0.5;
         end
 
+        function [o] = subsample(acc,A)
+            if tc.same(acc,zeros(size(acc)))
+                o = A;
+            else
+                o = acc;
+            end
+        end
+        
         function [o] = sqr(acc,A)
             o = acc + A .^ 2;
         end
@@ -212,7 +226,8 @@ classdef window_sparse_recoder < transform
         end
         
         function [o] = minmax(acc,A)
-            o = [max(acc(1:end/2,:),A);min(acc(end/2+1:end,:),A)];
+            o_1 = [max(acc(1:2:end,:),A);min(acc(2:2:end,:),A)];
+            o = [o_1(1:2:end,:);o_1(2:2:end,:)];
         end
     end
     

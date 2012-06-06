@@ -21,14 +21,15 @@ enum output_decoder {
 };
 
 enum input_decoder {
-    I_TRAIN_SAMPLE   = 0,
-    I_CLASS_INFO     = 1,
-    I_KERNEL_CODE    = 2,
-    I_KERNEL_PARAM1  = 3,
-    I_KERNEL_PARAM2  = 4,
-    I_REG_PARAM      = 5,
-    I_NUM_THREADS    = 6,
-    I_LOGGER         = 7,
+    I_TRAIN_SAMPLE      = 0,
+    I_CLASS_INFO        = 1,
+    I_KERNEL_CODE       = 2,
+    I_KERNEL_PARAM1     = 3,
+    I_KERNEL_PARAM2     = 4,
+    I_REG_PARAM         = 5,
+    I_NUM_THREADS       = 6,
+    I_MAX_WAIT_SECONDS  = 7,
+    I_LOGGER            = 8,
     INPUTS_COUNT
 };
 
@@ -235,8 +236,10 @@ do_task(
     task_info->results_sv_coeff = (double*)calloc(result_model->l,sizeof(double));
     memcpy(task_info->results_sv_coeff,result_model->sv_coef[0],result_model->l * sizeof(double));
     task_info->results_sv_rho = result_model->rho[0];
-    task_info->results_sv_prob_a = result_model->probA[0];
-    task_info->results_sv_prob_b = result_model->probB[0];
+    /* task_info->results_sv_prob_a = result_model->probA[0]; */
+    /* task_info->results_sv_prob_b = result_model->probB[0]; */
+    task_info->results_sv_prob_a = 0;
+    task_info->results_sv_prob_b = 0;
 
     sv_current_count = 0;
 
@@ -287,6 +290,7 @@ mexFunction(
     double                kernel_param2;
     double                reg_param;
     int                   num_threads;
+    unsigned int          max_wait_seconds;
     mxArray*              local_logger;
     int                   classifiers_count;
     struct svm_parameter  param;
@@ -396,6 +400,22 @@ mexFunction(
 		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
     check_condition(input[I_NUM_THREADS] > 0,
 		    "master:InvalidMEXCall","Parameter \"num_threads\" is not strictly positive.");
+    check_condition(mxGetNumberOfDimensions(input[I_MAX_WAIT_SECONDS]) == 2,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
+    check_condition(mxGetM(input[I_MAX_WAIT_SECONDS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
+    check_condition(mxGetN(input[I_MAX_WAIT_SECONDS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
+    check_condition(mxIsDouble(input[I_MAX_WAIT_SECONDS]),
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(fabs(mxGetScalar(input[I_MAX_WAIT_SECONDS]) - floor(mxGetScalar(input[I_MAX_WAIT_SECONDS]))) == 0,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_MAX_WAIT_SECONDS]) >= 0,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_MAX_WAIT_SECONDS]) < INT_MAX,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(input[I_MAX_WAIT_SECONDS] > 0,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_LOGGER]) == 2,
 		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
     check_condition(mxGetM(input[I_LOGGER]) == 1,
@@ -431,6 +451,7 @@ mexFunction(
     kernel_param2 = mxGetScalar(input[I_KERNEL_PARAM2]);
     reg_param = mxGetScalar(input[I_REG_PARAM]);
     num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
+    max_wait_seconds = (unsigned int)mxGetScalar(input[I_MAX_WAIT_SECONDS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
     classifiers_count = classes_count * (classes_count - 1) / 2;
@@ -447,6 +468,7 @@ mexFunction(
     logger_message(local_logger,"%s: %f",KERNEL_PARAM2_TO_STRING[kernel_code],kernel_param2);
     logger_message(local_logger,"Regularization parameter: %f",reg_param);
     logger_message(local_logger,"Number of worker threads: %d",num_threads);
+    logger_message(local_logger,"Maximum wait for convergence: %ds",max_wait_seconds);
     logger_message(local_logger,"Classifiers count: %d",classifiers_count);
 
     logger_end_node(local_logger);
@@ -468,8 +490,8 @@ mexFunction(
     param.weight = NULL;
     param.nu = 0;
     param.p = 0;
-    param.shrinking = 0;
-    param.probability = 1;
+    param.shrinking = 1;
+    param.probability = 0;
 
     logger_beg_node(local_logger,"Parameters structure [Sanity Check]");
 
@@ -525,7 +547,7 @@ mexFunction(
 
     logger_message(local_logger,"Starting parallel training of classifiers.");
 
-    run_workers(num_threads,(task_fn_t)do_task,classifiers_count,task_info,sizeof(struct task_info));
+    run_workers(num_threads,(task_fn_t)do_task,classifiers_count,task_info,sizeof(struct task_info),max_wait_seconds);
 
     logger_message(local_logger,"Finished parallel training of classifiers.");
 

@@ -26,7 +26,8 @@ enum input_decoder {
     I_KERNEL_PARAM2          = 9,
     I_REG_PARAM              = 10,
     I_NUM_THREADS            = 11,
-    I_LOGGER                 = 12,
+    I_MAX_WAIT_SECONDS       = 12,
+    I_LOGGER                 = 13,
     INPUTS_COUNT
 };
 
@@ -64,7 +65,8 @@ do_task(
 
     for (ii_int = 0; ii_int < task_info->classifiers_count; ii_int++) {
 	svm_predict_values(&task_info->local_models[ii_int],instance_features,&decision_value);
-	task_info->results_probs[ii_int] = sigmoid_predict(decision_value,task_info->local_models[ii_int].probA[0],task_info->local_models[ii_int].probB[0]);
+	/* task_info->results_probs[ii_int] = sigmoid_predict(decision_value,task_info->local_models[ii_int].probA[0],task_info->local_models[ii_int].probB[0]); */
+	task_info->results_probs[ii_int] = decision_value;
     }
 
     free(instance_features);
@@ -92,6 +94,7 @@ void mexFunction(
     double             kernel_param2;
     double             reg_param;
     int                num_threads;
+    unsigned int       max_wait_seconds;
     mxArray*           local_logger;
     mwSize*            non_null_counts;
     mwSize             non_null_full_count;
@@ -311,6 +314,22 @@ void mexFunction(
 		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
     check_condition(input[I_NUM_THREADS] > 0,
 		    "master:InvalidMEXCall","Parameter \"num_threads\" is not strictly positive.");
+    check_condition(mxGetNumberOfDimensions(input[I_MAX_WAIT_SECONDS]) == 2,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
+    check_condition(mxGetM(input[I_MAX_WAIT_SECONDS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
+    check_condition(mxGetN(input[I_MAX_WAIT_SECONDS]) == 1,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
+    check_condition(mxIsDouble(input[I_MAX_WAIT_SECONDS]),
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(fabs(mxGetScalar(input[I_MAX_WAIT_SECONDS]) - floor(mxGetScalar(input[I_MAX_WAIT_SECONDS]))) == 0,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_MAX_WAIT_SECONDS]) >= 0,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(mxGetScalar(input[I_MAX_WAIT_SECONDS]) < INT_MAX,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
+    check_condition(input[I_MAX_WAIT_SECONDS] > 0,
+		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_LOGGER]) == 2,
 		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
     check_condition(mxGetM(input[I_LOGGER]) == 1,
@@ -373,6 +392,7 @@ void mexFunction(
     kernel_param2 = mxGetScalar(input[I_KERNEL_PARAM2]);
     reg_param = mxGetScalar(input[I_REG_PARAM]);
     num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
+    max_wait_seconds = (unsigned int)mxGetScalar(input[I_MAX_WAIT_SECONDS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
     for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
@@ -398,6 +418,7 @@ void mexFunction(
     logger_message(local_logger,"%s: %f",KERNEL_PARAM2_TO_STRING[kernel_code],kernel_param1);
     logger_message(local_logger,"Regularization parameter: %f",reg_param);
     logger_message(local_logger,"Number of worker threads: %d",num_threads);
+    logger_message(local_logger,"Maximum wait for convergence: %ds",max_wait_seconds);
 
     logger_end_node(local_logger);
 
@@ -441,8 +462,8 @@ void mexFunction(
 	local_models[ii_int].param.weight = NULL;
 	local_models[ii_int].param.nu = 0;
 	local_models[ii_int].param.p = 0;
-	local_models[ii_int].param.shrinking = 0;
-	local_models[ii_int].param.probability = 1;
+	local_models[ii_int].param.shrinking = 1;
+	local_models[ii_int].param.probability = 0;
 	local_models[ii_int].nr_class = 2;
 	local_models[ii_int].l = sv_count[ii_int];
 	local_models[ii_int].SV = (struct svm_node**)mxCalloc(sv_count[ii_int],sizeof(struct svm_node*));
@@ -556,7 +577,7 @@ void mexFunction(
 
     logger_message(local_logger,"Starting parallel classification.");
 
-    run_workers(num_threads,(task_fn_t)do_task,(int)sample_count,task_info,sizeof(struct task_info));
+    run_workers(num_threads,(task_fn_t)do_task,(int)sample_count,task_info,sizeof(struct task_info),max_wait_seconds);
 
     logger_message(local_logger,"Finished parallel classification.");
 

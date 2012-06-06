@@ -5,9 +5,9 @@ classdef utils
             assert(tc.number(a));
             assert(tc.scalar(b));
             assert(tc.scalar(b));
-	    assert(tc.empty(varargin) || tc.vector(varargin));
-	    assert(tc.empty(varargin) || tc.checkf(@tc.scalar,varargin));
-	    assert(tc.empty(varargin) || tc.checkf(@tc.number,varargin));
+            assert(tc.empty(varargin) || tc.vector(varargin));
+            assert(tc.empty(varargin) || tc.checkf(@tc.scalar,varargin));
+            assert(tc.empty(varargin) || tc.checkf(@tc.number,varargin));
             assert(a < b);
             
             o = (b - a) * rand(varargin{:}) + a;
@@ -48,10 +48,10 @@ classdef utils
             assert(tc.dataset_image(images));
             assert(~exist('tiles_row_count','var') || tc.scalar(tiles_row_count));
             assert(~exist('tiles_row_count','var') || tc.natural(tiles_row_count));
-            assert(~exist('tiles_row_count','var') || (tiles_row_count > 1));
+            assert(~exist('tiles_row_count','var') || (tiles_row_count >= 1));
             assert(~exist('tiles_col_count','var') || tc.scalar(tiles_col_count));
             assert(~exist('tiles_col_count','var') || tc.natural(tiles_col_count));
-            assert(~exist('tiles_col_count','var') || (tiles_col_count > 1));
+            assert(~exist('tiles_col_count','var') || (tiles_col_count >= 1));
             assert(~(exist('tiles_row_count','var') && exist('tiles_col_count','var')) || ...
                      (tiles_row_count * tiles_col_count >= size(images,4)));
             assert(~(exist('tiles_row_count','var') && ~exist('tiles_col_count','var')) || ...
@@ -213,8 +213,8 @@ classdef utils
         
         function [] = display_sparse_basis(dict,row_count,col_count)
             assert(tc.matrix(dict));
-            assert(tc.unitreal(abs(dict)));
-            assert(tc.same(sum(dict .^ 2,2),ones(size(dict,1),1),'Epsilon',1e-7));
+%             assert(tc.unitreal(abs(dict)));
+%             assert(tc.same(sum(dict .^ 2,2),ones(size(dict,1),1),'Epsilon',1e-7));
             assert(tc.scalar(row_count));
             assert(tc.natural(row_count));
             assert(row_count >= 1);
@@ -231,6 +231,22 @@ classdef utils
             
             imshow(utils.format_as_tiles(utils.remap_images_to_unit(im_dict,'global')));
         end
+        
+        function [o] = center_digit(image)
+            assert(tc.matrix(image));
+            assert(tc.number(image));
+            
+            [~,first_col] = find(image,1,'first');
+            [~,last_col] = find(image,1,'last');
+            [~,first_row] = find(image',1,'first');
+            [~,last_row] = find(image',1,'last');
+                
+            place_row = max(floor((size(image,1) - (last_row - first_row)) / 2),0);
+            place_col = max(floor((size(image,2) - (last_col - first_col)) / 2),0);
+
+            o = zeros(size(image));
+            o((place_row + 1):(place_row + 1 + last_row - first_row),(place_col + 1):(place_col + 1 + last_col - first_col)) = image(first_row:last_row,first_col:last_col);
+        end
     end
     
     methods (Static,Access=public)
@@ -239,25 +255,25 @@ classdef utils
             
             fprintf('  Function "rand_range".\n');
             
-	    r1 = utils.rand_range(0,1);
-	    r2 = utils.rand_range(-1,1);
-	    r3 = utils.rand_range(0,10,1,10);
-	    r4 = utils.rand_range(-3,3,4,4,5);
-
-	    assert(tc.scalar(r1));
-	    assert(tc.unitreal(r1));
-	    assert(tc.scalar(r2));
-	    assert(tc.unitreal(abs(r2)));
-	    assert(tc.vector(r3));
-	    assert(length(r3) == 10);
-	    assert(tc.check(r3 >= 0));
-	    assert(tc.check(r3 <= 10));
-	    assert(tc.tensor(r4,3));
-	    assert(size(r4,1) == 4);
-	    assert(size(r4,2) == 4);
-	    assert(size(r4,3) == 5);
-	    assert(tc.check(r4 >= -3));
-	    assert(tc.check(r4 <= 3));
+            r1 = utils.rand_range(0,1);
+            r2 = utils.rand_range(-1,1);
+            r3 = utils.rand_range(0,10,1,10);
+            r4 = utils.rand_range(-3,3,4,4,5);
+            
+            assert(tc.scalar(r1));
+            assert(tc.unitreal(r1));
+            assert(tc.scalar(r2));
+            assert(tc.unitreal(abs(r2)));
+            assert(tc.vector(r3));
+            assert(length(r3) == 10);
+            assert(tc.check(r3 >= 0));
+            assert(tc.check(r3 <= 10));
+            assert(tc.tensor(r4,3));
+            assert(size(r4,1) == 4);
+            assert(size(r4,2) == 4);
+            assert(size(r4,3) == 5);
+            assert(tc.check(r4 >= -3));
+            assert(tc.check(r4 <= 3));
             
             fprintf('  Function "force_row".\n');
             
@@ -564,6 +580,10 @@ classdef utils
             assert(tc.same(utils.cell_cull({1;2;3}),{1;2;3}));
             assert(tc.same(utils.cell_cull({1;{};3}),{1;3}));
             assert(tc.same(utils.cell_cull({{};{}}),{}));
+            
+            fprintf('  Function "center_digit".\n');
+            
+            assert(false);
         end
     end
 end
