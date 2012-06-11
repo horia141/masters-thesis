@@ -46,7 +46,7 @@ classdef window_sparse_recoder < transform
             assert(patch_required_variance >= 0);
             assert(tc.scalar(dictionary_type));
             assert(tc.string(dictionary_type));
-            assert(tc.one_of(dictionary_type,'Dict','Learn:Grad','Random:Filters','Random:Instances'));
+            assert(tc.one_of(dictionary_type,'Dict','Learn:Grad','Learn:KMeans','Learn:NeuralGas','Random:Filters','Random:Instances'));
             assert(tc.empty(dictionary_params) || tc.vector(dictionary_params));
             assert(tc.empty(dictionary_params) || tc.cell(dictionary_params));
             assert(tc.scalar(window_step));
@@ -82,6 +82,10 @@ classdef window_sparse_recoder < transform
                 dictionary_ctor_fn_t = @transforms.record.dictionary;
             elseif tc.same(dictionary_type,'Learn:Grad')
                 dictionary_ctor_fn_t = @transforms.record.dictionary.learn.grad;
+            elseif tc.same(dictionary_type,'Learn:KMeans')
+                dictionary_ctor_fn_t = @transforms.record.dictionary.learn.kmeans;
+            elseif tc.same(dictionary_type,'Learn:NeuralGas')
+                dictionary_ctor_fn_t = @transforms.record.dictionary.learn.neural_gas;
             elseif tc.same(dictionary_type,'Random:Filters')
                 dictionary_ctor_fn_t = @transforms.record.dictionary.random.filters;
             else

@@ -46,9 +46,7 @@ transforms.image.resize.test(DISPLAY);
 transforms.image.window.test(DISPLAY);
 transforms.image.patch_extract.test(DISPLAY);
 transforms.image.remove_pinknoise.test(DISPLAY);
-% transforms.image.digit.center(DISPLAY);
-% transforms.image.digit.deform(DISPLAY);
-% transforms.image.digit.normalize_width(DISPLAY);
+transforms.image.digit.deform.test(DISPLAY);
 transforms.image.window_sparse_recoder.test(DISPLAY);
 
 %% Tests for "classifier" and derived classes.
