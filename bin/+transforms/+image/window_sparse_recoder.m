@@ -161,6 +161,9 @@ classdef window_sparse_recoder < transform
             full_sample = zeros(obj.features_mult_factor * obj.t_dictionary.word_count,N,obj.pooled_patch_row_count,obj.pooled_patch_col_count);
             local_sample_plain = shiftdim(sample_plain_padded,2);
             
+            current_patch = 1;
+            total_patches_count = obj.patch_count_row * obj.patch_count_col;
+            
             for ii = 1:obj.pooled_patch_row_count
                 for jj = 1:obj.pooled_patch_col_count
                     logger.beg_node('Output %02d%02d',ii,jj);
@@ -172,7 +175,9 @@ classdef window_sparse_recoder < transform
            
                     for ii_1 = source_patches_row
                         for jj_1 = source_patches_col
-                            logger.beg_node('Patch %02dx%02d %02dx%02d',((ii_1 - 1) * obj.window_step + 1),((jj_1 - 1) * obj.window_step + 1),((ii_1 - 1) * obj.window_step + obj.patch_row_count),((jj_1 - 1) * obj.window_step + obj.patch_col_count));
+                            logger.beg_node('Patch %02dx%02d %02dx%02d (%.2f/100)',((ii_1 - 1) * obj.window_step + 1),((jj_1 - 1) * obj.window_step + 1),...
+                                                                                   ((ii_1 - 1) * obj.window_step + obj.patch_row_count),((jj_1 - 1) * obj.window_step + obj.patch_col_count),...
+                                                                                    100 * current_patch / total_patches_count);
 
                             % Should check again that what we do here actually works.
                             local_sample_1 = local_sample_plain(:,:,((ii_1 - 1) * obj.window_step + 1):((ii_1 - 1) * obj.window_step + obj.patch_row_count),...
@@ -187,6 +192,8 @@ classdef window_sparse_recoder < transform
                             local_sample = obj.reduce_fn(local_sample,local_sample_6);
 
                             logger.end_node();
+                            
+                            current_patch = current_patch + 1;
                         end
                     end
 

@@ -211,27 +211,6 @@ classdef utils
             end
         end
         
-        function [] = display_sparse_basis(dict,row_count,col_count)
-            assert(tc.matrix(dict));
-%             assert(tc.unitreal(abs(dict)));
-%             assert(tc.same(sum(dict .^ 2,2),ones(size(dict,1),1),'Epsilon',1e-7));
-            assert(tc.scalar(row_count));
-            assert(tc.natural(row_count));
-            assert(row_count >= 1);
-            assert(tc.scalar(col_count));
-            assert(tc.natural(col_count));
-            assert(col_count >= 1);
-            assert(row_count * col_count == size(dict,2));
-            
-            im_dict = zeros(row_count,col_count,1,size(dict,1));
-            
-            for ii = 1:size(dict,1)
-                im_dict(:,:,1,ii) = reshape(dict(ii,:),row_count,col_count);
-            end
-            
-            imshow(utils.format_as_tiles(utils.remap_images_to_unit(im_dict,'global')));
-        end
-        
         function [o] = center_digit(image)
             assert(tc.matrix(image));
             assert(tc.number(image));
@@ -582,8 +561,117 @@ classdef utils
             assert(tc.same(utils.cell_cull({{};{}}),{}));
             
             fprintf('  Function "center_digit".\n');
-            
-            assert(false);
+
+	    assert(tc.same(utils.center_digit([0 0 0 0 0 0 0 0 0;
+                                               0 1 1 1 1 1 0 0 0;
+					       0 1 0 0 0 1 0 0 0;
+					       0 1 0 0 0 1 0 0 0;
+					       0 1 1 1 1 1 0 0 0;
+					       0 0 0 0 0 1 0 0 0;
+					       0 0 0 0 0 1 0 0 0;
+					       0 1 1 1 1 1 0 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]),...
+					      [0 0 0 0 0 0 0 0 0;
+                                               0 0 0 0 0 0 0 0 0;
+                                               0 0 1 1 1 1 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]));
+	    assert(tc.same(utils.center_digit([0 0 0 0 0 0 0 0 0;
+	    				       0 0 0 0 0 0 0 0 0;
+                                               0 1 1 1 1 1 0 0 0;
+					       0 1 0 0 0 1 0 0 0;
+					       0 1 0 0 0 1 0 0 0;
+					       0 1 1 1 1 1 0 0 0;
+					       0 0 0 0 0 1 0 0 0;
+					       0 0 0 0 0 1 0 0 0;
+					       0 1 1 1 1 1 0 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]),...
+					      [0 0 0 0 0 0 0 0 0;
+                                               0 0 0 0 0 0 0 0 0;
+                                               0 0 1 1 1 1 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]));
+	    assert(tc.same(utils.center_digit([0 0 0 0 0 0 0 0 0;
+	    				       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0;
+                                               0 1 1 1 1 1 0 0 0;
+					       0 1 0 0 0 1 0 0 0;
+					       0 1 0 0 0 1 0 0 0;
+					       0 1 1 1 1 1 0 0 0;
+					       0 0 0 0 0 1 0 0 0;
+					       0 0 0 0 0 1 0 0 0;
+					       0 1 1 1 1 1 0 0 0;
+					       0 0 0 0 0 0 0 0 0]),...
+					      [0 0 0 0 0 0 0 0 0;
+                                               0 0 0 0 0 0 0 0 0;
+                                               0 0 1 1 1 1 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]));
+	    assert(tc.same(utils.center_digit([0 0 0 0 0 0 0 0 0;
+	    				       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0;
+                                               0 0 1 1 1 1 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 0 0 0]),...
+					      [0 0 0 0 0 0 0 0 0;
+                                               0 0 0 0 0 0 0 0 0;
+                                               0 0 1 1 1 1 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]));
+	    assert(tc.same(utils.center_digit([0 0 0 0 0 0 0 0 0;
+	    				       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0;
+                                               0 0 0 1 1 1 1 1 0;
+					       0 0 0 1 0 0 0 1 0;
+					       0 0 0 1 0 0 0 1 0;
+					       0 0 0 1 1 1 1 1 0;
+					       0 0 0 0 0 0 0 1 0;
+					       0 0 0 0 0 0 0 1 0;
+					       0 0 0 1 1 1 1 1 0;
+					       0 0 0 0 0 0 0 0 0]),...
+					      [0 0 0 0 0 0 0 0 0;
+                                               0 0 0 0 0 0 0 0 0;
+                                               0 0 1 1 1 1 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 0 0 0 0 1 0 0;
+					       0 0 1 1 1 1 1 0 0;
+					       0 0 0 0 0 0 0 0 0;
+					       0 0 0 0 0 0 0 0 0]));
         end
     end
 end

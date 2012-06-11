@@ -171,7 +171,8 @@ classdef logger < handle
             assert(obj.active);
             assert((obj.level_stack(end) == logging.level.TopLevel) || ...
                    (obj.level_stack(end) == logging.level.Experiment) || ...
-                   (obj.level_stack(end) == logging.level.Architecture));
+                   (obj.level_stack(end) == logging.level.Architecture) || ...
+                   (obj.level_stack(end) == logging.level.Transform));
             assert(tc.scalar(message_fmt));
             assert(tc.string(message_fmt));
             assert(tc.empty(varargin) || tc.vector(varargin));
@@ -356,7 +357,8 @@ classdef logger < handle
             assert(obj.active);
             assert((obj.level_stack(end) == logging.level.TopLevel) || ...
                    (obj.level_stack(end) == logging.level.Experiment) || ...
-                   (obj.level_stack(end) == logging.level.Architecture));
+                   (obj.level_stack(end) == logging.level.Architecture) || ...
+                   (obj.level_stack(end) == logging.level.Transform));
             assert(tc.scalar(message_fmt));
             assert(tc.string(message_fmt));
             assert(tc.empty(varargin) || tc.vector(varargin));

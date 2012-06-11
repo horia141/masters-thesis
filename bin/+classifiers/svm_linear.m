@@ -91,7 +91,7 @@ classdef svm_linear < classifier
             end
 
             if class_info.labels_count == 2
-                model_weights_t = classifiers.liblinear.x_do_train_one_vs_one(train_sample,class_info,method_code_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));            
+                model_weights_t = classifiers.liblinear.x_do_train_one_vs_one(train_sample,class_info,method_code_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
             elseif tc.same(multiclass_form,'1va')
                 model_weights_t = classifiers.liblinear.x_do_train_one_vs_all(train_sample,class_info,method_code_t,reg_param,train_num_threads_t,logger.new_classifier('Training each classifier'));
             else
