@@ -39,7 +39,6 @@ transforms.record.dictionary.random.instances.test(DISPLAY);
 % transforms.record.dictionary.learn.autoencoder.test(DISPLAY);
 % transforms.record.dictionary.learn.boltzmann.test(DISPLAY);
 transforms.record.dictionary.learn.grad.test(DISPLAY);
-% transforms.record.dictionary.learn.grad_st.test(DISPLAY);
 transforms.record.dictionary.learn.kmeans.test(DISPLAY);
 transforms.record.dictionary.learn.neural_gas.test(DISPLAY);
 transforms.image.resize.test(DISPLAY);

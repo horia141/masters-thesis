@@ -16,7 +16,7 @@ classdef dictionary < transforms.reversible
             assert(size(dict,2) == dataset.geometry(train_sample_plain));
             assert(tc.scalar(coding_method));
             assert(tc.string(coding_method));
-            assert(tc.one_of(coding_method,'Corr','MP','OMP','Euclidean'));
+            assert(tc.one_of(coding_method,'Corr','MP','OMP','SparseNet','Euclidean'));
             assert((tc.same(coding_method,'Corr') && tc.empty(coding_params)) || ...
                    (tc.same(coding_method,'MP') && (tc.scalar(coding_params) && ...
                                                     tc.natural(coding_params) && ...
@@ -26,6 +26,9 @@ classdef dictionary < transforms.reversible
                                                      tc.natural(coding_params) && ...
                                                      (coding_params > 0) && ...
                                                      (coding_params <= size(dict,1)))) || ...
+                   (tc.same(coding_method,'SparseNet') && (tc.scalar(coding_params) && ...
+                                                           tc.unitreal(coding_params) && ...
+                                                           (coding_params > 0))) || ...
                    (tc.same(coding_method,'Euclidean') && tc.empty(coding_params)));
             assert(tc.scalar(logger));
             assert(tc.logging_logger(logger));
@@ -47,6 +50,11 @@ classdef dictionary < transforms.reversible
                 dict_t = transforms.record.dictionary.normalize_dict(dict);
                 dict_transp_t = dict_t';
                 coding_fn_t = @transforms.record.dictionary.ortho_matching_pursuit;
+                coding_params_cell_t = {coding_params(1)};
+            elseif tc.same(coding_method,'SparseNet')
+                dict_t = transforms.record.dictionary.normalize_dict(dict);
+                dict_transp_t = dict_t';
+                coding_fn_t = @transforms.record.dictionary.sparse_net;
                 coding_params_cell_t = {coding_params(1)};
             else
                 dict_t = dict;
@@ -118,6 +126,29 @@ classdef dictionary < transforms.reversible
                 end
                 sample_residue = sample - dict_transp * coeffs;
             end
+        end
+        
+        function [coeffs] = sparse_net(dict,dict_transp,sample,lambda_sigma_ratio)
+            N = dataset.count(sample);
+            w = size(dict,1);
+            coeffs = zeros(w,N);
+            
+            sigma = std(sample(:));
+            lambda = lambda_sigma_ratio * sigma;
+            S = @(x)log(1 + x.^2);
+            dS = @(x)2 * x ./ (1 + x);
+            dict_dict_transp = dict * dict_transp;
+            optprop = optimset('GradObj','on','Display','off','LargeScale','off');
+            
+            for ii = 1:N
+                coeffs(:,ii) = xternlib.fmincg(@(x)transforms.record.dictionary.sparse_net_opt(dict,dict_transp,dict_dict_transp,sample(:,ii),x,S,dS,lambda,sigma),...
+                                               utils.rand_range(-0.05,0.05,w,1),optprop);
+            end
+        end
+        
+        function [value,grad] = sparse_net_opt(dict,dict_transp,dict_dict_transp,instance_plain,instance_coded,S,dS,lambda,sigma)
+            value = 1/2 * sum((instance_plain - dict_transp * instance_coded) .^ 2) + lambda * sum(S(instance_coded / sigma));
+            grad = -dict * instance_plain + dict_dict_transp * instance_coded + lambda / sigma * dS(instance_coded / sigma);
         end
         
         function [coeffs] = euclidean(dict,dict_transp,sample)
@@ -196,6 +227,29 @@ classdef dictionary < transforms.reversible
             assert(tc.same(t.coding_params_cell,{1}));
             assert(tc.same(t.coding_method,'OMP'));
             assert(tc.same(t.coding_params,1));
+            assert(tc.same(t.input_geometry,2));
+            assert(tc.same(t.output_geometry,3));
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    SparseNet.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            s = [mvnrnd([0 0],[3 0; 0 0.01],200);mvnrnd([0 0],[0.01 0; 0 3],200);mvnrnd([0 0],[2 1.95; 1.95 2],200)]';
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'SparseNet',0.14,log);
+            
+            assert(tc.same(t.dict,[1 0; 0 1; 0.7071 0.7071],'Epsilon',1e-3));
+            assert(tc.same(t.dict_transp,[1 0 0.7071; 0 1 0.7071],'Epsilon',1e-3));
+            assert(t.word_count == 3);
+            assert(tc.same(t.coding_fn,@transforms.record.dictionary.sparse_net));
+            assert(tc.same(t.coding_params_cell,{0.14}));
+            assert(tc.same(t.coding_method,'SparseNet'));
+            assert(tc.same(t.coding_params,0.14));
             assert(tc.same(t.input_geometry,2));
             assert(tc.same(t.output_geometry,3));
             
@@ -401,6 +455,45 @@ classdef dictionary < transforms.reversible
             assert(tc.same(size(s_p),[3 600]));
             assert(tc.number(s_p));
             assert(tc.same(sum(s_p ~= 0,1),2*ones(1,600)));
+            
+            if exist('display','var') && (display == true)
+                figure;
+                subplot(1,2,1);
+                hold on;
+                scatter(s(1,:),s(2,:),'o','b');
+                line([0;t.dict(1,1)],[0;t.dict(1,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(2,1)],[0;t.dict(2,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(3,1)],[0;t.dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Original samples.');
+                hold off;
+                subplot(1,2,2);
+                scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('Coded samples.');
+                pause(5);
+                close(gcf());
+            end
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    SparseNet.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            s = [mvnrnd([0 0],[3 0; 0 0.01],200);mvnrnd([0 0],[0.01 0; 0 3],200);mvnrnd([0 0],[2 1.95; 1.95 2],200)]';
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'SparseNet',0.14,log);
+            s_p = t.code(s,log);
+            
+            assert(tc.matrix(s_p));
+            assert(tc.same(size(s_p),[3 600]));
+            assert(tc.number(s_p));
             
             if exist('display','var') && (display == true)
                 figure;
@@ -706,6 +799,52 @@ classdef dictionary < transforms.reversible
             s = [mvnrnd([0 0],[3 0; 0 0.01],200);mvnrnd([0 0],[0.01 0; 0 3],200);mvnrnd([0 0],[2 1.95; 1.95 2],200)]';
 
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'OMP',2,log);
+            s_p = t.code(s,log);
+            s_r = t.decode(s_p,log);
+            
+            assert(tc.matrix(s_r));
+            assert(tc.same(size(s_r),[2 600]));
+            assert(tc.number(s_r));
+            assert(tc.same(s_r,t.dict_transp * s_p));
+            
+            if exist('display','var') && (display == true)
+                figure;
+                subplot(1,3,1);
+                hold on;
+                scatter(s(1,:),s(2,:),'o','b');
+                line([0;t.dict(1,1)],[0;t.dict(1,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(2,1)],[0;t.dict(2,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(3,1)],[0;t.dict(3,2)],'Color','r','LineWidth',3);
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Original samples.');
+                hold off;
+                subplot(1,3,2);
+                scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('Coded samples.');
+                subplot(1,3,3);
+                scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Restored samples.');
+                pause(5);
+                close(gcf());
+            end
+            
+            log.close();
+            hnd.close();
+            
+            clearvars -except display;
+            
+            fprintf('    SparseNet.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            s = [mvnrnd([0 0],[3 0; 0 0.01],200);mvnrnd([0 0],[0.01 0; 0 3],200);mvnrnd([0 0],[2 1.95; 1.95 2],200)]';
+
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'SparseNet',0.14,log);
             s_p = t.code(s,log);
             s_r = t.decode(s_p,log);
             

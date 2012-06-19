@@ -59,7 +59,7 @@ classdef patch_extract < transform
                                      col_skip:(col_skip + obj.patch_col_count - 1),...
                                      :,image_idx);
                 
-                if var(patch(:)) > obj.required_variance
+                if var(patch(:)) >= obj.required_variance
                     if mod(curr_patches_count - 1,log_batch_size) == 0
                         logger.message('Patches %d to %d.',curr_patches_count,min(curr_patches_count + log_batch_size - 1,obj.patches_count));
                     end

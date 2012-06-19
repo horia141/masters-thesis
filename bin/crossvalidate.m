@@ -1,4 +1,4 @@
-function [best_param,param_list_extra] = crossvalidate(full_sample,class_info,classifier_ctor_fn,param_list,cv_tr_ratio,logger)
+function [best_param,param_list_extra] = crossvalidate(full_sample,class_info,classifier_ctor_fn,param_list,fold_count,logger)
     assert(tc.dataset_record(full_sample));
     assert(tc.scalar(class_info));
     assert(tc.classification_info(class_info));
@@ -6,31 +6,25 @@ function [best_param,param_list_extra] = crossvalidate(full_sample,class_info,cl
     assert(tc.function_h(classifier_ctor_fn));
     assert(tc.vector(param_list));
     assert(tc.struct(param_list));
-    assert(tc.scalar(cv_tr_ratio));
-    assert(tc.unitreal(cv_tr_ratio));
-    assert(cv_tr_ratio > 0);
-    assert(cv_tr_ratio < 1);
+    assert(tc.scalar(fold_count));
+    assert(tc.natural(fold_count)); 
+    assert(fold_count >= 1);
     assert(tc.scalar(logger));
     assert(tc.logging_logger(logger));
     assert(logger.active);
     assert(class_info.compatible(full_sample));
     
-    logger.message('Splitting full sample into test and cross-validation ones.');
+    [idx_tr,idx_cv] = class_info.partition('kfold',fold_count);
     
-    [idx_tr,idx_cv] = class_info.partition('holdout',cv_tr_ratio);
-    
-    tr_sample = dataset.subsample(full_sample,idx_tr);
-    tr_sample_ci = class_info.subsample(idx_tr);
-    cv_sample = dataset.subsample(full_sample,idx_cv);
-    cv_sample_ci = class_info.subsample(idx_cv);
-    
-    logger.beg_node('Starting meta-search for best C');
-
-    best_param = struct('score',-inf);
+    best_param = struct('score_avg',-inf,'scores',-1,'times',-1);
     
     param_list_extra = param_list;
-    [param_list_extra.score] = deal(-inf);
-    [param_list_extra(:).time] = deal(0);
+    [param_list_extra.scores] = deal(zeros(1,fold_count));
+    [param_list_extra.score_avg] = deal(-inf);
+    [param_list_extra.score_std] = deal(-inf);
+    [param_list_extra.times] = deal(zeros(1,fold_count));
+    [param_list_extra.time_avg] = deal(-inf);
+    [param_list_extra.time_std] = deal(-inf);
     
     full_keeper = tic();
     
@@ -41,34 +35,56 @@ function [best_param,param_list_extra] = crossvalidate(full_sample,class_info,cl
         logger.message(params.to_string(param_list(ii)));
         logger.end_node();
         
-        iter_keeper = tic();
-        
         try
-            cl = classifier_ctor_fn(tr_sample,tr_sample_ci,param_list(ii),logger.new_classifier('Training classifier on cross-validation set'));
-            [~,~,param_list_extra(ii).score,~,~] = cl.classify(cv_sample,cv_sample_ci,logger.new_classifier('Classifying cross-validation set'));
+            for fold = 1:fold_count
+                logger.beg_node('Fold %d',fold);
+
+                fold_keeper = tic();
+
+                tr_sample = dataset.subsample(full_sample,idx_tr(fold,:));
+                tr_sample_ci = class_info.subsample(idx_tr(fold,:));
+                cv_sample = dataset.subsample(full_sample,idx_cv(fold,:));
+                cv_sample_ci = class_info.subsample(idx_cv(fold,:));
+
+                cl = classifier_ctor_fn(tr_sample,tr_sample_ci,param_list(ii),logger.new_classifier('Training classifier on cross-validation set'));
+                [~,~,param_list_extra(ii).scores(fold),~,~] = cl.classify(cv_sample,cv_sample_ci,logger.new_classifier('Classifying cross-validation set'));
+                
+                param_list_extra(ii).times(fold) = toc(fold_keeper);
+                
+                logger.message('Fold score: %.2f',param_list_extra(ii).scores(fold));
+                logger.message('Fold time: %.2f',param_list_extra(ii).times(fold));
+                
+                logger.end_node();
+            end
             
-            logger.message('Score: %.2f',param_list_extra(ii).score);
+            param_list_extra(ii).score_avg = mean(param_list_extra(ii).scores);
+            param_list_extra(ii).score_std = std(param_list_extra(ii).scores);
+            param_list_extra(ii).time_avg = mean(param_list_extra(ii).times);
+            param_list_extra(ii).time_std = std(param_list_extra(ii).times);
+            
+            logger.message('Average score: %.2f+/-%.2f',param_list_extra(ii).score_avg,param_list_extra(ii).score_std);
+            logger.message('Total time: %.2fs',sum(param_list_extra(ii).times));
+            logger.message('Average time: %.2f+/-%.2f',param_list_extra(ii).time_avg,param_list_extra(ii).time_std);
         catch exp
             if strcmp(exp.identifier,'master:NoConvergence')
                 logger.message('Failed to converge with this configuration!');
-                param_list_extra(ii).score = NaN;
+                param_list_extra(ii).score_av = NaN;
             else
                 rethrow(exp);
             end
         end
         
-        param_list_extra(ii).time = toc(iter_keeper);
-        
         logger.beg_node('Best parameters');
-        logger.message(params.to_string(best_param));
-        logger.end_node();
-        logger.message('Time: %.2fs',param_list_extra(ii).time);
+        p_best_param = rmfield(best_param,{'scores' 'times'});
+        logger.message(params.to_string(p_best_param));
 
-        if param_list_extra(ii).score > best_param.score
+        if param_list_extra(ii).score_avg > best_param.score_avg
             logger.message('New best score!');
             
             best_param = param_list_extra(ii);
         end
+        
+        logger.end_node();
         
         logger.end_node();
     end
@@ -76,6 +92,4 @@ function [best_param,param_list_extra] = crossvalidate(full_sample,class_info,cl
     total_sec_count = toc(full_keeper);
     
     logger.message('Total time: %.2fs',total_sec_count);
-    
-    logger.end_node();
 end

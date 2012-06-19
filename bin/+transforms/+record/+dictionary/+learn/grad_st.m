@@ -1,13 +1,14 @@
-classdef grad < transforms.record.dictionary
+classdef grad_st < transforms.record.dictionary
     properties (GetAccess=public,SetAccess=immutable)
         saved_mse;
+        selection_size;
         initial_learning_rate;
         final_learning_rate;
         max_iter_count;
     end
 
     methods (Access=public)
-        function [obj] = grad(train_sample_plain,word_count,coding_method,coding_params,initial_learning_rate,final_learning_rate,max_iter_count,logger)
+        function [obj] = grad_st(train_sample_plain,word_count,coding_method,coding_params,selection_size,initial_learning_rate,final_learning_rate,max_iter_count,logger)
             assert(tc.dataset_record(train_sample_plain));
             assert(tc.scalar(word_count));
             assert(tc.natural(word_count));
@@ -28,6 +29,10 @@ classdef grad < transforms.record.dictionary
                                                      (coding_params > 0) && ...
                                                      (coding_params <= word_count))) || ...
                    (tc.same(coding_method,'Euclidean') && tc.empty(coding_params)));
+            assert(tc.scalar(selection_size));
+            assert(tc.natural(selection_size));
+            assert(selection_size >= 1);
+            assert(selection_size <= dataset.count(train_sample_plain));
             assert(tc.scalar(initial_learning_rate));
             assert(tc.number(initial_learning_rate));
             assert(initial_learning_rate > 0);
@@ -70,13 +75,16 @@ classdef grad < transforms.record.dictionary
             for iter = 1:max_iter_count
                 logger.message('Iteration %d.',iter);
                 
-                coeffs = coding_fn_t(dict,dict_transp,train_sample_plain,coding_params_cell_t{:});
+                selected = randi(N,1,selection_size);
+                iter_sample = dataset.subsample(train_sample_plain,selected);
                 
-                diff = train_sample_plain - dict_transp * coeffs;
+                coeffs = coding_fn_t(dict,dict_transp,iter_sample,coding_params_cell_t{:});
+                
+                diff = iter_sample - dict_transp * coeffs;
                 delta_dict = coeffs * diff';
                 learning_rate = initial_learning_rate * (final_learning_rate / initial_learning_rate) ^ (iter / max_iter_count);
                 
-                dict = dict + learning_rate * delta_dict;
+                dict = dict + learning_rate / selection_size * delta_dict;
                 dict = transforms.record.dictionary.normalize_dict(dict);
                 dict_transp = dict';
                 
@@ -85,11 +93,16 @@ classdef grad < transforms.record.dictionary
                 logger.message('Mean error: %.0f',mean_error);
 %                 if mod(iter - 1,1) == 0
 %                     sz = sqrt(size(dict,2));
-%                     subplot(2,1,1);
+%                     subplot(3,1,1);
 %                     utilsdisplay.sparse_basis(dict,sz,sz);
-%                     subplot(2,1,2);
-%                     mesh(1 - utils.format_as_tiles(reshape(delta_dict',sz,sz,1,size(dict,1))));
-%                     pause(1);
+%                     subplot(3,1,2);
+%                     ola = utils.format_as_tiles(reshape(learning_rate / selection_size * delta_dict',sz,sz,1,size(dict,1)));
+%                     ola(ola == 1) = mean(mean(ola(ola ~= 1)));
+%                     imagesc(ola);
+%                     subplot(3,1,3);
+%                     plot(saved_mse_t);
+%                     axis([1 max_iter_count 0 200]);
+%                     pause(0.1);
 %                 end
             end
             
@@ -97,6 +110,7 @@ classdef grad < transforms.record.dictionary
             
             obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,logger);
             obj.saved_mse = saved_mse_t;
+            obj.selection_size = selection_size;
             obj.initial_learning_rate = initial_learning_rate;
             obj.final_learning_rate = final_learning_rate;
             obj.max_iter_count = max_iter_count;
@@ -105,7 +119,7 @@ classdef grad < transforms.record.dictionary
     
     methods (Static,Access=public)
         function test(~)
-            fprintf('Testing "transforms.record.dictionary.learn.grad".\n');
+            fprintf('Testing "transforms.record.dictionary.learn.grad_st".\n');
             
             fprintf('  Proper constuction.\n');
             
@@ -113,12 +127,13 @@ classdef grad < transforms.record.dictionary
             log = logging.logger({hnd});
             s = [mvnrnd([0 0],[3 0; 0 0.01],200);mvnrnd([ 0 0],[0.01 0; 0 3],200);mvnrnd([0 0],[2 1.95; 1.95 2],200)]';
 
-            t = transforms.record.dictionary.learn.grad(s,3,'Corr',[],1e-2,1e-4,100,log);
+            t = transforms.record.dictionary.learn.grad_st(s,3,'Corr',[],10,1e-2,1e-4,100,log);
             
             assert(tc.vector(t.saved_mse));
             assert(length(t.saved_mse) == 100);
             assert(tc.number(t.saved_mse));
             assert(tc.check(t.saved_mse > 0));
+            assert(t.selection_size == 10);
             assert(t.initial_learning_rate == 1e-2);
             assert(t.final_learning_rate == 1e-4);
             assert(t.max_iter_count == 100);
