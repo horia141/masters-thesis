@@ -29,10 +29,7 @@ function [alpha,beta,t_wsr,cl_best,m_tr_coded,m_ts_coded,labels_hat,labels_confi
     logger.message('New sample geometry: %d',t_wsr.output_geometry);
     
     coder_build_time = toc();
-    
-%     utilsdisplay.sparse_basis(t_wsr.t_dictionary.dict,sqrt(size(t_wsr.t_dictionary.dict,2)),sqrt(size(t_wsr.t_dictionary.dict,2)));
-%     pause(5);
-%     
+
     tic();
     
     m_tr_coded = t_wsr.code(m_tr,logger.new_transform('Coding training dataset'));
@@ -42,7 +39,7 @@ function [alpha,beta,t_wsr,cl_best,m_tr_coded,m_ts_coded,labels_hat,labels_confi
     
     tic();
     
-    [alpha,beta] = crossvalidate(m_tr_coded,m_tr_ci,classifier_ctor_fn,param_list,fold_count,logger.new_node('Running a cross-validation search for best classifier parameters'));
+    [alpha,beta] = crossvalidate_lin(m_tr_coded,m_tr_ci,classifier_ctor_fn,param_list,fold_count,logger.new_node('Running a cross-validation search for best classifier parameters'));
     
     crossvalidation_time = toc();
     

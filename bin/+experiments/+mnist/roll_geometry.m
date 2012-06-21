@@ -22,28 +22,28 @@ param_desc_class.reg = logspace(-1.5,0.3,10);
 param_list_class = params.gen_all(param_desc_class);
 
 hnd = logging.handlers.stdout(logging.level.Experiment);
-log = logging.logger({hnd});
+logg = logging.logger({hnd});
 
 %% Start experiment.
 
-log.beg_experiment('Experiment "MNIST: Roll Geometry"');
+logg.beg_experiment('Experiment "MNIST - Roll Geometry"');
 
-[m_tr,m_tr_ci,m_ts,m_ts_ci] = utilstest.load_mnist(log.new_node('Loading MNIST dataset'));
+[m_tr,m_tr_ci,m_ts,m_ts_ci] = utilstest.load_mnist(logg.new_node('Loading MNIST dataset'));
 
 alphas = cell(17,9,28);
 t_wsrs = cell(17,9,28);
 cls_best = cell(17,9,28);
 scores = zeros(17,9,28);
 
-log.beg_node('Evaluating classifier performance for each configuration');
+logg.beg_node('Evaluating classifier performance for each configuration');
 
 for ii = 1:length(param_list)
-    log.beg_node('Configuration %d/%d',ii,length(param_list));
+    logg.beg_node('Configuration %d/%d',ii,length(param_list));
     
-    log.beg_node('Parameters');
+    logg.beg_node('Parameters');
     p_param_list = rmfield(param_list(ii),{'dictionary_type' 'dictionary_params'});
-    log.message(params.to_string(p_param_list));
-    log.end_node();
+    logg.message(params.to_string(p_param_list));
+    logg.end_node();
     
     ca = param_list(ii).window_size;
     cb = param_list(ii).window_step;
@@ -56,28 +56,28 @@ for ii = 1:length(param_list)
                                                                  param_list(ii).window_step,param_list(ii).nonlinear_type,param_list(ii).nonlinear_params,...
                                                                  param_list(ii).reduce_type,param_list(ii).reduce_spread,l),...
                   @(s,ci,p,l)classifiers.svm_linear(s,ci,'Primal','L2','L2',p.reg,'1v1',[TRAIN_WORKERS_COUNT CLASSIFY_WORKERS_COUNT],l),param_list_class,FOLD_COUNT,...
-                  log.new_node('Finding best classifier for current configuration'));
+                  logg.new_node('Finding best classifier for current configuration'));
 
-    log.message('Saving intermediate results.');
+    logg.message('Saving intermediate results.');
     
     save(RESULTS_PATH,'-v7.3','alphas','t_wsrs','cls_best','scores','ii','param_desc','param_list');
     
-    log.end_node();
+    logg.end_node();
 end
 
-log.end_node();
+logg.end_node();
 
 %% Stop experiment and save results.
 
-log.message('Saving final results.');
+logg.message('Saving final results.');
     
 save(RESULTS_PATH,'-v7.3','alphas','t_wsrs','cls_best','scores','param_desc','param_list');
 
-log.message('Experiment done ... Terminating');
+logg.message('Experiment done ... Terminating');
 
-log.end_experiment();
+logg.end_experiment();
 
-log.close();
+logg.close();
 hnd.close();
 
 %% Gather all results for plotting.
