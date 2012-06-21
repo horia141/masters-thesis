@@ -1,3 +1,19 @@
+- [59] B:21.06.2012 E:??.??.????
+  Task: Make "load_image_cifar" more robust. Add in-function tests for expected input
+    format and add tests for these modes of failure.
+
+- [58] B:21.06.2012 E:??.??.????
+  Task: Make the "logger" object passed to "dataset.load_*" functions be non-optional.
+
+- [57] B:19.06.2012 E:??.??.????
+  Task: See if it is possible to consider the node message of a "new_*" or
+    "beg_*" as being part of the previous type of message. This will make some
+    visualizations a little bit more verbose, but maybe a little bit more clear.
+
+- [56] B:19.06.2012 E:??.??.????
+  Task: Remove all the cruft that has gathered in the "logging" module. Remove
+    in general all references to architectures.
+
 - [55] B:07.05.2012 E:??.??.????
   Task: Check all occurances of "samples" in the source code (even in logging
     messages) and replace it with "sample". This also includes expressions

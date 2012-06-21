@@ -298,6 +298,54 @@ classdef dataset
             class_info = classification_info({'d0' 'd1' 'd2' 'd3' 'd4' 'd5' 'd6' 'd7' 'd8' 'd9'},labels + 1);
         end
         
+        function [sample,class_info] = load_image_cifar(data_paths,meta_path,logger)
+            assert((tc.scalar(data_paths) && tc.string(data_paths)) || ...
+                   (tc.vector(data_paths) && tc.cell(data_paths) && tc.checkf(@tc.scalar,data_paths) && tc.checkf(@tc.string,data_paths)));
+            assert(tc.scalar(meta_path));
+            assert(tc.string(meta_path));
+            assert(~exist('logger','var') || tc.scalar(logger));
+            assert(~exist('logger','var') || tc.logging_logger(logger));
+            assert(~exist('logger','var') || logger.active);
+            
+            if ~exist('logger','var')
+                hnd_zero = logging.handlers.zero(logging.level.All);
+                logger = logging.logger({hnd_zero});
+            end
+            
+            if tc.scalar(data_paths)
+                data_paths_t = {data_paths};
+            else
+                data_paths_t = data_paths;
+            end
+            
+            logger.message('Reading meta-information.');
+            
+            meta_info = load(meta_path);
+            data_info = cell(1,length(data_paths_t));
+            
+            logger.beg_node('Starting reading of images');
+            
+            for ii = 1:length(data_paths_t)
+                logger.message('Images from batch %d',ii);
+                data_info{ii} = load(data_paths_t{ii});
+            end
+            
+            logger.end_node();
+            
+            logger.message('Building dataset and labels information.');
+            
+            indices = [0 cumsum(cellfun(@(c)size(c.data,1),data_info))];
+            sample = zeros(32,32,3,sum(cellfun(@(c)size(c.data,1),data_info)));
+            class_info = classification_info(meta_info.label_names,1 + cell2mat(cellfun(@(c)double(c.labels)',data_info,'UniformOutput',false)));
+            
+            for ii = 1:length(data_paths_t)
+                idx1 = indices(ii) + 1;
+                idx2 = indices(ii + 1);
+                local_data = double(data_info{ii}.data') / 255;
+                sample(:,:,:,idx1:idx2) = reshape(local_data,32,32,3,idx2 - idx1 + 1);
+            end
+        end
+        
         function [new_sample] = rebuild_image(sample,layers_count,row_count,col_count)
             assert(tc.dataset_record(sample));
             assert(tc.scalar(layers_count));
@@ -879,6 +927,64 @@ classdef dataset
                     assert(false);
                 end
             end
+            
+            clearvars -except display;
+            
+            fprintf('  Function "load_image_cifar".\n');
+            
+            fprintf('    With CIFAR-10 test data.\n');
+            
+            [s,ci] = dataset.load_image_cifar('../test/cifar/test.mat','../test/cifar/meta.mat');
+
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[32 32 3 10000]));
+            assert(length(ci.labels) == 10);
+            assert(strcmp(ci.labels{1},'airplane'));
+            assert(strcmp(ci.labels{2},'automobile'));
+            assert(strcmp(ci.labels{3},'bird'));
+            assert(strcmp(ci.labels{4},'cat'));
+            assert(strcmp(ci.labels{5},'deer'));
+            assert(strcmp(ci.labels{6},'dog'));
+            assert(strcmp(ci.labels{7},'frog'));
+            assert(strcmp(ci.labels{8},'horse'));
+            assert(strcmp(ci.labels{9},'ship'));
+            assert(strcmp(ci.labels{10},'truck'));
+            assert(ci.labels_count == 10);
+            assert(tc.vector(ci.labels_idx));
+            assert(tc.match_dims(s,ci.labels_idx,4));
+            assert(tc.labels_idx(ci.labels_idx,ci.labels));
+            
+            clearvars -except display;
+            
+            fprintf('    With CIFAR-10 test data and a valid logger.\n');
+            
+            hnd = logging.handlers.testing(logging.level.All);
+            log = logging.logger({hnd});
+            
+            [s,ci] = dataset.load_image_cifar('../test/cifar/test.mat','../test/cifar/meta.mat',log);
+
+            assert(tc.dataset_image(s));
+            assert(tc.unitreal(s));
+            assert(tc.same(size(s),[32 32 3 10000]));
+            assert(length(ci.labels) == 10);
+            assert(strcmp(ci.labels{1},'airplane'));
+            assert(strcmp(ci.labels{2},'automobile'));
+            assert(strcmp(ci.labels{3},'bird'));
+            assert(strcmp(ci.labels{4},'cat'));
+            assert(strcmp(ci.labels{5},'deer'));
+            assert(strcmp(ci.labels{6},'dog'));
+            assert(strcmp(ci.labels{7},'frog'));
+            assert(strcmp(ci.labels{8},'horse'));
+            assert(strcmp(ci.labels{9},'ship'));
+            assert(strcmp(ci.labels{10},'truck'));
+            assert(ci.labels_count == 10);
+            assert(tc.vector(ci.labels_idx));
+            assert(tc.match_dims(s,ci.labels_idx,4));
+            assert(tc.labels_idx(ci.labels_idx,ci.labels));
+            
+            log.close();
+            hnd.close();
             
             clearvars -except display;
             

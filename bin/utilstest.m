@@ -9,6 +9,29 @@ classdef utilstest
             [mnist_ts,mnist_ts_ci] = dataset.load_image_mnist('../data/mnist/t10k-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte',logger);
         end
         
+        function [cifar10_tr,cifar10_tr_ci,cifar10_ts,cifar10_ts_ci] = load_cifar10(logger)
+            assert(tc.scalar(logger));
+            assert(tc.logging_logger(logger));
+            assert(logger.active);
+            
+            [cifar10_tr,cifar10_tr_ci] = dataset.load_image_cifar({'../data/cifar10/data_batch_1.mat' ...
+                                                                   '../data/cifar10/data_batch_2.mat' ...
+                                                                   '../data/cifar10/data_batch_3.mat' ...
+                                                                   '../data/cifar10/data_batch_4.mat' ...
+                                                                   '../data/cifar10/data_batch_5.mat'},...
+                                                                  '../data/cifar10/batches.meta.mat',logger);
+            [cifar10_ts,cifar10_ts_ci] = dataset.load_image_cifar('../data/cifar10/test_batch.mat','../data/cifar10/batches.meta.mat',logger);
+        end
+        
+        function [cifar100_tr,cifar100_tr_ci,cifar100_ts,cifar100_ts_ci] = load_cifar100(logger)
+            assert(tc.scalar(logger));
+            assert(tc.logging_logger(logger));
+            assert(logger.active);
+            
+            [cifar100_tr,cifar100_tr_ci] = dataset.load_image_cifar('../data/cifar100/train.mat','../data/cifar100/meta.mat',logger);
+            [cifar100_ts,cifar100_ts_ci] = dataset.load_image_cifar('../data/cifar100/test.mat','../data/cifar100/meta.mat',logger);
+        end
+        
         function [s,ci] = classifier_data_3()
             s = [mvnrnd([3 1],[0.01 0; 0 0.01],100);
                  mvnrnd([3 3],[0.01 0; 0 0.01],100);
