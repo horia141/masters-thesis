@@ -91,19 +91,15 @@ classdef grad_st < transforms.record.dictionary
                 mean_error = sum(mean((diff .^ 2)));
                 saved_mse_t(iter) = mean_error;
                 logger.message('Mean error: %.0f',mean_error);
-%                 if mod(iter - 1,1) == 0
-%                     sz = sqrt(size(dict,2));
-%                     subplot(3,1,1);
-%                     utilsdisplay.sparse_basis(dict,sz,sz);
-%                     subplot(3,1,2);
-%                     ola = utils.format_as_tiles(reshape(learning_rate / selection_size * delta_dict',sz,sz,1,size(dict,1)));
-%                     ola(ola == 1) = mean(mean(ola(ola ~= 1)));
-%                     imagesc(ola);
-%                     subplot(3,1,3);
-%                     plot(saved_mse_t);
-%                     axis([1 max_iter_count 0 200]);
-%                     pause(0.1);
-%                 end
+                if mod(iter - 1,1) == 0
+                    sz = sqrt(size(dict,2));
+                    subplot(2,1,1);
+                    utilsdisplay.sparse_basis(dict,sz,sz);
+                    subplot(2,1,2);
+                    plot(saved_mse_t);
+                    axis([1 max_iter_count 0 max(saved_mse_t)]);
+                    pause(0.1);
+                end
             end
             
             logger.end_node();

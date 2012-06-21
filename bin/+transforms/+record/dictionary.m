@@ -141,8 +141,8 @@ classdef dictionary < transforms.reversible
             optprop = optimset('GradObj','on','Display','off','LargeScale','off');
             
             for ii = 1:N
-                coeffs(:,ii) = xternlib.fmincg(@(x)transforms.record.dictionary.sparse_net_opt(dict,dict_transp,dict_dict_transp,sample(:,ii),x,S,dS,lambda,sigma),...
-                                               utils.rand_range(-0.05,0.05,w,1),optprop);
+                coeffs(:,ii) = fminunc(@(x)transforms.record.dictionary.sparse_net_opt(dict,dict_transp,dict_dict_transp,sample(:,ii),x,S,dS,lambda,sigma),...
+                                       utils.rand_range(-0.05,0.05,w,1),optprop);
             end
         end
         
