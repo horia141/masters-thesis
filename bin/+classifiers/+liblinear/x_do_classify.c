@@ -93,35 +93,35 @@ mexFunction(
     check_condition(input_count == INPUTS_COUNT,
 		    "master:InvalidMEXCall","Invalid number of inputs.");
     check_condition(mxGetNumberOfDimensions(input[I_SAMPLE]) == 2,
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxGetM(input[I_SAMPLE]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxGetN(input[I_SAMPLE]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxIsDouble(input[I_SAMPLE]),
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxGetNumberOfDimensions(input[I_WEIGHTS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"weights\" is not a tc.matrix.");
+		    "master:InvalidMEXCall","Parameter \"weights\" is not a check.matrix.");
     check_condition(mxGetM(input[I_WEIGHTS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"weights\" is not a tc.matrix.");
+		    "master:InvalidMEXCall","Parameter \"weights\" is not a check.matrix.");
     check_condition(mxGetN(input[I_WEIGHTS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"weights\" is not a tc.matrix.");
+		    "master:InvalidMEXCall","Parameter \"weights\" is not a check.matrix.");
     check_condition(mxIsDouble(input[I_WEIGHTS]),
-		    "master:InvalidMEXCall","Parameter \"weights\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"weights\" is not a check.dataset_record.");
     check_condition(mxGetNumberOfDimensions(input[I_METHOD_CODE]) == 2,
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.scalar.");
     check_condition(mxGetM(input[I_METHOD_CODE]) == 1,
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.scalar.");
     check_condition(mxGetN(input[I_METHOD_CODE]) == 1,
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_METHOD_CODE]),
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.natural.");
     check_condition(fabs(mxGetScalar(input[I_METHOD_CODE]) - floor(mxGetScalar(input[I_METHOD_CODE]))) == 0,
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_METHOD_CODE]) >= 0,
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_METHOD_CODE]) < INT_MAX,
-		    "master:InvalidMEXCall","Parameter \"method_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"method_code\" is not a check.natural.");
     check_condition((mxGetScalar(input[I_METHOD_CODE]) == L2R_LR) ||
 		    (mxGetScalar(input[I_METHOD_CODE]) == L2R_L2LOSS_SVC_DUAL) ||
 		    (mxGetScalar(input[I_METHOD_CODE]) == L2R_L2LOSS_SVC) ||
@@ -131,39 +131,39 @@ mexFunction(
 		    (mxGetScalar(input[I_METHOD_CODE]) == L2R_LR_DUAL),
 		    "master:InvalidMEXCall","Parameter \"method_code\" has an invalid value.");
     check_condition(mxGetNumberOfDimensions(input[I_REG_PARAM]) == 2,
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.scalar.");
     check_condition(mxGetM(input[I_REG_PARAM]) == 1,
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.scalar.");
     check_condition(mxGetN(input[I_REG_PARAM]) == 1,
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_REG_PARAM]),
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.number.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.number.");
     check_condition(mxGetScalar(input[I_REG_PARAM]) > 0,
 		    "master:InvalidMEXCall","Parameter \"reg_param\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_NUM_THREADS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.scalar.");
     check_condition(mxGetM(input[I_NUM_THREADS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.scalar.");
     check_condition(mxGetN(input[I_NUM_THREADS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_NUM_THREADS]),
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(fabs(mxGetScalar(input[I_NUM_THREADS]) - floor(mxGetScalar(input[I_NUM_THREADS]))) == 0,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_NUM_THREADS]) >= 0,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_NUM_THREADS]) < INT_MAX,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(input[I_NUM_THREADS] > 0,
 		    "master:InvalidMEXCall","Parameter \"num_threads\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_LOGGER]) == 2,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.scalar.");
     check_condition(mxGetM(input[I_LOGGER]) == 1,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.scalar.");
     check_condition(mxGetN(input[I_LOGGER]) == 1,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.scalar.");
     check_condition(strcmp(mxGetClassName(input[I_LOGGER]),"logging.logger") == 0,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.logging_logger.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.logging_logger.");
     check_condition(mxGetScalar(mxGetProperty(input[I_LOGGER],0,"active")) == 1,
     		    "master:InvalidMEXCall","Parameter \"logger\" is not active.");
     check_condition(mxGetN(input[I_SAMPLE]) < INT_MAX,

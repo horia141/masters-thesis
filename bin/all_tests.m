@@ -1,60 +1,62 @@
 %% Setup tests.
 
-DISPLAY = false;
+DISPLAY = true;
 
 tic;
 
+if DISPLAY
+    test_figure = figure();
+else
+    test_figure = -1;
+end
+
 %% Tests for basic classes.
 
-tc.test(DISPLAY);
-params.test(DISPLAY);
-utils.test(DISPLAY);
-logging.level.test(DISPLAY);
-logging.handlers.zero.test(DISPLAY);
-logging.handlers.stdout.test(DISPLAY);
-logging.handlers.file.test(DISPLAY);
-logging.handlers.sendmail.test(DISPLAY);
-logging.handlers.testing.test(DISPLAY);
-logging.logger.test(DISPLAY);
+check.test(test_figure);
+utils.common.test(test_figure);
+utils.display.test(test_figure);
+utils.load_dataset.test(test_figure);
+utils.params.test(test_figure);
+utils.testing.test(test_figure);
+logging.level.test(test_figure);
+logging.handlers.zero.test(test_figure);
+logging.handlers.stdout.test(test_figure);
+logging.handlers.file.test(test_figure);
+logging.handlers.sendmail.test(test_figure);
+logging.handlers.testing.test(test_figure);
+logging.logger.test(test_figure);
 
 %% Tests for "dataset" and derived classes.
 
-dataset.test(DISPLAY);
-classification_info.test(DISPLAY);
-regression_info.test(DISPLAY);
+dataset.test(test_figure);
+classifier_info.test(test_figure);
+regressor_info.test(test_figure);
 
 %% Tests for "transform" and derived classes.
 
-transforms.record.dc_offset.test(DISPLAY);
-transforms.record.mean_substract.test(DISPLAY);
-transforms.record.normalize.test(DISPLAY);
-transforms.record.standardize.test(DISPLAY);
-transforms.record.pca.test(DISPLAY);
-transforms.record.zca.test(DISPLAY);
-transforms.record.dictionary.test(DISPLAY);
-transforms.record.dictionary.random.filters.test(DISPLAY);
-transforms.record.dictionary.random.instances.test(DISPLAY);
-% transforms.record.dictionary.given.fourier.test(DISPLAY);
-% transforms.record.dictionary.given.gabor.test(DISPLAY);
-% transforms.record.dictionary.learn.autoencoder.test(DISPLAY);
-% transforms.record.dictionary.learn.boltzmann.test(DISPLAY);
-transforms.record.dictionary.learn.grad.test(DISPLAY);
-transforms.record.dictionary.learn.kmeans.test(DISPLAY);
-transforms.record.dictionary.learn.neural_gas.test(DISPLAY);
-transforms.image.resize.test(DISPLAY);
-transforms.image.window.test(DISPLAY);
-transforms.image.patch_extract.test(DISPLAY);
-transforms.image.remove_pinknoise.test(DISPLAY);
-transforms.image.digit.deform.test(DISPLAY);
-transforms.image.window_sparse_recoder.test(DISPLAY);
+transforms.record.dc_offset.test(test_figure);
+transforms.record.mean_substract.test(test_figure);
+transforms.record.normalize.test(test_figure);
+transforms.record.standardize.test(test_figure);
+transforms.record.pca.test(test_figure);
+transforms.record.zca.test(test_figure);
+transforms.record.dictionary.test(test_figure);
+transforms.record.dictionary.random.filters.test(test_figure);
+transforms.record.dictionary.random.instances.test(test_figure);
+transforms.record.dictionary.learn.grad.test(test_figure);
+transforms.record.dictionary.learn.grad_st.test(test_figure);
+transforms.image.resize.test(test_figure);
+transforms.image.patch_extract.test(test_figure);
+transforms.image.digit.deform.test(test_figure);
+transforms.image.recoder.test(test_figure);
 
 %% Tests for "classifier" and derived classes.
 
-classifiers.cmeans.test(DISPLAY);
-classifiers.knn.test(DISPLAY);
-classifiers.logistic.test(DISPLAY);
-classifiers.svm_linear.test(DISPLAY);
-classifiers.svm_kernel.test(DISPLAY);
+classifiers.cmeans.test(test_figure);
+classifiers.knn.test(test_figure);
+classifiers.logistic.test(test_figure);
+classifiers.svm_linear.test(test_figure);
+classifiers.svm_kernel.test(test_figure);
 
 %% Print timing results.
 

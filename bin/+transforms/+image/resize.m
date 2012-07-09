@@ -6,15 +6,15 @@ classdef resize < transform
     
     methods (Access=public)
         function [obj] = resize(train_sample_plain,new_row_count,new_col_count,logger)
-            assert(tc.dataset_image(train_sample_plain));
-            assert(tc.scalar(new_row_count));
-            assert(tc.natural(new_row_count));
+            assert(check.dataset_image(train_sample_plain));
+            assert(check.scalar(new_row_count));
+            assert(check.natural(new_row_count));
             assert(new_row_count >= 1);
-            assert(tc.scalar(new_col_count));
-            assert(tc.natural(new_col_count));
+            assert(check.scalar(new_col_count));
+            assert(check.natural(new_col_count));
             assert(new_col_count >= 1);
-            assert(tc.scalar(logger));
-            assert(tc.logging_logger(logger));
+            assert(check.scalar(logger));
+            assert(check.logging_logger(logger));
             assert(logger.active);
             
             [d,dr,dc,dl] = dataset.geometry(train_sample_plain);
@@ -61,106 +61,76 @@ classdef resize < transform
     end
     
     methods (Static,Access=public)
-        function test(display)
+        function test(test_figure)
             fprintf('Testing "transforms.image.resize".\n');
             
             fprintf('  Proper construction.\n');
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small');
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            s = utils.testing.scenes_small();
             
-            t = transforms.image.resize(s,20,20,log);
+            t = transforms.image.resize(s,20,20,logg);
             
             assert(t.new_row_count == 20);
             assert(t.new_col_count == 20);
-            assert(tc.same(t.input_geometry,[192*256*1 192 256 1]));
-            assert(tc.same(t.output_geometry,[20*20*1 20 20 1]));
+            assert(check.same(t.input_geometry,[192*256*3 192 256 3]));
+            assert(check.same(t.output_geometry,[20*20*3 20 20 3]));
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
-            fprintf('    With grayscale images.\n');
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            s = utils.testing.scenes_small();
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small');
+            t = transforms.image.resize(s,100,100,logg);
+            s_p = t.code(s,logg);
             
-            t = transforms.image.resize(s,100,100,log);
-            s_p = t.code(s,log);
+            assert(check.checkf(@(ii)check.same(s_p(:,:,:,ii),imresize(s(:,:,:,ii),[100 100])),1:7));
             
-            assert(tc.check(arrayfun(@(ii)tc.same(s_p(:,:,:,ii),imresize(s(:,:,:,ii),[100 100])),1:7)));
-            
-            if exist('display','var') && (display == true)
-                figure();
+            if test_figure ~= -1
+                figure(test_figure);
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(s,3,3));
+                utils.display.as_tiles(s);
                 subplot(1,2,2);
-                imshow(utils.format_as_tiles(s_p,3,3));
+                utils.display.as_tiles(s_p);
                 pause(5);
-                close(gcf());
             end
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
-            fprintf('    With color images.\n');
+            fprintf('    With sub-multiple size.\n');
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small','original');
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            s = utils.testing.scenes_small();
             
-            t = transforms.image.resize(s,100,100,log);
-            s_p = t.code(s,log);
-            
-            assert(tc.check(arrayfun(@(ii)tc.same(s_p(:,:,:,ii),imresize(s(:,:,:,ii),[100 100])),1:7)));
-            
-            if exist('display','var') && (display == true)
-                figure();
-                subplot(1,2,1);
-                imshow(utils.format_as_tiles(s,3,3));
-                subplot(1,2,2);
-                imshow(utils.format_as_tiles(s_p,3,3));
-                pause(5);
-                close(gcf());
-            end
-            
-            log.close();
-            hnd.close();
-            
-            clearvars -except display;
-            
-            fprintf('    With grayscale images and sub-multiple size.\n');
-            
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small');
-            
-            t = transforms.image.resize(s,96,128,log);
-            s_p = t.code(s,log);
+            t = transforms.image.resize(s,96,128,logg);
+            s_p = t.code(s,logg);
 
-            assert(tc.check(arrayfun(@(ii)tc.same(s_p(:,:,:,ii),s(1:2:end,1:2:end,:,ii)),1:7)));
+            assert(check.checkf(@(ii)check.same(s_p(:,:,:,ii),s(1:2:end,1:2:end,:,ii)),1:7));
             
-            if exist('display','var') && (display == true)
-                figure();
+            if test_figure ~= -1
+                figure(test_figure);
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(s,3,3));
+                utils.display.as_tiles(s);
                 subplot(1,2,2);
-                imshow(utils.format_as_tiles(s_p,3,3));
+                utils.display.as_tiles(s_p);
                 pause(5);
-                close(gcf());
             end
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
         end
     end
 end

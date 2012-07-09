@@ -5,8 +5,8 @@ classdef testing < logging.handler
     
     methods (Access=public)
         function [obj] = testing(min_level)
-            assert(tc.scalar(min_level));
-            assert(tc.logging_level(min_level));
+            assert(check.scalar(min_level));
+            assert(check.logging_level(min_level));
             
             obj = obj@logging.handler(min_level);
             obj.logged_data = '';
@@ -28,17 +28,17 @@ classdef testing < logging.handler
             
             fprintf('  Proper construction.\n');
             
-            fprintf('    With minimum level "Architecture".\n');
+            fprintf('    With minimum level "Experiment".\n');
             
-            hnd = logging.handlers.testing(logging.level.Architecture);
+            hnd = logging.handlers.testing(logging.level.Experiment);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Architecture);
+            assert(hnd.min_level == logging.level.Experiment);
             assert(strcmp(hnd.logged_data,''));
             
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('    With minimum level "Results".\n');
             
@@ -50,34 +50,22 @@ classdef testing < logging.handler
             
             hnd.close();
             
-            clearvars -except display;
-            
-            fprintf('    With minimum level "Dataset_IO".\n');
-            
-            hnd = logging.handlers.testing(logging.level.Dataset_IO);
-            
-            assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Dataset_IO);
-            assert(strcmp(hnd.logged_data,''));
-            
-            hnd.close();
-            
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "send".\n');
             
-            hnd = logging.handlers.testing(logging.level.TopLevel);
+            hnd = logging.handlers.testing(logging.level.Experiment);
             
             hnd.send('Successful send of message.\n');
             hnd.close();
             
             assert(strcmp(hnd.logged_data,sprintf('Successful send of message.\n')));
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "close".\n');
             
-            hnd = logging.handlers.testing(logging.level.TopLevel);
+            hnd = logging.handlers.testing(logging.level.Experiment);
             
             hnd.close();
             
@@ -87,7 +75,7 @@ classdef testing < logging.handler
             
             assert(hnd.active == false);
             
-            clearvars -except display;
+            clearvars -except test_figure;
         end
     end
 end

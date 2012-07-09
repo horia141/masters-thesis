@@ -8,21 +8,21 @@ classdef patch_extract < transform
     
     methods (Access=public)
         function [obj] = patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,required_variance,logger)
-            assert(tc.dataset_image(train_sample_plain));
-            assert(tc.scalar(patches_count));
-            assert(tc.natural(patches_count));
+            assert(check.dataset_image(train_sample_plain));
+            assert(check.scalar(patches_count));
+            assert(check.natural(patches_count));
             assert(patches_count >= 1);
-            assert(tc.scalar(patch_row_count));
-            assert(tc.natural(patch_row_count));
+            assert(check.scalar(patch_row_count));
+            assert(check.natural(patch_row_count));
             assert(patch_row_count >= 1);
-            assert(tc.scalar(patch_col_count));
-            assert(tc.natural(patch_col_count));
+            assert(check.scalar(patch_col_count));
+            assert(check.natural(patch_col_count));
             assert(patch_col_count >= 1);
-            assert(tc.scalar(required_variance));
-            assert(tc.number(required_variance));
+            assert(check.scalar(required_variance));
+            assert(check.number(required_variance));
             assert(required_variance >= 0);
-            assert(tc.scalar(logger));
-            assert(tc.logging_logger(logger));
+            assert(check.scalar(logger));
+            assert(check.logging_logger(logger));
             assert(logger.active);
             
             [d dr dc dl] = dataset.geometry(train_sample_plain);
@@ -74,82 +74,54 @@ classdef patch_extract < transform
     end
     
     methods (Static,Access=public)
-        function test(display)
+        function test(test_figure)
             fprintf('Testing "transforms.image.patch_extract".\n');
             
             fprintf('  Proper construction.\n');
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small');
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            s = utils.testing.scenes_small();
             
-            t = transforms.image.patch_extract(s,10,5,5,0.01,log);
+            t = transforms.image.patch_extract(s,10,5,5,0.01,logg);
             
             assert(t.patches_count == 10);
             assert(t.patch_row_count == 5);
             assert(t.patch_col_count == 5);
             assert(t.required_variance == 0.01);
-            assert(tc.same(t.input_geometry,[192*256*1 192 256 1]));
-            assert(tc.same(t.output_geometry,[5*5*1 5 5 1]));
+            assert(check.same(t.input_geometry,[192*256*3 192 256 3]));
+            assert(check.same(t.output_geometry,[5*5*3 5 5 3]));
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
-            fprintf('    With grayscale images.\n');
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            s = utils.testing.scenes_small();
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small');
+            t = transforms.image.patch_extract(s,50,40,40,0.01,logg);
+            s_p = t.code(s,logg);
             
-            t = transforms.image.patch_extract(s,50,40,40,0.01,log);
-            s_p = t.code(s,log);
+            assert(check.tensor(s_p,4));
+            assert(check.same(size(s_p),[40 40 3 50]));
+            assert(check.unitreal(s_p));
+            assert(check.checkf(@(ii)var(reshape(s_p(:,:,:,ii),[1 40*40*3])) >= 0.01,1:50));
             
-            assert(tc.tensor(s_p,4));
-            assert(tc.same(size(s_p),[40 40 1 50]));
-            assert(tc.unitreal(s_p));
-            assert(tc.check(arrayfun(@(ii)var(reshape(s_p(:,:,:,ii),[1 40*40*1])) >= 0.01,1:50)));
-            
-            if exist('display','var') && (display == true)
-                figure();
-                imshow(utils.format_as_tiles(s_p,5,10));
+            if test_figure ~= -1
+                figure(test_figure);
+                subplot(1,1,1);
+                utils.display.as_tiles(s_p,[5 10]);
                 pause(5);
-                close(gcf());
             end
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
-            
-            fprintf('    With color images.\n');
-            
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
-            s = dataset.load_image_from_dir('../test/scenes_small','original');
-            
-            t = transforms.image.patch_extract(s,50,40,40,0.01,log);
-            s_p = t.code(s,log);
-            
-            assert(tc.tensor(s_p,4));
-            assert(tc.same(size(s_p),[40 40 3 50]));
-            assert(tc.unitreal(s_p));
-            assert(tc.check(arrayfun(@(ii)var(reshape(s_p(:,:,:,ii),[1 40*40*3])) >= 0.01,1:50)));
-            
-            if exist('display','var') && (display == true)
-                figure();
-                imshow(utils.format_as_tiles(s_p,5,10));
-                pause(5);
-                close(gcf());
-            end
-            
-            log.close();
-            hnd.close();
-            
-            clearvars -except display;
+            clearvars -except test_figure;
         end
     end
 end

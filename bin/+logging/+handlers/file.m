@@ -5,10 +5,10 @@ classdef file < logging.handler
     
     methods (Access=public)
         function [obj] = file(logging_file_path,min_level)
-            assert(tc.scalar(logging_file_path));
-            assert(tc.string(logging_file_path));
-            assert(tc.scalar(min_level));
-            assert(tc.logging_level(min_level));
+            assert(check.scalar(logging_file_path));
+            assert(check.string(logging_file_path));
+            assert(check.scalar(min_level));
+            assert(check.logging_level(min_level));
             
             [file_id_t,file_msg] = fopen(logging_file_path,'wt');
             
@@ -38,12 +38,12 @@ classdef file < logging.handler
             
             fprintf('  Proper construction.\n');
             
-            fprintf('    With good logging path and minimum level "Architecture".\n');
+            fprintf('    With good logging path and minimum level "Experiment".\n');
             
-            hnd = logging.handlers.file('../test/log1.log',logging.level.Architecture);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.Experiment);
             
             assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Architecture);
+            assert(hnd.min_level == logging.level.Experiment);
             
             hnd.close();
             
@@ -53,7 +53,7 @@ classdef file < logging.handler
             assert(ls_code == 0);
             assert(rm_code == 0);
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('    With good logging path and minimum level "Results".\n');
             
@@ -70,24 +70,7 @@ classdef file < logging.handler
             assert(ls_code == 0);
             assert(rm_code == 0);
             
-            clearvars -except display;
-            
-            fprintf('    With good logging path and minimum level "Dataset_IO".\n');
-            
-            hnd = logging.handlers.file('../test/log1.log',logging.level.Dataset_IO);
-            
-            assert(hnd.active == true);
-            assert(hnd.min_level == logging.level.Dataset_IO);
-            
-            hnd.close();
-            
-            [ls_code,~] = system('ls ../test/log1.log');
-            rm_code = system('rm ../test/log1.log');
-            
-            assert(ls_code == 0);
-            assert(rm_code == 0);
-            
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('    With invalid external input.\n');
             
@@ -98,7 +81,7 @@ classdef file < logging.handler
                 assert(touch_code == 0);
                 assert(chmod_code == 0);
                 
-                logging.handlers.file('../test/log1.log',logging.level.TopLevel);
+                logging.handlers.file('../test/log1.log',logging.level.Experiment);
                 
                 chmod2_code = system('chmod a+w ../test/log1.log');
                 rm_code = system('rm ../test/log1.log');
@@ -120,11 +103,11 @@ classdef file < logging.handler
                 end
             end
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "send".\n');
             
-            hnd = logging.handlers.file('../test/log1.log',logging.level.TopLevel);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.Experiment);
             
             hnd.send('Successful send of message.\n');
             hnd.close();
@@ -136,11 +119,11 @@ classdef file < logging.handler
             assert(strcmp(cat_res,sprintf('%s\n','Successful send of message.')));
             assert(rm_code == 0);
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "close".\n');
             
-            hnd = logging.handlers.file('../test/log1.log',logging.level.TopLevel);
+            hnd = logging.handlers.file('../test/log1.log',logging.level.Experiment);
             
             hnd.close();
             
@@ -154,7 +137,7 @@ classdef file < logging.handler
             
             assert(rm_code == 0);
             
-            clearvars -except display;
+            clearvars -except test_figure;
         end
     end
 end

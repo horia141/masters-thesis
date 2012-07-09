@@ -9,30 +9,30 @@ classdef deform < transform
     
     methods (Access=public)
         function [obj] = deform(train_sample_plain,scaling_max,rotation_max,field_smoothness_factor,field_intensity,logger)
-            assert(tc.dataset_image(train_sample_plain));
+            assert(check.dataset_image(train_sample_plain));
             assert(size(train_sample_plain,3) == 1); % A BIT OF A HACK
             assert(size(train_sample_plain,1) == size(train_sample_plain,2)); % A BIT OF A HACK
-            assert(tc.scalar(scaling_max));
-            assert(tc.number(scaling_max));
+            assert(check.scalar(scaling_max));
+            assert(check.number(scaling_max));
             assert(scaling_max > 0);
             assert(scaling_max < 100);
-            assert(tc.scalar(rotation_max));
-            assert(tc.number(rotation_max));
+            assert(check.scalar(rotation_max));
+            assert(check.number(rotation_max));
             assert(rotation_max > 0);
             assert(rotation_max < 180);
-            assert(tc.empty(field_smoothness_factor) || tc.scalar(field_smoothness_factor));
-            assert(tc.empty(field_smoothness_factor) || tc.number(field_smoothness_factor));
-            assert(tc.empty(field_smoothness_factor) || field_smoothness_factor > 0);
-            assert(tc.empty(field_intensity) || tc.scalar(field_intensity));
-            assert(tc.empty(field_intensity) || tc.number(field_intensity));
-            assert(tc.empty(field_intensity) || field_intensity > 0);
-            assert(tc.scalar(logger));
-            assert(tc.logging_logger(logger));
+            assert(check.empty(field_smoothness_factor) || check.scalar(field_smoothness_factor));
+            assert(check.empty(field_smoothness_factor) || check.number(field_smoothness_factor));
+            assert(check.empty(field_smoothness_factor) || field_smoothness_factor > 0);
+            assert(check.empty(field_intensity) || check.scalar(field_intensity));
+            assert(check.empty(field_intensity) || check.number(field_intensity));
+            assert(check.empty(field_intensity) || field_intensity > 0);
+            assert(check.scalar(logger));
+            assert(check.logging_logger(logger));
             assert(logger.active);
-            assert((tc.empty(field_smoothness_factor) && tc.empty(field_intensity)) || ...
-                   (~tc.empty(field_smoothness_factor) && ~tc.empty(field_intensity)));
+            assert((check.empty(field_smoothness_factor) && check.empty(field_intensity)) || ...
+                   (~check.empty(field_smoothness_factor) && ~check.empty(field_intensity)));
                
-            if ~tc.empty(field_smoothness_factor)
+            if ~check.empty(field_smoothness_factor)
                 do_deforming_t = true;
             else
                 do_deforming_t = false;
@@ -70,9 +70,9 @@ classdef deform < transform
                     logger.message('Images %d to %d.',ii,min(ii + log_batch_size - 1,N));
                 end
 
-                scaling_factor_row = utils.rand_range(1 - obj.scaling_max/100,1 + obj.scaling_max/100);
-                scaling_factor_col = utils.rand_range(1 - obj.scaling_max/100,1 + obj.scaling_max/100);
-                rotation_angle = utils.rand_range(-obj.rotation_max,obj.rotation_max);
+                scaling_factor_row = utils.common.rand_range(1 - obj.scaling_max/100,1 + obj.scaling_max/100);
+                scaling_factor_col = utils.common.rand_range(1 - obj.scaling_max/100,1 + obj.scaling_max/100);
+                rotation_angle = utils.common.rand_range(-obj.rotation_max,obj.rotation_max);
                 
                 original_instance = sample_plain(:,:,:,ii);
                 
@@ -90,10 +90,10 @@ classdef deform < transform
                 rotated_instance = imrotate(resized_instance,rotation_angle,'bilinear','crop');
                 
                 if obj.do_deforming
-                    field_row_1 = utils.rand_range(-0.05,0.05,dr,dc);
+                    field_row_1 = utils.common.rand_range(-0.05,0.05,dr,dc);
                     field_row_2 = conv2(field_row_1,smooth_kernel,'same');
                     field_row_3 = field_row_2 ./ max(max(field_row_2));
-                    field_col_1 = utils.rand_range(-0.05,0.05,dr,dc);
+                    field_col_1 = utils.common.rand_range(-0.05,0.05,dr,dc);
                     field_col_2 = conv2(field_col_1,smooth_kernel,'same');
                     field_col_3 = field_col_2 ./ max(max(field_col_2));
                     
@@ -127,83 +127,82 @@ classdef deform < transform
     end
     
     methods (Static,Access=public)
-        function test(display)
+        function test(test_figure)
             fprintf('Testing "transforms.image.digit.deform".\n');
             
             fprintf('  Proper construction.\n');
             
             fprintf('    With field deformations.\n');
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
             s = rand(16,16,1,100);
             
-            t = transforms.image.digit.deform(s,10,15,5,2.4,log);
+            t = transforms.image.digit.deform(s,10,15,5,2.4,logg);
             
             assert(t.scaling_max == 10);
             assert(t.rotation_max == 15);
             assert(t.field_smoothness_factor == 5);
             assert(t.field_intensity == 2.4);
             assert(t.do_deforming == true);
-            assert(tc.same(t.input_geometry,[16*16*1 16 16 1]));
-            assert(tc.same(t.output_geometry,[16*16*1 16 16 1]));
+            assert(check.same(t.input_geometry,[16*16*1 16 16 1]));
+            assert(check.same(t.output_geometry,[16*16*1 16 16 1]));
 
-            log.close();
+            logg.close();
             hnd.close();
 
-            clearvars -except display;
+            clearvars -except test_figure;
 
             fprintf('    Without field deformations.\n');
 
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
             s = rand(16,16,1,100);
 
-            t = transforms.image.digit.deform(s,10,15,[],[],log);
+            t = transforms.image.digit.deform(s,10,15,[],[],logg);
 
             assert(t.scaling_max == 10);
             assert(t.rotation_max == 15);
-            assert(tc.same(t.field_smoothness_factor,[]));
-            assert(tc.same(t.field_intensity,[]));
+            assert(check.same(t.field_smoothness_factor,[]));
+            assert(check.same(t.field_intensity,[]));
             assert(t.do_deforming == false);
-            assert(tc.same(t.input_geometry,[16*16*1 16 16 1]));
-            assert(tc.same(t.output_geometry,[16*16*1 16 16 1]));
+            assert(check.same(t.input_geometry,[16*16*1 16 16 1]));
+            assert(check.same(t.output_geometry,[16*16*1 16 16 1]));
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
-            hnd = logging.handlers.testing(logging.level.All);
-            log = logging.logger({hnd});
+            hnd = logging.handlers.testing(logging.level.Experiment);
+            logg = logging.logger({hnd});
             s_1 = rand(16,16,1,16);
             s = zeros(24,24,1,16);
             s(5:20,5:20,:,:) = s_1;
             
-            t = transforms.image.digit.deform(s,10,15,[],[],log);
+            t = transforms.image.digit.deform(s,10,15,[],[],logg);
             
-            s_p = t.code(s,log);
+            s_p = t.code(s,logg);
             
-            assert(tc.tensor(s_p,4));
-            assert(tc.same(size(s_p),[24 24 1 16]));
-            assert(tc.number(s_p));
+            assert(check.tensor(s_p,4));
+            assert(check.same(size(s_p),[24 24 1 16]));
+            assert(check.number(s_p));
             
-            if exist('display','var') && (display == true)
-                figure();
+            if test_figure ~= -1
+                figure(test_figure);
                 subplot(1,2,1);
-                imshow(utils.format_as_tiles(s));
+                utils.display.as_tiles(s);
                 subplot(1,2,2);
-                imshow(utils.format_as_tiles(s_p));
-                pause;
-                close(gcf());
+                utils.display.as_tiles(s_p);
+                pause(5);
             end
             
-            log.close();
+            logg.close();
             hnd.close();
             
-            clearvars -except display;
+            clearvars -except test_figure;
         end
     end
 end

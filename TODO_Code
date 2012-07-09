@@ -1,23 +1,42 @@
++ [61] B:02.07.2012 E:09.07.2012
+  Task: Add all pre-processing steps for dictionary learning but none of them
+    for coding (except maybe DC offset). This seems to be a more natural approach.
+  Resolved: Made ZCA transform optional for learning dictionaries. In rest, it
+    is not used.
+ 
++ [60] B:21.06.2012 E:09.07.2012
+  Task: Add "Learn:GradSt" as valid learning methods in "window_sparse_recoder".
+    Also make "learn.grad" divide by the number of samples.
+  Resolved: Did this in the new update as requested.
+
 - [59] B:21.06.2012 E:??.??.????
   Task: Make "load_image_cifar" more robust. Add in-function tests for expected input
     format and add tests for these modes of failure.
 
-- [58] B:21.06.2012 E:??.??.????
++ [58] B:21.06.2012 E:09.07.2012
   Task: Make the "logger" object passed to "dataset.load_*" functions be non-optional.
+  Resolved: Made them non-optional and simplified the interface quite a lot.
 
-- [57] B:19.06.2012 E:??.??.????
++ [57] B:19.06.2012 E:09.07.2012
   Task: See if it is possible to consider the node message of a "new_*" or
     "beg_*" as being part of the previous type of message. This will make some
     visualizations a little bit more verbose, but maybe a little bit more clear.
+  Resolved: It was possible. The output is a little bit more verbose, but we
+    get a clearer picture of what's happening.
 
-- [56] B:19.06.2012 E:??.??.????
++ [56] B:19.06.2012 E:09.07.2012
   Task: Remove all the cruft that has gathered in the "logging" module. Remove
     in general all references to architectures.
+  Resolved: I've removed the extra stuff from "logging" (Dataset_IO,
+    Architecture) and added Regressor for the future. I've also simplified a
+    lot of things there, including having just Experiment, Transform,
+    Classifier, Regressor and Results as logging levels.
 
-- [55] B:07.05.2012 E:??.??.????
++ [55] B:07.05.2012 E:09.07.2012
   Task: Check all occurances of "samples" in the source code (even in logging
     messages) and replace it with "sample". This also includes expressions
     like "each sample".
+  Resolved: Too specific.
 
 - [54] B:06.05.2012 E:??.??.????
   Task: See where "logger.new_*" is used in critical code and remove
@@ -28,29 +47,41 @@
     MATLAB. Also, see why "logger.beg_*" is so expensive. It adds two seconds
     to the test runs.
 
-- [53] B:30.04.2012 E:??.??.????
++ [53] B:30.04.2012 E:09.07.2012
   Task: Add "confidence" surface test for classifiers. This should be a
     visualization of the per-class confidence returned for the domain points
     for each classifier.
+  Resolved: Added this for all classifiers as well as "sane-ish" confidence
+    score computation.
 
-- [52] B:19.04.2012 E:??.??.????
++ [52] B:19.04.2012 E:09.07.2012
   Task: Add "RBF" as a coding method. A RBF-like distance is taken to each
     dictionary element and the catenation of all distances is the feature
     vector of a sample. This is similar to what is done in SVMs.
+  Resolved: I've decided on no longer using distances as features, as, in
+    general, the activation distribution tended to be uniform, which didn't
+    help a lot for classification (we need a tightly peaked around 0 distribution).
 
-- [51] B:18.04.2012 E:??.??.????
++ [51] B:18.04.2012 E:09.07.2012
   Task: Separate the "coding" algorithms: correlation, matching pursuit and
     orthogonal matching pursuit into a separate module etc. Separate the
     "dictionary learning" algorithms: k-means, gradient descent etc. into a
     separate module, which accept a coding algorithm as input.
+  Resolved: I've made this move. The class "transforms.record.dictionary"
+    defines what a dictionary coding method does, and implements several
+    coding methods, while several subclasses of this, in the
+    "+transforms/+record/+dictionary" module, define different ways to learn
+    the dictionary words.
 
-- [50] B:11.04.2012 E:??.??.????
++ [50] B:11.04.2012 E:09.07.2012
   Task: Add progress reports for long experiments. Delivered by mail, ofcourse.
+  Resolved: Too fancy.
 
-- [49] B:04.04.2012 E:??.??.????
++ [49] B:04.04.2012 E:09.07.2012
   Task: Add stricter constraints to a dataset. It must contain at least one
     point from each class. Or at least one point. See whichone makes more
     sense.
+  Task: Neither made sense. Dataset is OK as it is.
 
 + [48] B:29.03.2012 E:12.04.2012
   Task: Formalize the types of exceptions we will see in an application. For
@@ -140,10 +171,12 @@
     the effects are easily controlled. Also, the fact that we use "new_*" mitigates
     some of these problems.
 
-- [41] B:26.03.2012 E:??.??.????
++ [41] B:26.03.2012 E:09.07.2012
   Task: In many places we test that a dataset has at least one element. A
     dataset cannot be empty, so this test is redundant. See if it is worth it
     to eliminate it or if it has some documentation purposes.
+  Resolved: The new formulation for "dataset" has this implicit. A "dataset"
+    cannot be empty.
 
 + [40] B:26.03.2012 E:12.04.2012
   Task: Add a function "utils.string_in" or "tc.string_in" which checks that a
@@ -155,13 +188,15 @@
   Task: Add tests after calls to abstract methods to make sure the results are
     compatible.
 
-- [38] B:22.03.2012 E:??.??.????
++ [38] B:22.03.2012 E:??.??.????
   Task: There are a lot of places in the code, where functions use optional
     parameters. We should define a function in "utils" which, by accessing the
     workspace of the calling function, can provide a default value for a
     variable. It should work like.
 
       aa = utils.get_with_default('sender','coman@inb.uni-luebeck.de'); 
+  Resolved: There aren't that many functions with optional parameters now,
+    after the big rewrite.
 
 + [37] B:21.03.2012 E:12.04.2012
   Task: Replace usage of "!" syntax to call system utilities with calls to the
@@ -221,10 +256,11 @@
     to rescale images. Thefore we let them be and do rescaling just for
     visualization.
 
-- [30] B:16.03.2012 E:??.??.????
++ [30] B:16.03.2012 E:09.07.2012
   Task: Add a subclass of reversible transform for all dictionary based
     transform methods (save PCA), if it seems that it makes sense to share
     code like "corr_code" or "mp_code" or "omp_code" etc. between transforms.
+  Resolved: Related to [51]. This was solved by solving that.
 
 + [29] B:14.03.2012 E:15.03.2012
   Task: Add a "image_resize_transform" which does resizing of
@@ -258,10 +294,11 @@
     geometric classifier.
   Resolved: I've added the classifier and the usual tests for it.
 
-- [24] B:14.03.2012 E:??.??.????
++ [24] B:14.03.2012 E:09.07.2012
   Task: Add a whole sleuth of other transforms besides the "dct_transform".
     Think of "fourier_transform", "random_patches_transform" and
     "random_weights_transform".
+  Resolved: Task was open-ended. Some things were added, some things were not.
    
 - [23] B:13.03.2012 E:??.??.????
   Task: Add "dct_transform".
@@ -303,11 +340,13 @@
     to do coding, and added an extra parameter to the constructor to allow
     user selection. The other things will be added if needed.
 
-- [19] B:13.03.2012 E:??.??.????
++ [19] B:13.03.2012 E:09.07.2012
   Task: Add batch mode options for learning the sparse dictionary
     "transforms.sparse.sgdmp". Currently it does only online learning.
     A "batch_size" parameter should control how many vectors are selected per
     update.
+  Resolved: In the new setup this is solved in the "transforms.record.dictionary.learn.grad_st"
+    learning method.
 
 + [18] B:13.03.2012 E:15.03.2012
   Task: Make the testing code for "gray_images_set" which load the MNIST
@@ -326,7 +365,7 @@
     mostly, though some transforms also use them to retrieve extra information
     during coding or decoding.
 
-- [16] B:13.03.2012 E:??.??.????
++ [16] B:13.03.2012 E:09.07.2012
   Task: We currently have no support for data of an unknown class. These
     appear quite a lot as data for which we have no labels and that we want to
     classify or as data for unsupervised pre-training. The support for this is
@@ -344,6 +383,9 @@
     purposes of classification etc.
     In any case, at first, think about this, then implement it, because it
     seems like a big change for the framework.
+  Resolved: This was solved earlier, but I forgot to update the TODO.
+    Separating the sample data and classification/regression information
+    achieves the request's problems.
 
 + [15] B:09.03.2012 E:12.04.2012
   Task: Introduce more succint assertions for the objects we work with to use

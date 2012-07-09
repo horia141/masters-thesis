@@ -26,8 +26,7 @@ enum input_decoder {
     I_KERNEL_PARAM2          = 9,
     I_REG_PARAM              = 10,
     I_NUM_THREADS            = 11,
-    I_MAX_WAIT_SECONDS       = 12,
-    I_LOGGER                 = 13,
+    I_LOGGER                 = 12,
     INPUTS_COUNT
 };
 
@@ -94,7 +93,6 @@ void mexFunction(
     double             kernel_param2;
     double             reg_param;
     int                num_threads;
-    unsigned int       max_wait_seconds;
     mxArray*           local_logger;
     mwSize*            non_null_counts;
     mwSize             non_null_full_count;
@@ -116,228 +114,212 @@ void mexFunction(
     check_condition(input_count == INPUTS_COUNT,
 		    "master:InvalidMEXCall","Invalid number of inputs.");
     check_condition(mxGetNumberOfDimensions(input[I_SAMPLE]) == 2,
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxGetM(input[I_SAMPLE]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxGetN(input[I_SAMPLE]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxIsDouble(input[I_SAMPLE]),
-		    "master:InvalidMEXCall","Parameter \"sample\" is not a tc.dataset_record.");
+		    "master:InvalidMEXCall","Parameter \"sample\" is not a check.dataset_record.");
     check_condition(mxGetNumberOfDimensions(input[I_SUPPORT_VECTORS_COUNT]) == 2,
-		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.vector.");
     check_condition(mxGetM(input[I_SUPPORT_VECTORS_COUNT]) == 1,
-		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.vector.");
     check_condition(mxGetN(input[I_SUPPORT_VECTORS_COUNT]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.vector.");
     check_condition(mxIsCell(input[I_SUPPORT_VECTORS_COUNT]),
-		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell.");
     for (ii = 0; ii < mxGetN(input[I_SUPPORT_VECTORS_COUNT]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.vector components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.vector components.");
 	check_condition(mxGetM(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.vector components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.vector components.");
 	check_condition(mxGetN(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii)) >= 1,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.vector components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.vector components.");
 	check_condition(mxGetN(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.vector components of length 2.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.vector components of length 2.");
 	check_condition(mxIsDouble(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii)),
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(fabs(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[0] - floor(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[0])) == 0,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(fabs(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[1] - floor(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[1])) == 0,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[0] >= 0,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[1] >= 0,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[0] < INT_MAX,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[1] < INT_MAX,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with tc.natural components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with check.natural components.");
 	check_condition(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[0] > 0,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with strictly positive components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with strictly positive components.");
 	check_condition(mxGetPr(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii))[1] > 0,
-			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a tc.cell with strictly positive components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors_count\" is not a check.cell with strictly positive components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_SUPPORT_VECTORS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.vector.");
     check_condition(mxGetM(input[I_SUPPORT_VECTORS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.vector.");
     check_condition(mxGetN(input[I_SUPPORT_VECTORS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.vector.");
     check_condition(mxIsCell(input[I_SUPPORT_VECTORS]),
-		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.cell.");
     for (ii = 0; ii < mxGetN(input[I_SUPPORT_VECTORS]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_SUPPORT_VECTORS_COUNT],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.cell with tc.matrix components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.cell with check.matrix components.");
 	check_condition(mxGetM(mxGetCell(input[I_SUPPORT_VECTORS],ii)) >= 1,
-			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.cell with tc.matrix components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.cell with check.matrix components.");
 	check_condition(mxGetN(mxGetCell(input[I_SUPPORT_VECTORS],ii)) >= 1,
-			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.cell with tc.matrix components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.cell with check.matrix components.");
 	check_condition(mxIsDouble(mxGetCell(input[I_SUPPORT_VECTORS],ii)),
-			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a tc.cell with tc.number components.");
+			"master:InvalidMEXCall","Parameter \"support_vectors\" is not a check.cell with check.number components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_COEFFS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a check.vector.");
     check_condition(mxGetM(input[I_COEFFS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a check.vector.");
     check_condition(mxGetN(input[I_COEFFS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a check.vector.");
     check_condition(mxIsCell(input[I_COEFFS]),
-		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a check.cell.");
     for (ii = 0; ii < mxGetN(input[I_COEFFS]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_COEFFS],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell with tc.vector components.");
+			"master:InvalidMEXCall","Parameter \"coeffs\" is not a check.cell with check.vector components.");
 	check_condition(mxGetM(mxGetCell(input[I_COEFFS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell with tc.vector components.");
+			"master:InvalidMEXCall","Parameter \"coeffs\" is not a check.cell with check.vector components.");
 	check_condition(mxGetN(mxGetCell(input[I_COEFFS],ii)) >= 1,
-			"master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell with tc.vector components.");
+			"master:InvalidMEXCall","Parameter \"coeffs\" is not a check.cell with check.vector components.");
 	check_condition(mxIsDouble(mxGetCell(input[I_COEFFS],ii)),
-			"master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell with tc.number components.");
+			"master:InvalidMEXCall","Parameter \"coeffs\" is not a check.cell with check.number components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_RHOS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"rhos\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"rhos\" is not a check.vector.");
     check_condition(mxGetM(input[I_RHOS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"rhos\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"rhos\" is not a check.vector.");
     check_condition(mxGetN(input[I_RHOS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"rhos\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"rhos\" is not a check.vector.");
     check_condition(mxIsCell(input[I_RHOS]),
-		    "master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"rhos\" is not a check.cell.");
     for (ii = 0; ii < mxGetN(input[I_RHOS]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_RHOS],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"rhos\" is not a check.cell with check.scalar components.");
 	check_condition(mxGetM(mxGetCell(input[I_RHOS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"rhos\" is not a check.cell with check.scalar components.");
 	check_condition(mxGetN(mxGetCell(input[I_RHOS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"rhos\" is not a check.cell with check.scalar components.");
 	check_condition(mxIsDouble(mxGetCell(input[I_RHOS],ii)),
-			"master:InvalidMEXCall","Parameter \"rhos\" is not a tc.cell with tc.number components.");
+			"master:InvalidMEXCall","Parameter \"rhos\" is not a check.cell with check.number components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_PROB_AS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a check.vector.");
     check_condition(mxGetM(input[I_PROB_AS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a check.vector.");
     check_condition(mxGetN(input[I_PROB_AS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a check.vector.");
     check_condition(mxIsCell(input[I_PROB_AS]),
-		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"prob_as\" is not a check.cell.");
     for (ii = 0; ii < mxGetN(input[I_PROB_AS]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_PROB_AS],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a check.cell with check.scalar components.");
 	check_condition(mxGetM(mxGetCell(input[I_PROB_AS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a check.cell with check.scalar components.");
 	check_condition(mxGetN(mxGetCell(input[I_PROB_AS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a check.cell with check.scalar components.");
 	check_condition(mxIsDouble(mxGetCell(input[I_PROB_AS],ii)),
-			"master:InvalidMEXCall","Parameter \"prob_as\" is not a tc.cell with tc.number components.");
+			"master:InvalidMEXCall","Parameter \"prob_as\" is not a check.cell with check.number components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_PROB_BS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.vector.");
     check_condition(mxGetM(input[I_PROB_BS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.vector.");
     check_condition(mxGetN(input[I_PROB_BS]) >= 1,
-		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.vector.");
+		    "master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.vector.");
     check_condition(mxIsCell(input[I_PROB_BS]),
-		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a tc.cell.");
+		    "master:InvalidMEXCall","Parameter \"coeffs\" is not a check.cell.");
     for (ii = 0; ii < mxGetN(input[I_PROB_BS]); ii++) {
 	check_condition(mxGetNumberOfDimensions(mxGetCell(input[I_PROB_BS],ii)) == 2,
-			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.cell with check.scalar components.");
 	check_condition(mxGetM(mxGetCell(input[I_PROB_BS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.cell with check.scalar components.");
 	check_condition(mxGetN(mxGetCell(input[I_PROB_BS],ii)) == 1,
-			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.scalar components.");
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.cell with check.scalar components.");
 	check_condition(mxIsDouble(mxGetCell(input[I_PROB_BS],ii)),
-			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a tc.cell with tc.number components.");
+			"master:InvalidMEXCall","Parameter \"prob_bs\" is not a check.cell with check.number components.");
     }
     check_condition(mxGetNumberOfDimensions(input[I_KERNEL_CODE]) == 2,
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.scalar.");
     check_condition(mxGetM(input[I_KERNEL_CODE]) == 1,
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.scalar.");
     check_condition(mxGetN(input[I_KERNEL_CODE]) == 1,
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_KERNEL_CODE]),
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.natural.");
     check_condition(fabs(mxGetScalar(input[I_KERNEL_CODE]) - floor(mxGetScalar(input[I_KERNEL_CODE]))) == 0,
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_KERNEL_CODE]) >= 0,
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_KERNEL_CODE]) < INT_MAX,
-		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"kernel_code\" is not a check.natural.");
     check_condition((mxGetScalar(input[I_KERNEL_CODE]) == LINEAR) ||
 		    (mxGetScalar(input[I_KERNEL_CODE]) == POLY) ||
 		    (mxGetScalar(input[I_KERNEL_CODE]) == RBF) ||
 		    (mxGetScalar(input[I_KERNEL_CODE]) == SIGMOID),
 		    "master:InvalidMEXCall","Parameter \"kernel_code\" has an invalid value.");
     check_condition(mxGetNumberOfDimensions(input[I_KERNEL_PARAM1]) == 2,
-		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a check.scalar.");
     check_condition(mxGetM(input[I_KERNEL_PARAM1]) == 1,
-		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a check.scalar.");
     check_condition(mxGetN(input[I_KERNEL_PARAM1]) == 1,
-		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_KERNEL_PARAM1]),
-		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a tc.number.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not a check.number.");
     check_condition(mxGetScalar(input[I_KERNEL_PARAM1]) >= 0,
 		    "master:InvalidMEXCall","Parameter \"kernel_param1\" is not positive.");
     check_condition(mxGetNumberOfDimensions(input[I_KERNEL_PARAM2]) == 2,
-		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a check.scalar.");
     check_condition(mxGetM(input[I_KERNEL_PARAM2]) == 1,
-		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a check.scalar.");
     check_condition(mxGetN(input[I_KERNEL_PARAM2]) == 1,
-		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_KERNEL_PARAM2]),
-		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a tc.number.");
+		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not a check.number.");
     check_condition(mxGetScalar(input[I_KERNEL_PARAM2]) >= 0,
 		    "master:InvalidMEXCall","Parameter \"kernel_param2\" is not positive.");
     check_condition(mxGetNumberOfDimensions(input[I_REG_PARAM]) == 2,
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.scalar.");
     check_condition(mxGetM(input[I_REG_PARAM]) == 1,
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.scalar.");
     check_condition(mxGetN(input[I_REG_PARAM]) == 1,
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_REG_PARAM]),
-		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a tc.number.");
+		    "master:InvalidMEXCall","Parameter \"reg_param\" is not a check.number.");
     check_condition(mxGetScalar(input[I_REG_PARAM]) > 0,
 		    "master:InvalidMEXCall","Parameter \"reg_param\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_NUM_THREADS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.scalar.");
     check_condition(mxGetM(input[I_NUM_THREADS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.scalar.");
     check_condition(mxGetN(input[I_NUM_THREADS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.scalar.");
     check_condition(mxIsDouble(input[I_NUM_THREADS]),
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(fabs(mxGetScalar(input[I_NUM_THREADS]) - floor(mxGetScalar(input[I_NUM_THREADS]))) == 0,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_NUM_THREADS]) >= 0,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(mxGetScalar(input[I_NUM_THREADS]) < INT_MAX,
-		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a tc.natural.");
+		    "master:InvalidMEXCall","Parameter \"num_threads\" is not a check.natural.");
     check_condition(input[I_NUM_THREADS] > 0,
 		    "master:InvalidMEXCall","Parameter \"num_threads\" is not strictly positive.");
-    check_condition(mxGetNumberOfDimensions(input[I_MAX_WAIT_SECONDS]) == 2,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
-    check_condition(mxGetM(input[I_MAX_WAIT_SECONDS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
-    check_condition(mxGetN(input[I_MAX_WAIT_SECONDS]) == 1,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.scalar.");
-    check_condition(mxIsDouble(input[I_MAX_WAIT_SECONDS]),
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
-    check_condition(fabs(mxGetScalar(input[I_MAX_WAIT_SECONDS]) - floor(mxGetScalar(input[I_MAX_WAIT_SECONDS]))) == 0,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
-    check_condition(mxGetScalar(input[I_MAX_WAIT_SECONDS]) >= 0,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
-    check_condition(mxGetScalar(input[I_MAX_WAIT_SECONDS]) < INT_MAX,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not a tc.natural.");
-    check_condition(input[I_MAX_WAIT_SECONDS] > 0,
-		    "master:InvalidMEXCall","Parameter \"max_wait_seconds\" is not strictly positive.");
     check_condition(mxGetNumberOfDimensions(input[I_LOGGER]) == 2,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.scalar.");
     check_condition(mxGetM(input[I_LOGGER]) == 1,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.scalar.");
     check_condition(mxGetN(input[I_LOGGER]) == 1,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.scalar.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.scalar.");
     check_condition(strcmp(mxGetClassName(input[I_LOGGER]),"logging.logger") == 0,
-		    "master:InvalidMEXCall","Parameter \"logger\" is not a tc.logging_logger.");
+		    "master:InvalidMEXCall","Parameter \"logger\" is not a check.logging_logger.");
     check_condition(mxGetScalar(mxGetProperty(input[I_LOGGER],0,"active")) == 1,
     		    "master:InvalidMEXCall","Parameter \"logger\" is not active.");
     check_condition(mxGetN(input[I_SAMPLE]) < INT_MAX,
@@ -392,7 +374,6 @@ void mexFunction(
     kernel_param2 = mxGetScalar(input[I_KERNEL_PARAM2]);
     reg_param = mxGetScalar(input[I_REG_PARAM]);
     num_threads = (int)mxGetScalar(input[I_NUM_THREADS]);
-    max_wait_seconds = (unsigned int)mxGetScalar(input[I_MAX_WAIT_SECONDS]);
     local_logger = mxDuplicateArray(input[I_LOGGER]);
 
     for (ii_int = 0; ii_int < classifiers_count; ii_int++) {
@@ -418,7 +399,6 @@ void mexFunction(
     logger_message(local_logger,"%s: %f",KERNEL_PARAM2_TO_STRING[kernel_code],kernel_param1);
     logger_message(local_logger,"Regularization parameter: %f",reg_param);
     logger_message(local_logger,"Number of worker threads: %d",num_threads);
-    logger_message(local_logger,"Maximum wait for convergence: %ds",max_wait_seconds);
 
     logger_end_node(local_logger);
 
@@ -577,7 +557,7 @@ void mexFunction(
 
     logger_message(local_logger,"Starting parallel classification.");
 
-    run_workers(num_threads,(task_fn_t)do_task,(int)sample_count,task_info,sizeof(struct task_info),max_wait_seconds);
+    run_workers(num_threads,(task_fn_t)do_task,(int)sample_count,task_info,sizeof(struct task_info));
 
     logger_message(local_logger,"Finished parallel classification.");
 
