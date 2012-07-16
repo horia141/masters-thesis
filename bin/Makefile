@@ -1,8 +1,8 @@
 CXX ?= g++
 CC ?= gcc
-CFLAGS = -g -Wall -Wconversion -fPIC -lpthread -D_GNU_SOURCE
+CFLAGS = -O3 -Wall -Wconversion -fPIC -lpthread -D_GNU_SOURCE
 MEX = /opt/local-ubuntu/MATLAB/R2011a/bin/mex
-MEXFLAGS = -g CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -largeArrayDims
+MEXFLAGS = -O CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -largeArrayDims
 XTERN = +xtern
 
 all: +classifiers/+liblinear/x_do_train_one_vs_all.mexa64 +classifiers/+liblinear/x_do_train_one_vs_one.mexa64 +classifiers/+liblinear/x_do_classify.mexa64 +classifiers/+libsvm/x_do_train_one_vs_all.mexa64 +classifiers/+libsvm/x_do_train_one_vs_one.mexa64 +classifiers/+libsvm/x_do_classify.mexa64 +transforms/+record/dictionary_correlation_order.mexa64

@@ -16,6 +16,47 @@ classdef testing
             dict = dict_struct.saved_dict_11x11_144;
         end
         
+        function [patches,t_patch,t_dc_offset,t_zca] = mnist_patches_for_dict_learning(patches_count,patch_row_count,patch_col_count,do_patch_zca)
+            assert(check.scalar(patches_count));
+            assert(check.natural(patches_count));
+            assert(patches_count >= 1);
+            assert(check.scalar(patch_row_count));
+            assert(check.natural(patch_row_count));
+            assert(patch_row_count >= 1);
+            assert(patch_row_count <= 28);
+            assert(check.scalar(patch_col_count));
+            assert(check.natural(patch_col_count));
+            assert(patch_col_count >= 1);
+            assert(patch_col_count <= 28);
+            assert(check.scalar(do_patch_zca));
+            assert(check.logical(do_patch_zca));
+
+            hnd = logging.handlers.zero(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            
+            images = utils.load_dataset.g_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte',logg);
+            
+            t_patch = transforms.image.patch_extract(images,patches_count,patch_row_count,patch_col_count,0.01,logg);
+            
+            patches_1 = t_patch.code(images,logg);
+            patches_1f = dataset.flatten_image(patches_1);
+            
+            t_dc_offset = transforms.record.dc_offset(patches_1f,logg);
+            
+            patches_2 = t_dc_offset.code(patches_1f,logg);
+            
+            if do_patch_zca
+                t_zca = transforms.record.zca(patches_2,logg);
+                patches = t_zca.code(patches_2,logg);
+            else
+                t_zca = {};
+                patches = patches_2;
+            end
+            
+            logg.close();
+            hnd.close();
+        end
+        
         function [images] = mnist()
             hnd = logging.handlers.zero(logging.level.Experiment);
             logg = logging.logger({hnd});
@@ -28,6 +69,11 @@ classdef testing
 
         function [s] = correlated_cloud()
             s = mvnrnd([3 3],[1 0.6; 0.6 0.5],10000)';
+        end
+        
+        function [s] = two_component_cloud()
+            s = [mvnrnd([0 0],[3 0; 0 0.01],200); ...
+                 mvnrnd([0 0],[0.01 0; 0 3],200)]';
         end
         
         function [s] = three_component_cloud()

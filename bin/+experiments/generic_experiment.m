@@ -44,7 +44,7 @@ logg.beg_node('Experiment "[[[dataset name]]] - [[[experiment name]]]"');
 logg.message('Checking results file.');
 
 if exist(RESULTS_PATH,'file')
-    logg.end_experiment();
+    logg.end_node();
     logg.close();
     hnd.close();
     error('The results file "%s" already exists!',RESULTS_PATH);
@@ -277,6 +277,10 @@ for coder_idx = 1:length(param_list_coder)
                                   'classifier_scores','classifier_scores_avg','classifier_scores_std',...
                                   'best_classifier_score_avg','best_classifier_idx',...
                                   'coder_scores','coder_scores_avg','coder_scores_std');
+        
+        clear d_coder_useful_coded;
+        clear d_ts_coded;
+        clear d_classifier_useful_coded;
         
         logg.end_node();
     end

@@ -1,6 +1,6 @@
 %% Setup tests.
 
-DISPLAY = true;
+DISPLAY = false;
 
 tic;
 
@@ -45,6 +45,7 @@ transforms.record.dictionary.random.filters.test(test_figure);
 transforms.record.dictionary.random.instances.test(test_figure);
 transforms.record.dictionary.learn.grad.test(test_figure);
 transforms.record.dictionary.learn.grad_st.test(test_figure);
+transforms.record.dictionary.learn.neural_gas.test(test_figure);
 transforms.image.resize.test(test_figure);
 transforms.image.patch_extract.test(test_figure);
 transforms.image.digit.deform.test(test_figure);

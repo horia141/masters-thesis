@@ -11,7 +11,7 @@ classdef grad < transforms.record.dictionary
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
-            assert(word_count > 0);
+            assert(word_count >= 1);
             assert(transforms.record.dictionary.coding_setup_ok(word_count,coding_method,coding_params));
             assert(check.scalar(initial_learning_rate));
             assert(check.number(initial_learning_rate));
@@ -34,6 +34,7 @@ classdef grad < transforms.record.dictionary
             dict = transforms.record.dictionary.normalize_dict(utils.common.rand_range(-1,1,word_count,d));
             dict_transp = dict';
             saved_mse_t = zeros(1,max_iter_count);
+            learning_rate_schedule = utils.common.schedule(initial_learning_rate,final_learning_rate,max_iter_count);
             
             logger.beg_node('Learning sparse dictionary');
 
@@ -44,23 +45,19 @@ classdef grad < transforms.record.dictionary
                 
                 diff = train_sample_plain - dict_transp * coeffs;
                 delta_dict = coeffs * diff';
-                learning_rate = initial_learning_rate * (final_learning_rate / initial_learning_rate) ^ (iter / max_iter_count);
                 
-                dict = dict + (learning_rate / N) * delta_dict;
+                dict = dict + (learning_rate_schedule(iter) / N) * delta_dict;
                 dict = transforms.record.dictionary.normalize_dict(dict);
                 dict_transp = dict';
                 
                 mean_error = sum(mean((diff .^ 2)));
                 saved_mse_t(iter) = mean_error;
                 logger.message('Mean error: %.0f',mean_error);
-%                 if mod(iter - 1,1) == 0
-%                     sz = sqrt(size(dict,2));
-%                     subplot(2,1,1);
-%                     utilsdisplay.sparse_basis(dict,sz,sz);
-%                     subplot(2,1,2);
-%                     mesh(1 - utils.format_as_tiles(reshape(delta_dict',sz,sz,1,size(dict,1))));
-%                     pause(1);
-%                 end
+                if mod(iter - 1,1) == 0
+                    sz = sqrt(size(dict,2));
+                    utils.display.dictionary(dict,sz,sz);
+                    pause(1);
+                end
             end
             
             logger.end_node();

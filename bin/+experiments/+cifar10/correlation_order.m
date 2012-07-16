@@ -2,21 +2,33 @@
 
 MODEL_SELECTION_RATIO = {'full' 0.2};
 TRAIN_VALIDATION_RATIO = 0.5;
-CODER_REP_COUNT = 1;
+CODER_REP_COUNT = 3;
 CLASSIFIER_REP_COUNT = 5;
-RESULTS_PATH = '../explogs/mnist/baseline_direct/results.mat';
+RESULTS_PATH = '../explogs/cifar10/correlation_order/results_1.mat';
 
-TRAIN_WORKER_COUNT = 45;
-CLASSIFY_WORKER_COUNT = 48;
+TRAIN_WORKER_COUNT = 16;
+CLASSIFY_WORKER_COUNT = 16;
 
 %% Build the list of coder configurations to test.
 
-param_desc_coder = [];
-param_list_coder = 1;
+param_desc_coder.patches_count = 10;
+param_desc_coder.do_patch_zca = true;
+param_desc_coder.dictionary_type = 'Random:Filters';
+param_desc_coder.dictionary_params = {{128 'CorrOrder' [0.1 0.01 16]}};
+param_desc_coder.window_size = 9;
+param_desc_coder.window_step = 1;
+param_desc_coder.nonlinear_type = 'Linear';
+param_desc_coder.nonlinear_params = {};
+param_desc_coder.reduce_type = 'Sqr';
+param_desc_coder.reduce_spread = 4;
+
+param_list_coder = utils.params.gen_all(param_desc_coder,...
+                                        @(p)mod(28 - 1,p.window_step) == 0,...
+                                        @(p)mod((28 - 1) / p.window_step + 1,p.reduce_spread) == 0);
                         
 %% Build the list of classifier configurations to test.
 
-param_desc_classifier.reg = logspace(-2,-1,10);
+param_desc_classifier.reg = logspace(-3,-1,10);
 
 param_list_classifier = utils.params.gen_all(param_desc_classifier);
 
@@ -25,7 +37,7 @@ param_list_classifier = utils.params.gen_all(param_desc_classifier);
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Baseline Direct"');
+logg.beg_node('Experiment "CIFAR10 - Correlation Order"');
 
 %% Make sure we can write to the results file.
 
@@ -47,7 +59,7 @@ end
 
 %% Load the experiment data, separating it into the part used for model selection and the part used for final testing.
 
-[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.mnist(logg.new_node('Loading MNIST dataset'));
+[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.cifar10(logg.new_node('Loading CIFAR10 dataset'));
 
 %% Filter the experiment model selection data, retaining only a subsample from it.
 
@@ -129,22 +141,50 @@ total_time_obj = tic();
 
 for coder_idx = 1:length(param_list_coder)
     logg.beg_node('Configuration %d/%d',coder_idx,length(param_list_coder));
-    
+
     for coder_rep_idx = 1:CODER_REP_COUNT
         logg.beg_node('Repetition %d/%d',coder_rep_idx,CODER_REP_COUNT);
         
+        logg.beg_node('Parameters');
+        p_coder_config = rmfield(param_list_coder(coder_idx),{'dictionary_type' 'dictionary_params'});
+        p_coder_config.coding_method = param_list_coder(coder_idx).dictionary_params{2};
+        p_coder_config.desired_sparsity = param_list_coder(coder_idx).dictionary_params{3}(1);
+        p_coder_config.minimum_non_zero = param_list_coder(coder_idx).dictionary_params{3}(2);
+        p_coder_config.num_threads = param_list_coder(coder_idx).dictionary_params{3}(3);
+        logg.message(utils.params.to_string(p_coder_config));
+        logg.end_node();
+        
         coder_build_times_obj = tic();
+        
+        d_coder_useful_semiflat = cat(4,d_coder_useful(:,:,1,:),...
+                                        d_coder_useful(:,:,2,:),...
+                                        d_coder_useful(:,:,3,:));
+        
+        coders{coder_rep_idx,coder_idx} = ...
+            transforms.image.recoder(d_coder_useful_semiflat,...
+                                     param_list_coder(coder_idx).patches_count,param_list_coder(coder_idx).window_size,param_list_coder(coder_idx).window_size,0.01,param_list_coder(coder_idx).do_patch_zca,...
+                                     param_list_coder(coder_idx).dictionary_type,param_list_coder(coder_idx).dictionary_params,...
+                                     param_list_coder(coder_idx).window_step,...
+                                     param_list_coder(coder_idx).nonlinear_type,param_list_coder(coder_idx).nonlinear_params,...
+                                     param_list_coder(coder_idx).reduce_type,param_list_coder(coder_idx).reduce_spread,...
+                                     logg.new_node('Training coder'));
 
         coder_build_times(coder_rep_idx,coder_idx) = toc(coder_build_times_obj);
 
         coder_code_times_obj = tic();
 
-        d_coder_useful_coded = dataset.flatten_image(d_coder_useful);
-        d_ts_coded = dataset.flatten_image(d_ts);
+        d_coder_useful_coded_r = coders{coder_rep_idx,coder_idx}.code(d_coder_useful(:,:,1,:),logg.new_node('Coding red channel for model selection data'));
+        d_coder_useful_coded_g = coders{coder_rep_idx,coder_idx}.code(d_coder_useful(:,:,2,:),logg.new_node('Coding green channel for model selection data'));
+        d_coder_useful_coded_b = coders{coder_rep_idx,coder_idx}.code(d_coder_useful(:,:,3,:),logg.new_node('Coding blue channel for model selection data'));
+        d_coder_useful_coded = [d_coder_useful_coded_r; d_coder_useful_coded_g; d_coder_useful_coded_b];
+        d_ts_coded_r = coders{coder_rep_idx,coder_idx}.code(d_ts(:,:,1,:),logg.new_node('Coding red channel final testing data'));
+        d_ts_coded_g = coders{coder_rep_idx,coder_idx}.code(d_ts(:,:,2,:),logg.new_node('Coding green channel final testing data'));
+        d_ts_coded_b = coders{coder_rep_idx,coder_idx}.code(d_ts(:,:,3,:),logg.new_node('Coding blue channel final testing data'));
+        d_ts_coded = [d_ts_coded_r; d_ts_coded_g; d_ts_coded_b];
 
         d_classifier_useful_coded = dataset.subsample(d_coder_useful_coded,classifier_useful_idx);
-
-        coders_dicts{coder_rep_idx,coder_idx} = [];
+        
+        coders_dicts{coder_rep_idx,coder_idx} = coders{coder_rep_idx,coder_idx}.t_dictionary.dict;
         sparse_rate(coder_rep_idx,coder_idx) = sum(sum(d_coder_useful_coded ~= 0)) / numel(d_coder_useful_coded);
         
         coder_code_times(coder_rep_idx,coder_idx) = toc(coder_code_times_obj);
@@ -154,9 +194,9 @@ for coder_idx = 1:length(param_list_coder)
         logg.message('Validation dataset(s) size: %d',ceil((1 - TRAIN_VALIDATION_RATIO) * dataset.count(d_classifier_useful_coded)));
         logg.message('Dataset feature count: %d',dataset.geometry(d_classifier_useful_coded));
         logg.message('Dataset sparseness: %.2f',sparse_rate(coder_rep_idx,coder_idx));
-
+        
         logg.beg_node('Testing each classifier configuration');
-
+        
         coder_classifysearch_times_obj = tic();
         
         for classifier_idx = 1:length(param_list_classifier)

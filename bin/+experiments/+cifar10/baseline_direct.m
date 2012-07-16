@@ -4,10 +4,10 @@ MODEL_SELECTION_RATIO = {'full' 0.2};
 TRAIN_VALIDATION_RATIO = 0.5;
 CODER_REP_COUNT = 1;
 CLASSIFIER_REP_COUNT = 5;
-RESULTS_PATH = '../explogs/mnist/baseline_direct/results.mat';
+RESULTS_PATH = '../explogs/cifar10/baseline_direct/results.mat';
 
-TRAIN_WORKER_COUNT = 45;
-CLASSIFY_WORKER_COUNT = 48;
+TRAIN_WORKER_COUNT = 16;
+CLASSIFY_WORKER_COUNT = 16;
 
 %% Build the list of coder configurations to test.
 
@@ -25,7 +25,7 @@ param_list_classifier = utils.params.gen_all(param_desc_classifier);
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Baseline Direct"');
+logg.beg_node('Experiment "CIFAR10 - Baseline Direct"');
 
 %% Make sure we can write to the results file.
 
@@ -47,7 +47,7 @@ end
 
 %% Load the experiment data, separating it into the part used for model selection and the part used for final testing.
 
-[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.mnist(logg.new_node('Loading MNIST dataset'));
+[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.cifar10(logg.new_node('Loading CIFAR10 dataset'));
 
 %% Filter the experiment model selection data, retaining only a subsample from it.
 
@@ -129,7 +129,7 @@ total_time_obj = tic();
 
 for coder_idx = 1:length(param_list_coder)
     logg.beg_node('Configuration %d/%d',coder_idx,length(param_list_coder));
-    
+
     for coder_rep_idx = 1:CODER_REP_COUNT
         logg.beg_node('Repetition %d/%d',coder_rep_idx,CODER_REP_COUNT);
         
@@ -138,12 +138,12 @@ for coder_idx = 1:length(param_list_coder)
         coder_build_times(coder_rep_idx,coder_idx) = toc(coder_build_times_obj);
 
         coder_code_times_obj = tic();
-
+        
         d_coder_useful_coded = dataset.flatten_image(d_coder_useful);
         d_ts_coded = dataset.flatten_image(d_ts);
 
         d_classifier_useful_coded = dataset.subsample(d_coder_useful_coded,classifier_useful_idx);
-
+        
         coders_dicts{coder_rep_idx,coder_idx} = [];
         sparse_rate(coder_rep_idx,coder_idx) = sum(sum(d_coder_useful_coded ~= 0)) / numel(d_coder_useful_coded);
         
@@ -154,9 +154,9 @@ for coder_idx = 1:length(param_list_coder)
         logg.message('Validation dataset(s) size: %d',ceil((1 - TRAIN_VALIDATION_RATIO) * dataset.count(d_classifier_useful_coded)));
         logg.message('Dataset feature count: %d',dataset.geometry(d_classifier_useful_coded));
         logg.message('Dataset sparseness: %.2f',sparse_rate(coder_rep_idx,coder_idx));
-
+        
         logg.beg_node('Testing each classifier configuration');
-
+        
         coder_classifysearch_times_obj = tic();
         
         for classifier_idx = 1:length(param_list_classifier)

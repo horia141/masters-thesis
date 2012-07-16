@@ -117,6 +117,21 @@ classdef common
                 s = sprintf('%s\n',s);
             end
         end
+        
+        function [sched] = schedule(initial,final,T_max)
+            assert(check.scalar(initial));
+            assert(check.number(initial));
+            assert(initial > 0);
+            assert(check.scalar(final));
+            assert(check.number(final));
+            assert(final > 0);
+            assert(check.scalar(T_max));
+            assert(check.natural(T_max));
+            assert(T_max >= 1);
+            assert(final <= initial);
+
+            sched = initial * (final / initial) .^ ((0:(T_max - 1)) / (T_max - 1));
+        end
     end
     
     methods (Static,Access=public)
@@ -274,6 +289,30 @@ classdef common
             assert(check.same(utils.common.matrix_to_string([1 2 3; 4 5 6; 7 8 9]),sprintf('1.000000 2.000000 3.000000 \n4.000000 5.000000 6.000000 \n7.000000 8.000000 9.000000 \n')));
             assert(check.same(utils.common.matrix_to_string([1 0; 0 1],'%d '),sprintf('1 0 \n0 1 \n')));
             assert(check.same(utils.common.matrix_to_string([1.2 3.2; 4.4 1.3],' %.2f '),sprintf(' 1.20  3.20 \n 4.40  1.30 \n')));
+            
+            clearvars -except test_figure;
+            
+            fprintf('  Function "schedule".\n');
+            
+            assert(check.same(utils.common.schedule(1,0.5,2),[1 0.5]));
+            assert(check.same(utils.common.schedule(1,0.1,3),[1 0.3162 0.1],1e-2));
+            
+            if test_figure ~= -1
+                figure(test_figure);
+                subplot(2,2,1);
+                plot(1:10,utils.common.schedule(1,0.1,10));
+                axis([1 10 0 1]);
+                subplot(2,2,2);
+                plot(1:20,utils.common.schedule(2,0.5,20));
+                axis([1 20 0 2]);
+                subplot(2,2,3);
+                plot(1:20,utils.common.schedule(10,1e-3,20));
+                axis([1 20 0 10]);
+                subplot(2,2,4);
+                plot(1:100,utils.common.schedule(1,0.5,100));
+                axis([1 100 0 1]);
+                pause(5);
+            end
             
             clearvars -except test_figure;
         end

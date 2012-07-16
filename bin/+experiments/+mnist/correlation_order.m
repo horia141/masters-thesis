@@ -2,21 +2,33 @@
 
 MODEL_SELECTION_RATIO = {'full' 0.2};
 TRAIN_VALIDATION_RATIO = 0.5;
-CODER_REP_COUNT = 1;
+CODER_REP_COUNT = 10;
 CLASSIFIER_REP_COUNT = 5;
-RESULTS_PATH = '../explogs/mnist/baseline_direct/results.mat';
+RESULTS_PATH = '../explogs/mnist/correlation_order/results_1.mat';
 
 TRAIN_WORKER_COUNT = 45;
 CLASSIFY_WORKER_COUNT = 48;
 
 %% Build the list of coder configurations to test.
 
-param_desc_coder = [];
-param_list_coder = 1;
+param_desc_coder.patches_count = 10;
+param_desc_coder.do_patch_zca = false;
+param_desc_coder.dictionary_type = 'Random:Filters';
+param_desc_coder.dictionary_params = {{2048 'CorrOrder' [0.01 0.01 48]}};
+param_desc_coder.window_size = 9;
+param_desc_coder.window_step = 1;
+param_desc_coder.nonlinear_type = 'Linear';
+param_desc_coder.nonlinear_params = {};
+param_desc_coder.reduce_type = 'Max';
+param_desc_coder.reduce_spread = 4;
+
+param_list_coder = utils.params.gen_all(param_desc_coder,...
+                                        @(p)mod(28 - 1,p.window_step) == 0,...
+                                        @(p)mod((28 - 1) / p.window_step + 1,p.reduce_spread) == 0);
                         
 %% Build the list of classifier configurations to test.
 
-param_desc_classifier.reg = logspace(-2,-1,10);
+param_desc_classifier.reg = logspace(-3,-1,10);
 
 param_list_classifier = utils.params.gen_all(param_desc_classifier);
 
@@ -25,7 +37,7 @@ param_list_classifier = utils.params.gen_all(param_desc_classifier);
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Baseline Direct"');
+logg.beg_node('Experiment "MNIST - Correlation Order"');
 
 %% Make sure we can write to the results file.
 
@@ -133,18 +145,36 @@ for coder_idx = 1:length(param_list_coder)
     for coder_rep_idx = 1:CODER_REP_COUNT
         logg.beg_node('Repetition %d/%d',coder_rep_idx,CODER_REP_COUNT);
         
+        logg.beg_node('Parameters');
+        p_coder_config = rmfield(param_list_coder(coder_idx),{'dictionary_type' 'dictionary_params'});
+        p_coder_config.coding_method = param_list_coder(coder_idx).dictionary_params{2};
+        p_coder_config.desired_sparsity = param_list_coder(coder_idx).dictionary_params{3}(1);
+        p_coder_config.minimum_non_zero = param_list_coder(coder_idx).dictionary_params{3}(2);
+        p_coder_config.num_threads = param_list_coder(coder_idx).dictionary_params{3}(3);
+        logg.message(utils.params.to_string(p_coder_config));
+        logg.end_node();
+        
         coder_build_times_obj = tic();
+        
+        coders{coder_rep_idx,coder_idx} = ...
+            transforms.image.recoder(d_coder_useful,...
+                                     param_list_coder(coder_idx).patches_count,param_list_coder(coder_idx).window_size,param_list_coder(coder_idx).window_size,0.01,param_list_coder(coder_idx).do_patch_zca,...
+                                     param_list_coder(coder_idx).dictionary_type,param_list_coder(coder_idx).dictionary_params,...
+                                     param_list_coder(coder_idx).window_step,...
+                                     param_list_coder(coder_idx).nonlinear_type,param_list_coder(coder_idx).nonlinear_params,...
+                                     param_list_coder(coder_idx).reduce_type,param_list_coder(coder_idx).reduce_spread,...
+                                     logg.new_node('Training coder'));
 
         coder_build_times(coder_rep_idx,coder_idx) = toc(coder_build_times_obj);
 
         coder_code_times_obj = tic();
 
-        d_coder_useful_coded = dataset.flatten_image(d_coder_useful);
-        d_ts_coded = dataset.flatten_image(d_ts);
+        d_coder_useful_coded = coders{coder_rep_idx,coder_idx}.code(d_coder_useful,logg.new_node('Coding model selection data'));
+        d_ts_coded = coders{coder_rep_idx,coder_idx}.code(d_ts,logg.new_node('Coding final testing data'));
 
         d_classifier_useful_coded = dataset.subsample(d_coder_useful_coded,classifier_useful_idx);
-
-        coders_dicts{coder_rep_idx,coder_idx} = [];
+        
+        coders_dicts{coder_rep_idx,coder_idx} = coders{coder_rep_idx,coder_idx}.t_dictionary.dict;
         sparse_rate(coder_rep_idx,coder_idx) = sum(sum(d_coder_useful_coded ~= 0)) / numel(d_coder_useful_coded);
         
         coder_code_times(coder_rep_idx,coder_idx) = toc(coder_code_times_obj);
@@ -154,9 +184,9 @@ for coder_idx = 1:length(param_list_coder)
         logg.message('Validation dataset(s) size: %d',ceil((1 - TRAIN_VALIDATION_RATIO) * dataset.count(d_classifier_useful_coded)));
         logg.message('Dataset feature count: %d',dataset.geometry(d_classifier_useful_coded));
         logg.message('Dataset sparseness: %.2f',sparse_rate(coder_rep_idx,coder_idx));
-
+        
         logg.beg_node('Testing each classifier configuration');
-
+        
         coder_classifysearch_times_obj = tic();
         
         for classifier_idx = 1:length(param_list_classifier)
@@ -176,7 +206,7 @@ for coder_idx = 1:length(param_list_coder)
                 d_validation_coded = dataset.subsample(d_classifier_useful_coded,validation_idx(:,classifier_rep_idx)');
                 d_validation_ci = d_classifier_useful_ci.subsample(validation_idx(:,classifier_rep_idx));
                 
-                cl = classifiers.svm_linear(d_train_coded,d_train_ci,'Primal','L2','L2',param_list_classifier(classifier_idx).reg,'1v1',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on training subsample'));
+                cl = classifiers.svm_linear(d_train_coded,d_train_ci,'Primal','L2','L2',param_list_classifier(classifier_idx).reg,'1va',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on training subsample'));
                 [~,~,classifier_scores(classifier_rep_idx,classifier_idx,coder_rep_idx,coder_idx),~,~] = cl.classify(d_validation_coded,d_validation_ci,logg.new_classifier('Classifying validation subsample'));
                 
                 classifier_times(classifier_rep_idx,classifier_idx,coder_rep_idx,coder_idx) = toc(classifier_times_obj);
@@ -224,7 +254,7 @@ for coder_idx = 1:length(param_list_coder)
         
         coder_classifyfinal_times_obj = tic();
         
-        final_classifier{coder_rep_idx,coder_idx} = classifiers.svm_linear(d_coder_useful_coded,d_coder_useful_ci,'Primal','L2','L2',param_list_classifier(best_classifier_idx(coder_rep_idx,coder_idx)).reg,'1v1',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on full model selection data'));
+        final_classifier{coder_rep_idx,coder_idx} = classifiers.svm_linear(d_coder_useful_coded,d_coder_useful_ci,'Primal','L2','L2',param_list_classifier(best_classifier_idx(coder_rep_idx,coder_idx)).reg,'1va',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on full model selection data'));
         [final_labels{coder_rep_idx,coder_idx},~,coder_scores(coder_rep_idx,coder_idx),~,~] = final_classifier{coder_rep_idx,coder_idx}.classify(d_ts_coded,d_ts_ci,logg.new_classifier('Classifying final testing data'));
         
         coder_classifyfinal_times(coder_rep_idx,coder_idx) = toc(coder_classifyfinal_times_obj);
@@ -249,7 +279,7 @@ for coder_idx = 1:length(param_list_coder)
                                   'classifier_scores','classifier_scores_avg','classifier_scores_std',...
                                   'best_classifier_score_avg','best_classifier_idx',...
                                   'coder_scores','coder_scores_avg','coder_scores_std');
-        
+                              
         clear d_coder_useful_coded;
         clear d_ts_coded;
         clear d_classifier_useful_coded;

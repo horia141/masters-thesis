@@ -1,0 +1,278 @@
+\documentclass[runningheads,a4paper]{llncs}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\setcounter{tocdepth}{3}
+\floatstyle{boxed}
+\restylefloat{figure}
+\algrenewcommand\algorithmicrequire{\textbf{input}}
+\algrenewcommand\algorithmicensure{\textbf{output}}
+
+\newcommand{\hctimes}[2]{{#1}\!\times\!{#2}}
+\newcommand{\hcrange}[2]{\overline{{#1}\colon\!\!{#2}}}
+\newcommand{\hcsignalspace}{\mathbb{R}^d}
+\newcommand{\hcweightspace}{\mathbb{R}^w}
+
+\urldef{\mailall}\path|{coman,barth,martinetz}@inb.uni-luebeck.de|
+\newcommand{\keywords}[1]{\par\addvspace\baselineskip
+\noindent\keywordname\enspace\ignorespaces#1}
+
+\begin{document}
+
+\mainmatter
+
+\title{Sparse Coding Neural Gas Applied to Image Recognition}
+\titlerunning{Sparse Coding Neural Gas Applied to Image Recognition}
+
+\author{Horia Coman \and Erhardt Barth \and Thomas Martinetz}
+\authorrunning{Sparse Coding Neural Gas Applied to Image Recognition}
+
+\institute{Institute for Neuro-and Bioinformatics, University of L\"{u}beck\\
+Ratzeburger Alee 160, 23538 L\"{u}beck, Germany\\
+\mailall\\
+\url{http://www.inb.uni-luebeck.de}}
+
+\toctitle{Sparse Coding Neural Gas Applied to Image Recognition}
+\tocauthor{Sparse Coding Neural Gas Applied to Image Recognition}
+\maketitle
+
+\begin{abstract}
+\keywords{Image Recognition, Neural Gas, Sparse Coding, Sparse Coding Neural Gas, Deep Learning, Matching Pursuit}
+\end{abstract}
+
+\section{Introduction}
+
+The task of image recognition is a complex one. Simply training a classifier on raw image data will yield poor performance, as the problem is too high-dimensional and the training sample too small to make much sense of the data, except in the simplest of cases. Therefore, before actual classification, \emph{features}, that is, certain properties of the image which the designer of the application, armed with domain knowledge, consideres important, are extracted. The classifier is then trained on the sample of features. Feature engineering is a big part of most machine learning applications. However, the approach has two major drawbacks. First, time must be spent accumulating knowledge of the problem domain and building appropriate features. This intrinsically ties the performance of a learning system on the ways in which problem properties are exploited, and makes qualitative judgements about them harder. Second, it is unlikely that the brain, the most successful learning machine known, has application specific ``rules'' stored. Instead, it employs general principles which can adapt to every situation. 
+
+In the last decade, automatic feature construction, also known as unsupervised feature learning \cite{u1,u2,u3}, has become mainstream, surpassing hand-crafted methods on diverse problems. These techinques aim to build features by looking at the statistical properties of a dataset. The problem is essentially an unsupervised one, and the methods are usually performed on a much larger, unlabeled, datasets, from which desired properties can be more easily extracted and which is easier to collect. Also, a full framework for employing the learned features, which includes feature extraction and classification has been developed, inspired by the structure of the V1 area of the brain \cite{u1,u2,u3}. This is based on adapted convolutional neural networks (CNNs).
+
+This paper studies the results of using a particular type of learning method, called the Sparse Coding Neural Gas \cite{u1,u2,u3}, on two tasks of image classification. The algorithm itself is an adaptation of the Neural Gas vector quantization algorithm \cite{neuralgas1,neuralgas2}, and has deep roots in the self-organizing map subfield of artificial intelligence.
+
+The rest of the article is structured as follows: section 2 describes the architecture of a V1 inspired classifier, section 3 describes several ways in which features can be detected (coded) in an image, section 4 describes a way to learn features while section 5 covers experimental results with the methods described.
+
+\section{Structure of the Classifier}
+
+Assume we are working on $\hctimes{m}{n}$ sized images.
+
+We will choose a simple classifier. Most common are the linear ones, for example logistic regression or a linear SVM. The important part is feature extraction. We will taylor that module so that the output is easily separable by the classifier.
+
+What does the feature extractor look like? It consists of several neuronal-network like modules. The image is fed as input to the first module. The ouput of the first module is a set of at most $w_1$ images of a smaller size. This set is fed as input to the second module which produces a set of at most $w_1w_2$ images. The process continues until the output of the last module is used by the classifier. Each module has an associated set of images (or \emph{filters}), denoted by $C^i = \{ C^i_1 , C^i_2 \dots C^i_{w_i} \}$. These are the set of features that must be learned for the particular module. For now, assume these are given. Also, notice that $C^2$ is a set of features for the images produced by the first layer, not for the original images. Similar concerns apply for higher levels.
+
+Each module consists of two parts. In the original formulation of \cite{u1}, the first part would compute a convolution of the input with each filter from the associated set $C^i$. The result will be a set of $w_i$ smaller images, as the convolution only included the valid region. Each pixel from the resulting images was also passed through a non-linearity. This step can be seen as passing the input image through a classical neural-network, with the filters (appropriately repeated) as weights. The second part would combine results from non-overlapping patches of these images. The simplest combination would output the sum of squares from patches in each image separately, producing, as the module output, a full set of even smaller $w_i$ images. More complex methods would combine several images into one, thus making the output contain less than $w_i$ images.
+
+The generalization of this method replaces convolution with a different type of coding. More precisely, each pixel-centered patch from an input image can be coded with regards to $C^1$ according to the methods described in the \textbf{Coding} section. After performing this operation, grouping all the coefficients associated with a certain feature $C^1_j$ into an image, produces a convolution-like result. Certaintly, the operation is non-linear, and does not depend only on the image and filter anymore - it depends on all the filters, but the results can be interpreted in a common framework.
+
+\section{Coding}
+
+Assume our signal space is the vector space $\hcsignalspace$, which consists of $d$-dimensional signals with real components. In the case of $\hctimes{m}{n}$ images, these are linearized such that $d = mn$. Assume, also, that we are given a dictionary, $C$, consisting of a number of $w \geq d$ \emph{code words}, all of which are \emph{normalized}. This is represented as a $\hctimes{d}{w}$ matrix with the code signals as columns. We have:
+
+\begin{equation*}
+C = \left[ C_1 \left|\right. C_2 \left|\right. \dots \left|\right. C_w \right] \text{~and~} \|C_i\| = 1 \text{~for all $i = \hcrange{1}{w}$}
+\end{equation*}
+
+Since $w \geq d$, we say that the dictionary is \emph{overcomplete} - it contains more vectors than are required to form a basis for the vector space. Our wish is to approximate a signal $x \in \hcsignalspace$ in terms of $C$. The most common approach is to use a linear combination of the code words. The \emph{code} is then the signal $a \in \hcweightspace$ and the \emph{approximation} is:
+
+\begin{equation*}
+\hat{x} = \sum_{i=1}^w {a_i C_i} = Ca
+\end{equation*}
+
+The quality of the code is determined by how well the reconstruction $\hat{x}$ matches the original signal. If we measure the approximation error by the squared norm of the difference between the original and reconstructed signals, we obtain a first criterion for obtaining a good code, $a^\mathcal{LS}$:
+
+\begin{equation}
+\label{eqn:InitialProblem}
+a^\mathcal{LS} = \arg \min_a \| x - Ca \|_2^2
+\end{equation}
+
+This is the classical least squares problem, and a solution for it has both analytical and iterative solutions. $\dots$ somehow get to sparse $\dots$.
+
+It has been shown that a sparse code for $x$, that is, one with numerous zero or close to zero components, has many desirable properties. Chief amongst these is the fact that such codes seem to be biologically plausible \cite{emergence,strategyv1}. In order to produce a code with the desired properties, a special regularization term is added to the formulation of (\ref{eqn:InitialProblem}). The sparse code for $x$ is then found as:
+
+\begin{equation}
+\label{eqn:SparseProblem}
+a^\mathcal{SP} = \arg \min_a \| x - Ca \|_2^2 + \lambda S(a)
+\end{equation}
+
+$S$ is a function which induces sparsity while $\lambda$ is a regularization parameter which controls the tradeoff between approximation error and sparseness. $S$ can take a number of forms. Common are the $\mathcal{L}_0$ norm, which counts the number of non-null entries in a code, the $\mathcal{L}_1$ norm, which, in many instances, is a good approximator of the $\mathcal{L}_0$ norm, as investigated in \cite{minimall1}, the functions $\sum_{i=1}^w log(1 + a_i^2)$, $\sum_{i=1}^w \left|a_i\right|$ and $\sum_{i=1}^w -e^{-a_i^2}$, for which \cite{strategyv1} also gives a Bayesian interpretation. Employing the $\mathcal{L}_1$ norm form leads to the \emph{LASSO} method, while using the latter forms leads to the \emph{SparseNet} algorithm. In both cases, a convex optimization problem has to be solved using iterative methods. This is a time-consuming process we wish to avoid.
+
+The signal processing community has come up with a number of methods, called pursuit methods, in order to tackle just this problem. There are several variations, but the most important ones are Matching Pursuit (MP) \cite{matchingpursuit1,matchingpursuit2}, Orthogonal Matching Pursuit \cite{matchingpursuit2,orthopursuit} and Optimized Orthogonal Matching Pursuit (OOMP) \cite{optimizedorthopursuit,pursuitdifferences}, which is also known as Orthogonal Least Squares (OLS) \cite{orthogonalls}. All of these methods have in common a greedy iterative strategy for building a code $a$ of at most $k < d$ non-zero components. At each iteration, a new code word is selected from $C$, according to method specific criteria, and $a$ is updated with regards to it. The greedy strategy only approximates the true solution, as the problem of selecting the subset of $k$ optimal code words from $C$ is NP-complete.
+
+The original and simplest method is Matching Pursuit. It gradually decomposes the signal $x$ by matching it with the code words from the dictionary. More precisely, at each iteration, a residual of $x$, denoted by $\mathcal{R}^tx$ and initially equal to $x$, is updated, substracting from it, it's projection onto the most similar code word $C_\omega$. Similarity is measured by the absolute inner-product. The code $a^\mathcal{MP}$ is completed by setting the component $a_\omega^\mathcal{MP}$ to be equal to the actual similarity (with the sign). This is equivalent to adding the projection onto the most similar code word to the approximation $Ca^\mathcal{MP}$. The algorithm is presented as \textbf{Algorithm \ref{algo:MatchingPursuit}}.
+
+\begin{algorithm}
+\caption{Matching Pursuit}
+\label{algo:MatchingPursuit}
+\begin{algorithmic}
+\Require $C,k,x$
+\Ensure $a^\mathcal{MP},\mathcal{R}^kx,\Lambda^k$
+\State $t \gets 0$
+\State $\mathcal{R}^0x \gets x$
+\State $\Lambda^0 \gets \phi$
+\While {$t < k \text{~or~} \|\mathcal{R}^tx\|_2 \geq \delta$}
+\State $\omega \gets \arg \max_i \left| \langle \mathcal{R}^tx , C_i \rangle \right|$
+\State $\Lambda^{t+1} \gets \Lambda^t \cup \omega$
+\State $a_\omega^\mathcal{MP} \gets a_\omega^\mathcal{MP} + \langle \mathcal{R}^tx , C_i \rangle$
+\State $\mathcal{R}^{t+1}x \gets \mathcal{R}^tx - \langle \mathcal{R}^tx , C_\omega \rangle C_\omega$
+\State $t \gets t + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+At the end of this algorithm we have that:
+
+\begin{eqnarray}
+x & = & \sum_{i=0}^{k-1} \langle \mathcal{R}^ix , C_{\Lambda^i} \rangle C_{\Lambda^i} + \mathcal{R}^kx \\
+\label{eqn:MatchingPursuitResult}
+  & = & Ca^\mathcal{MP} + \mathcal{R}^kx
+\end{eqnarray}
+
+Besides being simple to implement, this method has a number of nice properties \cite{matchingpursuit2}: the norm of the residual $\mathcal{R}^kx$ tends to $0$ as $k \rightarrow +\infty$ (therefore, in the limit, equality (\ref{eqn:MatchingPursuitResult}) becomes $x = Ca^\mathcal{MP}$), for every $t$ we have $\|\mathcal{R}^tx\|^2 \geq \|\mathcal{R}^{t+1}x\|^2$ and the decay in residual norm is exponential. There is also an energy conservation theorem, which states that $\|x\|^2 = \sum_{i=0}^{k-1} \left| \langle \mathcal{R}^ix , C_{\Lambda^i} \rangle \right|^2 + \| \mathcal{R}^kx \|^2$.
+
+The major flaw of this method is that the approximation $Ca^\mathcal{MP}$ is not optimal with respect to the selection of code words $\Lambda^k$. Orthogonal Matching Pursuit remedies this by computing $Ca^\mathcal{MP}$ as the closest point in $span(C_{\Lambda^k})$ to $x$, that is the orthogonal projection of $x$ onto that space. Naturally, this is the solution to the least squares problem $\arg \min_a \| x - Ca \|_2^2$. This time, as $k < d$, the problem can be solved through normal means. The algorithm is implemented as \textbf{Algorithm \ref{algo:OrthogonalMatchingPursuit}}.
+
+\begin{algorithm}
+\caption{Orthogonal Matching Pursuit}
+\label{algo:OrthogonalMatchingPursuit}
+\begin{algorithmic}
+\Require $C,k,x$
+\Ensure $a^\mathcal{OMP},\mathcal{R}^kx,\Lambda^k$
+\State $t \gets 0$
+\State $\mathcal{R}^0x \gets x$
+\State $\Lambda^0 \gets \phi$
+\While {$t < k \text{~or~} \|\mathcal{R}^tx\|_2 \geq \delta$}
+\State $\omega \gets \arg \max_{i \not\in \Lambda^t} \left| \langle \mathcal{R}^tx , C_i \rangle \right|$
+\State $\Lambda^{t+1} \gets \Lambda^t \cup \omega$
+\State $a_\omega^\mathcal{OMP} \gets \arg \min_a \| x - C_{\Lambda^{t+1}}a \|_2^2$
+\State $\mathcal{R}^{t+1}x \gets \mathcal{R}^tx - \langle \mathcal{R}^tx , C_\omega \rangle C_\omega$
+\State $t \gets t + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+At the end of this algorithm we also have that:
+
+\begin{eqnarray}
+x & = & \sum_{i=0}^{k-1} \langle \mathcal{R}^ix , C_{\Lambda^i} \rangle C_{\Lambda^i} + \mathcal{R}^kx \\
+\label{eqn:OrthogonalMatchingPursuitResult}
+  & = & Ca^\mathcal{OMP} + \mathcal{R}^kx
+\end{eqnarray}
+
+We also have that the residual at time $k$ is orthogonal to the approximation:
+
+\begin{equation*}
+\langle \mathcal{R}^kx , Ca^\mathcal{OMP} \rangle = 0
+\end{equation*}
+
+This formulation gives stronger convergence properties than in the case of MP. In this case, convergence to the optimal solution is guaranteed in a finite number of steps, if we allows $k = w$ \cite{matchingpursuit2,pursuitdifferences}. We also have a energy conservation law, but this time it is a little bit more complex.
+
+The biggest problem of OMP is it's greater computational time. The algorithm presented here is merely the conceptual view. Actual implementations are based on a modified QR factorization, which computes the columns of the $Q$ and $R$ matrices as the method progresses. More technical details can be found in \cite{matchingpursuit2} for a gradual build-up of the optimized solution and in \cite{pursuitdifferences} for the QR approach. The extra floating-point computations also add to the numerical instability problems of the algorithm.
+
+One step further is a reevaluation of the rule which selects the new code word to select. Currently, both MP and OMP select a basis which is most ``similar'' with the residue, as measured by the inner-product between the two signals. OOMP/OLS change this. More specifically, the new vector which is added should be the one which allows the new $a_\omega^\mathcal{OOMP}$ to best match the original signal. The new algorithm is presented in \textbf{Algorithm \ref{algo:OptimizedOrthogonalMatchingPursuit}}.
+
+\begin{algorithm}
+\caption{Optimized Orthogonal Matching Pursuit}
+\label{algo:OptimizedOrthogonalMatchingPursuit}
+\begin{algorithmic}
+\Require $C,k,x$
+\Ensure $a^\mathcal{OOMP},\mathcal{R}^kx,\Lambda^k$
+\State $t \gets 0$
+\State $\mathcal{R}^0x \gets x$
+\State $\Lambda^0 \gets \phi$
+\While {$t < k \text{~or~} \|\mathcal{R}^tx\|_2 \geq \delta$}
+\State $\omega \gets \arg \max_{i \not\in \Lambda^t} \min_a \| x - C_{\Lambda^{t} \cup i}a \|_2^2$
+\State $\Lambda^{t+1} \gets \Lambda^t \cup \omega$
+\State $a_\omega^\mathcal{OOMP} \gets \arg \min_a \| x - C_{\Lambda^{t+1}}a \|_2^2$
+\State $\mathcal{R}^{t+1}x \gets \mathcal{R}^tx - \langle \mathcal{R}^tx , C_\omega \rangle C_\omega$
+\State $t \gets t + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+The same results hold as for OMP. The difference between the two methods is how the new code word is selected. After this, both find an optimal representation with respect to the sub-dictionary provided.
+
+\section{Learning a Dictionary}
+
+Until now we have assumed a dictionary, $C$, was given, and our task was only to find an appropriate code $a$ in terms of it. Indeed, depending on the application, $C$ can be a well-known family of signals (DCT bases, Gabor Wavelet bases \cite{LaBaMa08c} etc), randomly selected bases \cite{importanceencoding,randomweights} or \emph{learned} bases. It is the latter case we are interested in here. There are several coding method agnostic procedures for determining $C$. A gradient descent or stochastic gradient descent in weight space, trying to minimize the average approximation error for a signal is the method proposed in \cite{emergence,strategyv1}. The Method of Optimal Directions \cite{firstmod} and K-SVD \cite{firstksvd} are alternatives to the simple descent.
+
+As mentioned before, we used the Sparse Coding Neural Gas (SCNG). The algorithm is simple to describe: until a convergence criterion is met, select an observation, $x$, randomly from the training sample, obtain a code $a$ for it and adapt each dictionary $C_i$ proportional to the rank of the magnitude of $a_i$. The updating rule is very similar to the well known Oja's Rule \cite{ojarule}, and is identical, when the coding method is simple inner-products between the dictionary elements and the observation $x$. An outline of this algorithm is given as \textbf{Algorithm \ref{algo:SparseCodingNeuralGas}}. The algorithm has the coding method abstracted away as the function \emph{coding\_method} and requires a sample $X$ of signals from which it will learn.
+
+\begin{algorithm}
+\caption{Sparse Coding Neural Gas}
+\label{algo:SparseCodingNeuralGas}
+\begin{algorithmic}
+\Require $\text{coding\_method},w,X,T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}}$
+\Ensure $C$
+\State $t \gets 0$
+\State $C \gets \text{randomly initialize $w$ normalized code words}$
+\While {$t < T_{max}$}
+\State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$
+\State $\mu^t \gets \mu^0 (\mu^{T_max} / \mu^0)^{t / T_{max}}$
+\State $x \gets \text{an observation from $X$}$
+\State $a \gets \text{coding\_method}(C,a)$
+\For {$i = \hcrange{1}{w}$}
+\State $C_i \gets C_i + \mu^t e^{-rank(a_i) / \lambda^t} a_i (x - a_i C_i)$
+\EndFor
+\State $t \gets t + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+When using one of the pursuit methods, an extension of this algorithm can be employed. More precisely, for any iterative method which produces at a certain iteration, $k$, an ordering of a subset $\Lambda^k$ of the passed coding dictionary $C$ with respect to $x$, and a series of magnitudes on which the ordering is based $a_{\Lambda^k}$, the Generalized Sparse Coding Neural Gase, described in \textbf{Algorithm \ref{algo:GeneralizedSparseCodingNeuralGas}}, updates only those words in $C$, indicated by the coding method.
+
+\begin{algorithm}
+\caption{Generalized Sparse Coding Neural Gas}
+\label{algo:GeneralizedSparseCodingNeuralGas}
+\begin{algorithmic}
+\Require $\text{coding\_method\_spc},w,X,T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}}$
+\Ensure $C$
+\State $t \gets 0$
+\State $C \gets \text{randomly initialize $w$ normalized code words}$
+\While {$t < T_{max}$}
+\State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$
+\State $\mu^t \gets \mu^0 (\mu^{T_max} / \mu^0)^{t / T_{max}}$
+\State $x \gets \text{an observation from $X$}$
+\State $S^0 \gets \text{initialize coding method specific state}$
+\For {$k = \hcrange{0}{k}$}
+\State $[S^{k+1}~\Lambda^k~a_{\Lambda^k}] \gets \text{coding\_method\_spc}(S^k,C,x)$
+\For {$i = \Lambda^k$}
+\State $C_i \gets C_i + \mu^t e^{-rank(a_i) / \lambda^t} a_i (x - a_i C_i)$
+\EndFor
+\EndFor
+\State $t \gets t + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\section{Experiments}
+
+To test the coding method, two datasets were employed, the MNIST \cite{lecun-01a} and CIFAR10 \cite{tiny-images} datasets. The first is a well-known dataset for handwritten digit recognition. It consists of $\hctimes{28}{28}$ grayscale images of the $10$ digits, split into a $60000$ training dataset and a $10000$ testing dataset. Current state-of-the-art results can be found at \cite{mnist-results}. The second is a dataset containing $\hctimes{32}{32}$ color images of $10$ categories of objects, split into a $50000$ training dataset and a $10000$ testing dataset. Current state-of-the-art results can be found at \cite{cifar10-results}. A selection from these two datasets can be seen in \textbf{Figure \ref{fig:MNISTAndCIFAR10Images}}.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.45\textwidth]{Figure1.png}
+\includegraphics[width=0.45\textwidth]{Figure2.png}
+\caption{MNIST and CIFAR10 images}
+\label{fig:MNISTAndCIFAR10Images}
+\end{figure}
+
+Talk about structure of the classifier used for MNIST and CIFAR10 datasets and describe training methods for each one.
+
+Talk about results.
+
+Insert a table here with results and comparision with state-of-the-art.
+
+\section{Conclusion}
+
+This paper has shown a way to apply the Sparse Coding Neural Gas of \cite{LaBaMa09} to the task of image recognition, more specifically the MNIST and CIFAR10 datasets. The results look promising.
+
+\bibliographystyle{ieeetr}
+\bibliography{Bibliography}
+
+\end{document}

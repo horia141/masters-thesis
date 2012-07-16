@@ -136,7 +136,16 @@ classdef recoder < transform
                 patches_4 = patches_3;
             end
 
-            t_dictionary_t = dictionary_ctor_fn_t(patches_4,dictionary_params{:},logger.new_transform('Building patches dictionary'));
+            t_dictionary_first_t = dictionary_ctor_fn_t(patches_4,dictionary_params{:},logger.new_transform('Building patches dictionary'));
+            
+            if do_patch_zca
+                back_projected_dict_t1 = t_zca_t.saved_transform_decode * t_dictionary_first_t.dict_transp;
+                back_projected_dict = bsxfun(@plus,back_projected_dict_t1,t_zca_t.sample_mean)';
+                % This might be problematic for funkier "dictionary_params".
+                t_dictionary_t = transforms.record.dictionary(patches_4,back_projected_dict,dictionary_params{2},dictionary_params{3},logger.new_transform('Building ZCA backprojected dictionary'));
+            else
+                t_dictionary_t = t_dictionary_first_t;
+            end
             
             input_geometry = [d,dr,dc,1];
             output_geometry = features_mult_factor_t * pooled_patch_row_count_t * pooled_patch_col_count_t * t_dictionary_t.word_count;

@@ -39,6 +39,7 @@ classdef grad_st < transforms.record.dictionary
             dict = transforms.record.dictionary.normalize_dict(utils.common.rand_range(-1,1,word_count,d));
             dict_transp = dict';
             saved_mse_t = zeros(1,max_iter_count);
+            learning_rate_schedule = utils.common.schedule(initial_learning_rate,final_learning_rate,max_iter_count);
             
             logger.beg_node('Learning sparse dictionary');
 
@@ -47,14 +48,13 @@ classdef grad_st < transforms.record.dictionary
                 
                 selected = randi(N,1,selection_size);
                 iter_sample = dataset.subsample(train_sample_plain,selected);
-                
+
                 coeffs = coding_fn_t(dict,dict_transp,iter_sample,coding_params_cell_t{:});
-                
+
                 diff = iter_sample - dict_transp * coeffs;
                 delta_dict = coeffs * diff';
-                learning_rate = initial_learning_rate * (final_learning_rate / initial_learning_rate) ^ (iter / max_iter_count);
-                
-                dict = dict + learning_rate / selection_size * delta_dict;
+
+                dict = dict + (learning_rate_schedule(iter) / selection_size) * delta_dict;
                 dict = transforms.record.dictionary.normalize_dict(dict);
                 dict_transp = dict';
                 

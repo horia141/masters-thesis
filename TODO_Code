@@ -1,3 +1,12 @@
++ [62] B:10.07.2012 E:??.??.????
+  Task: For the "CorrOrder" coding method, we usually employ a very low
+    sparsity value (to the tune of 0.01~0.2 depending on the number of coding
+    words). It's wasteful to sort all similarities for an observation, and
+    then use only the top of them. Using a heap we can determine the top k and
+    then we can sort just these (with heap sort). The time will go down from
+    O(wlogw) per observation to O(wlogk+klogk) per observation, where k is
+    "sparsity_control * w". For low sparsity values, the time is essentially linear.
+
 + [61] B:02.07.2012 E:09.07.2012
   Task: Add all pre-processing steps for dictionary learning but none of them
     for coding (except maybe DC offset). This seems to be a more natural approach.
