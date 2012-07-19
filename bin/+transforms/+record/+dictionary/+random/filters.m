@@ -1,11 +1,13 @@
 classdef filters < transforms.record.dictionary
     methods (Access=public)
-        function [obj] = filters(train_sample_plain,word_count,coding_method,coding_params,logger)
+        function [obj] = filters(train_sample_plain,word_count,coding_method,coding_params,do_polarity_split,logger)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
             assert(word_count > 0);
             assert(transforms.record.dictionary.coding_setup_ok(word_count,coding_method,coding_params));
+            assert(check.scalar(do_polarity_split));
+            assert(check.logical(do_polarity_split));
             assert(check.scalar(logger));
             assert(check.logging_logger(logger));
             assert(logger.active);
@@ -13,7 +15,7 @@ classdef filters < transforms.record.dictionary
             d = dataset.geometry(train_sample_plain);
             dict = utils.common.rand_range(-1,1,word_count,d);
             
-            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,logger);
+            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,do_polarity_split,logger);
         end
     end
     
@@ -27,7 +29,7 @@ classdef filters < transforms.record.dictionary
             logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary.random.filters(s,3,'Corr',[],logg);
+            t = transforms.record.dictionary.random.filters(s,3,'Corr',[],false,logg);
             
             assert(check.matrix(t.dict));
             assert(check.same(size(t.dict),[3 2]));

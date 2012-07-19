@@ -8,7 +8,7 @@ classdef grad_st < transforms.record.dictionary
     end
 
     methods (Access=public)
-        function [obj] = grad_st(train_sample_plain,word_count,coding_method,coding_params,selection_size,initial_learning_rate,final_learning_rate,max_iter_count,logger)
+        function [obj] = grad_st(train_sample_plain,word_count,coding_method,coding_params,selection_size,initial_learning_rate,final_learning_rate,max_iter_count,do_polarity_split,logger)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
@@ -28,6 +28,8 @@ classdef grad_st < transforms.record.dictionary
             assert(check.scalar(max_iter_count));
             assert(check.natural(max_iter_count));
             assert(max_iter_count >= 1);
+            assert(check.scalar(do_polarity_split));
+            assert(check.logical(do_polarity_split));
             assert(check.scalar(logger));
             assert(check.logging_logger(logger));
             assert(logger.active);
@@ -74,7 +76,7 @@ classdef grad_st < transforms.record.dictionary
             
             logger.end_node();
             
-            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,logger);
+            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,do_polarity_split,logger);
             obj.saved_mse = saved_mse_t;
             obj.selection_size = selection_size;
             obj.initial_learning_rate = initial_learning_rate;
@@ -93,7 +95,7 @@ classdef grad_st < transforms.record.dictionary
             logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
 
-            t = transforms.record.dictionary.learn.grad_st(s,3,'MP',1,1,1,1e-2,100,logg);
+            t = transforms.record.dictionary.learn.grad_st(s,3,'MP',1,1,1,1e-2,100,false,logg);
             
             assert(check.vector(t.saved_mse));
             assert(length(t.saved_mse) == 100);

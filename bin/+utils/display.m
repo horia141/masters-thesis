@@ -71,12 +71,14 @@ classdef display
             utils.display.as_tiles(utils.common.remap_images_to_unit(im_dict),tiles_format_t{:});
         end
         
-        function [] = coded_output(sample_plain,sample_coded,dict_count,pooled_patch_row_count,pooled_patch_col_count,new_frame_wait_time,tiles_format)
+        function [] = coded_output(sample_plain,sample_coded,word_count,do_polarity_split,pooled_patch_row_count,pooled_patch_col_count,new_frame_wait_time,tiles_format)
             assert(check.dataset_image(sample_plain));
             assert(check.dataset_record(sample_coded));
-            assert(check.scalar(dict_count));
-            assert(check.natural(dict_count));
-            assert(dict_count >= 1);
+            assert(check.scalar(word_count));
+            assert(check.natural(word_count));
+            assert(word_count >= 1);
+            assert(check.scalar(do_polarity_split));
+            assert(check.logical(do_polarity_split));
             assert(check.scalar(pooled_patch_row_count));
             assert(check.natural(pooled_patch_row_count));
             assert(pooled_patch_row_count >= 1);
@@ -89,29 +91,52 @@ classdef display
             assert(~exist('tiles_format','var') || (check.natural(tiles_format)));
             assert(~exist('tiles_format','var') || (check.checkv(tiles_format >= 1)));
             assert(dataset.count(sample_plain) == dataset.count(sample_coded));
-            assert(dataset.geometry(sample_coded) == dict_count * pooled_patch_row_count * pooled_patch_col_count);
-            assert(~exist('tiles_format','var') || (~(length(tiles_format) == 2) || prod(tiles_format) >= dict_count));
+            assert((do_polarity_split && (dataset.geometry(sample_coded) == 2 * word_count * pooled_patch_row_count * pooled_patch_col_count)) || ...
+	    	       (~do_polarity_split && (dataset.geometry(sample_coded) == 1 * word_count * pooled_patch_row_count * pooled_patch_col_count)))
+            assert(~exist('tiles_format','var') || (~(length(tiles_format) == 2) || prod(tiles_format) >= word_count));
             
             if exist('tiles_format','var')
                 tiles_format_t = {tiles_format};
             else
                 tiles_format_t = {};
             end
+
+            if do_polarity_split
+                reshape_mult_factor = 2;
+            else
+                reshape_mult_factor = 1;
+            end
             
             N = dataset.count(sample_plain);
-            sample_reshaped_t1 = reshape(sample_coded,pooled_patch_row_count,pooled_patch_col_count,1,dict_count*N);
+            sample_reshaped_t1 = reshape(sample_coded,pooled_patch_row_count,pooled_patch_col_count,1,reshape_mult_factor*word_count*N);
             sample_reshaped_t2 = utils.common.remap_images_to_unit(sample_reshaped_t1);
-            sample_reshaped = reshape(sample_reshaped_t2,pooled_patch_row_count,pooled_patch_col_count,1,dict_count,N);
+            sample_reshaped = reshape(sample_reshaped_t2,pooled_patch_row_count,pooled_patch_col_count,reshape_mult_factor,word_count,N);
             
-            for ii = 1:N
-                subplot(2,1,1);
-                imshow(sample_plain(:,:,:,ii));
-                subplot(2,1,2);
-                utils.display.as_tiles(sample_reshaped(:,:,:,:,ii),tiles_format_t{:});
-                if new_frame_wait_time == -1
-                    pause;
-                else
-                    pause(new_frame_wait_time);
+            if do_polarity_split
+                for ii = 1:N
+                    subplot(3,1,1);
+                    imshow(sample_plain(:,:,:,ii));
+                    subplot(3,1,2);
+                    utils.display.as_tiles(sample_reshaped(:,:,1,:,ii),tiles_format_t{:});
+                    subplot(3,1,3);
+                    utils.display.as_tiles(sample_reshaped(:,:,2,:,ii),tiles_format_t{:});
+                    if new_frame_wait_time == -1
+                        pause;
+                    else
+                        pause(new_frame_wait_time);
+                    end
+                end
+            else
+                for ii = 1:N
+                    subplot(2,1,1);
+                    imshow(sample_plain(:,:,:,ii));
+                    subplot(2,1,2);
+                    utils.display.as_tiles(sample_reshaped(:,:,:,:,ii),tiles_format_t{:});
+                    if new_frame_wait_time == -1
+                        pause;
+                    else
+                        pause(new_frame_wait_time);
+                    end
                 end
             end
         end
