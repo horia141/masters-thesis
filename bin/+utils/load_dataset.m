@@ -59,6 +59,15 @@ classdef load_dataset
             
             [s,s_ci] = utils.load_dataset.g_image_from_dirs('../data/orl_faces',[-1 -1],logger);
         end
+        
+        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = smallnorb(logger)
+            assert(check.scalar(logger));
+            assert(check.logging_logger(logger));
+            assert(logger.active);
+            
+            [s_tr,s_tr_ci] = utils.load_dataset.g_norb('../data/smallnorb/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat','../data/smallnorb/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat',logger);
+            [s_ts,s_ts_ci] = utils.load_dataset.g_norb('../data/smallnorb/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat','../data/smallnorb/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat',logger);
+        end
 
         function [s] = scenes(logger)
             assert(check.scalar(logger));
@@ -191,9 +200,22 @@ classdef load_dataset
                              sprintf('Labels file "%s" not in MNIST format!',meta_path)));
                 end
                 
-                logger.beg_node('Reading images and labels count (should be equal)');
+                logger.beg_node('Reading images geometry');
                 
                 data_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
+                layer_count = 1;
+                row_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
+                col_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
+                
+                logger.message('Row count: %d',row_count);
+                logger.message('Col count: %d',col_count);
+                logger.message('Layer count: %d',layer_count);
+                logger.message('Observation count: %d',data_count);
+                
+                logger.end_node();
+                
+                logger.beg_node('Reading labels geometry');
+                
                 meta_count = utils.load_dataset.high2low(fread(meta_fid,4,'uint8=>uint32'));
                 
                 if data_count ~= meta_count
@@ -201,37 +223,15 @@ classdef load_dataset
                              sprintf('Different number of labels in "%s" for images in "%s"!',meta_path,data_path)));
                 end
                 
-                logger.message('Images count: %d',data_count);
-                logger.message('Labels count: %d',meta_count);
-                
                 logger.end_node();
                 
-                logger.beg_node('Reading images row and col count');
+                logger.message('Reading images.');
                 
-                row_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
-                col_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
-                
-                logger.message('Row count: %d',row_count);
-                logger.message('Col count: %d',col_count);
-                
-                logger.end_node();
-                
-                log_batch_size = ceil(data_count / 10);
-                images = zeros(row_count,col_count,1,data_count);
-                
-                logger.beg_node('Starting reading of images');
-                
-                for ii = 1:data_count
-                    if mod(ii - 1,log_batch_size) == 0
-                        logger.message('Images %d to %d',ii,min(ii + log_batch_size - 1,data_count));
-                    end
-                    
-                    images(:,:,1,ii) = fread(data_fid,[row_count col_count],'uint8=>double')' ./ 255;
-                end
-                
-                logger.end_node();
-                
-                logger.message('Starting reading of labels');
+                images_t1 = fread(data_fid,row_count * col_count * 1 * data_count,'uint8=>double') ./ 255;
+                images_t2 = reshape(images_t1,row_count,col_count,1,data_count);
+                images = permute(images_t2,[2 1 3 4]);
+
+                logger.message('Reading labels.');
                 
                 labels = fread(meta_fid,[data_count 1],'uint8');
                 
@@ -290,10 +290,129 @@ classdef load_dataset
                     
                     s(:,:,:,idx1:idx2) = reshape(local_data,32,32,3,idx2 - idx1 + 1);
                 end
+                
+                s = permute(s,[2 1 3 4]);
             catch exp
                 throw(MException('master:NoLoad',...
                          sprintf('Could not load images: %s',exp.message)));
             end
+        end
+        
+        function [s,s_ci] = g_norb(data_path,meta_path,logger)
+            assert(check.scalar(data_path));
+            assert(check.string(data_path));
+            assert(check.scalar(meta_path));
+            assert(check.string(meta_path));
+            assert(check.scalar(logger));
+            assert(check.logging_logger(logger));
+            assert(logger.active);
+            
+            logger.message('Opening images files "%s".',data_path);
+            
+            data_fid = fopen(data_path,'rb');
+            
+            if data_fid == -1
+                throw(MException('master:NoLoad',...
+                         sprintf('Could not load images in "%s": %s!',data_path,data_msg)))
+            end
+            
+            logger.message('Opening labels file "%s".',meta_path);
+            
+            [meta_fid,meta_msg] = fopen(meta_path,'rb');
+            
+            if meta_fid == -1
+                fclose(data_fid);
+                throw(MException('master:NoLoad',...
+                         sprintf('Could not load labels in "%s": %s!',meta_path,meta_msg)))
+            end
+            
+            try
+                logger.message('Reading images file magic number.');
+                
+                data_magic = fread(data_fid,1,'uint32');
+                
+                if ~check.same(data_magic,507333717)
+                    throw(MException('master:NoLoad',...
+                             sprintf('Images file "%s" not in NORB format!',data_path)));
+                end
+                
+                logger.message('Reading labels file magic number.');
+                
+                meta_magic = fread(meta_fid,1,'uint32');
+                
+                if ~check.same(meta_magic,507333716)
+                    throw(MException('master:NoLoad',...
+                             sprintf('Labels file "%s" not in NORB format!',meta_path)));
+                end
+                
+                logger.beg_node('Reading images geometry');
+                
+                data_dims_count = fread(data_fid,1,'uint32');
+                
+                if data_dims_count ~= 4
+                    throw(MException('master:NoLoad',...
+                             sprintf('Image file "%s" not in NORB format!',data_path)));
+                end
+                
+                data_count = fread(data_fid,1,'uint32=>uint64');
+                layer_count = fread(data_fid,1,'uint32=>uint64');
+                col_count = fread(data_fid,1,'uint32=>uint64');
+                row_count = fread(data_fid,1,'uint32=>uint64');
+                
+                logger.message('Row count: %d',row_count);
+                logger.message('Col count: %d',col_count);
+                logger.message('Layer count: %d',layer_count);
+                logger.message('Observation count: %d',data_count);
+                
+                logger.end_node();
+                
+                logger.beg_node('Reading labels geometry');
+                
+                meta_dims_count = fread(meta_fid,1,'uint32');
+                
+                if meta_dims_count ~= 1
+                    throw(MException('master:NoLoad',...
+                             sprintf('Labels file "%s" not in NORB format!',meta_path)));
+                end
+                
+                meta_count = fread(meta_fid,1,'uint32=>uint64');
+                ignore1 = fread(meta_fid,1,'uint32');
+                ignore2 = fread(meta_fid,1,'uint32');
+                
+                if data_count ~= meta_count
+                    throw(MException('master:NoLoad',...
+                             sprintf('Different number of labels in "%s" for images in "%s"!',meta_path,data_path)));
+                end
+                
+                if ignore1 ~= 1 || ignore2 ~= 1
+                    throw(MException('master:NoLoad',...
+                             sprintf('Labels file "%s" not in NORB format!',meta_path)));
+                end
+
+                logger.end_node();
+                
+                logger.message('Reading images.');
+                
+                images_t1 = fread(data_fid,row_count*col_count*layer_count*data_count,'uint8=>double') ./ 255;
+                images_t2 = reshape(images_t1,row_count,col_count,layer_count,data_count);
+                images = permute(images_t2,[2 1 3 4]);
+                
+                logger.message('Reading labels.');
+                
+                labels = fread(meta_fid,meta_count,'uint32');
+                
+                fclose(meta_fid);
+                fclose(data_fid);                
+            catch exp
+                fclose(data_fid);
+                fclose(meta_fid);
+                throw(MException('master:NoLoad',exp.message));
+            end
+            
+            logger.message('Building dataset and labels information.');
+            
+            s = images;
+            s_ci = classifier_info({'animals' 'humans' 'airplanes' 'trucks' 'cars'},labels + 1);
         end
         
         function [s] = g_image_from_dir(path,force_size,logger)
@@ -528,6 +647,11 @@ classdef load_dataset
             
             clearvars -except test_figure;
             
+            fprintf('  Function "smallnorb".\n');
+            
+            % do all tests here as well. For the moment, this is too big
+            % for testing on smaller machines.
+            
             fprintf('  Function "orl_faces".\n');
             
             hnd = logging.handlers.testing(logging.level.Experiment);
@@ -710,7 +834,7 @@ classdef load_dataset
             % test for data file not with required fields
             % test for data stores in data file not good (various size
             % mismatches, for example);
-             % test for meta file not with required fields
+            % test for meta file not with required fields
             % test for data stored in meta file not good.
             % test for incompatibilities between data file and meta file.
             % test for incompatibilities between two data files.
@@ -719,6 +843,15 @@ classdef load_dataset
             hnd.close();
             
             clearvars -except test_figure;
+            
+            fprintf('  Function "g_norb".\n');
+            
+            % do all tests here as well. For the moment, this is too big
+            % for testing on smaller machines.
+            
+            fprintf('  Function "g_image_from_dir".\n');
+            
+            fprintf('  Function "g_image_from_dirs".\n');
         end
     end
 end

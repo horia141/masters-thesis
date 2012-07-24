@@ -34,7 +34,7 @@ classdef testing
             hnd = logging.handlers.zero(logging.level.Experiment);
             logg = logging.logger({hnd});
             
-            images = utils.load_dataset.g_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte',logg);
+            images = utils.load_dataset.mnist(logg);
             
             t_patch = transforms.image.patch_extract(images,patches_count,patch_row_count,patch_col_count,0.01,logg);
             
@@ -51,6 +51,66 @@ classdef testing
             else
                 t_zca = {};
                 patches = patches_2;
+            end
+            
+            logg.close();
+            hnd.close();
+        end
+        
+        function [patches_r,patches_g,patches_b,t_patch,t_dc_offset,t_zca] = cifar10_patches_for_dict_learning(patches_count,patch_row_count,patch_col_count,do_patch_zca)
+            assert(check.scalar(patches_count));
+            assert(check.natural(patches_count));
+            assert(patches_count >= 1);
+            assert(check.scalar(patch_row_count));
+            assert(check.natural(patch_row_count));
+            assert(patch_row_count >= 1);
+            assert(patch_row_count <= 28);
+            assert(check.scalar(patch_col_count));
+            assert(check.natural(patch_col_count));
+            assert(patch_col_count >= 1);
+            assert(patch_col_count <= 28);
+            assert(check.scalar(do_patch_zca));
+            assert(check.logical(do_patch_zca));
+
+            hnd = logging.handlers.zero(logging.level.Experiment);
+            logg = logging.logger({hnd});
+            
+            images = utils.load_dataset.cifar10(logg);
+            
+            t_patch_r = transforms.image.patch_extract(images(:,:,1,:),patches_count,patch_row_count,patch_col_count,0.01,logg);
+            t_patch_g = transforms.image.patch_extract(images(:,:,2,:),patches_count,patch_row_count,patch_col_count,0.01,logg);
+            t_patch_b = transforms.image.patch_extract(images(:,:,3,:),patches_count,patch_row_count,patch_col_count,0.01,logg);
+            t_patch = {t_patch_r t_patch_g t_patch_b};
+            
+            patches_1_r = t_patch_r.code(images(:,:,1,:),logg);
+            patches_1_g = t_patch_g.code(images(:,:,2,:),logg);
+            patches_1_b = t_patch_b.code(images(:,:,3,:),logg);
+            patches_1f_r = dataset.flatten_image(patches_1_r);
+            patches_1f_g = dataset.flatten_image(patches_1_g);
+            patches_1f_b = dataset.flatten_image(patches_1_b);
+            
+            t_dc_offset_r = transforms.record.dc_offset(patches_1f_r,logg);
+            t_dc_offset_g = transforms.record.dc_offset(patches_1f_g,logg);
+            t_dc_offset_b = transforms.record.dc_offset(patches_1f_b,logg);
+            t_dc_offset = {t_dc_offset_r t_dc_offset_g t_dc_offset_b};
+            
+            patches_2_r = t_dc_offset_r.code(patches_1f_r,logg);
+            patches_2_g = t_dc_offset_g.code(patches_1f_g,logg);
+            patches_2_b = t_dc_offset_b.code(patches_1f_b,logg);
+            
+            if do_patch_zca
+                t_zca_r = transforms.record.zca(patches_2_r,logg);
+                t_zca_g = transforms.record.zca(patches_2_g,logg);
+                t_zca_b = transforms.record.zca(patches_2_b,logg);
+                t_zca = {t_zca_r t_zca_g t_zca_b};
+                patches_r = t_zca_r.code(patches_2_r,logg);
+                patches_g = t_zca_g.code(patches_2_g,logg);
+                patches_b = t_zca_b.code(patches_2_b,logg);
+            else
+                t_zca = {};
+                patches_r = patches_2_r;
+                patches_g = patches_2_g;
+                patches_b = patches_2_b;
             end
             
             logg.close();

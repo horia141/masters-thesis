@@ -43,8 +43,6 @@ classdef dataset
             
             o = check.same(geom_1,geom_2);
         end
-
-        
         
         function [new_sample] = rebuild_image(sample,layers_count,row_count,col_count)
             assert(check.dataset_record(sample));
