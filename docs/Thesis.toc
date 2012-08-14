@@ -1,0 +1,13 @@
+\contentsline {chapter}{List of Figures}{iii}{chapter*.2}
+\contentsline {chapter}{List of Tables}{iv}{chapter*.3}
+\contentsline {unnumberedsection}{List of Abbreviations}{v}{chapter*.4}
+\contentsline {unnumberedsection}{Introduction}{1}{chapter*.5}
+\contentsline {chapter}{\numberline {1}General Architecture of a Classifier}{2}{chapter.1}
+\contentsline {chapter}{\numberline {2}Coding and Different Coding Methods}{3}{chapter.2}
+\contentsline {chapter}{\numberline {3}Learning a Sparse Code}{5}{chapter.3}
+\contentsline {chapter}{\numberline {4}Statistics of Natural Scenes}{6}{chapter.4}
+\contentsline {chapter}{\numberline {5}Experiments}{7}{chapter.5}
+\contentsline {section}{\numberline {5.1}MNIST}{7}{section.5.1}
+\contentsline {section}{\numberline {5.2}NORB and SmallNORB}{7}{section.5.2}
+\contentsline {section}{\numberline {5.3}Text Detection Application}{7}{section.5.3}
+\contentsline {chapter}{\numberline {6}Conclusions}{8}{chapter.6}
