@@ -7,23 +7,14 @@ classdef pca < transform
     end
     
     methods (Access=public)
-        function [obj] = pca(train_sample_plain,kept_energy,logger)
+        function [obj] = pca(train_sample_plain,kept_energy)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(kept_energy));
             assert(check.unitreal(kept_energy));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            logger.message('Computing dataset mean.');
-            
+
             sample_mean_t = mean(train_sample_plain,2);
             
-            logger.message('Computing principal components and associated variances.');
-            
             [coeffs_t,~,latent] = princomp(train_sample_plain');
-            
-            logger.message('Determining number of components to keep.');
             
             energy_per_comp_rel = cumsum(latent);
             kept_energy_rel = kept_energy * energy_per_comp_rel(end);
@@ -32,7 +23,7 @@ classdef pca < transform
             input_geometry = dataset.geometry(train_sample_plain);
             output_geometry = coded_features_count_t;
             
-            obj = obj@transform(input_geometry,output_geometry,logger);
+            obj = obj@transform(input_geometry,output_geometry);
             obj.coeffs = coeffs_t';
             obj.sample_mean = sample_mean_t;
             obj.kept_energy = kept_energy;
@@ -41,9 +32,7 @@ classdef pca < transform
     end
     
     methods (Access=protected)
-        function [sample_coded] = do_code(obj,sample_plain,logger)
-            logger.message('Projecting onto reduced space of principal components.');
-
+        function [sample_coded] = do_code(obj,sample_plain)
             sample_coded_t1 = bsxfun(@minus,sample_plain,obj.sample_mean);
             sample_coded = obj.coeffs(1:obj.coded_features_count,:) * sample_coded_t1;
         end
@@ -57,12 +46,10 @@ classdef pca < transform
             
             fprintf('    With 90%% kept energy.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.correlated_cloud();
             s_s = princomp(s');
             
-            t = transforms.record.pca(s,0.9,logg);
+            t = transforms.record.pca(s,0.9);
             
             assert(check.same(t.coeffs,s_s',0.1));
             assert(check.same(t.coeffs * t.coeffs',eye(2),0.1));
@@ -72,19 +59,14 @@ classdef pca < transform
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,1));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With 100%% kept energy.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.correlated_cloud();
             s_s = princomp(s');
             
-            t = transforms.record.pca(s,1,logg);
+            t = transforms.record.pca(s,1);
             
             assert(check.same(t.coeffs,s_s'));
             assert(check.same(t.coeffs * t.coeffs',eye(2),0.1));
@@ -94,22 +76,17 @@ classdef pca < transform
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,2));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
             fprintf('    With 90%% kept energy.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.correlated_cloud();
             [~,s_s,p_latent] = princomp(s');
             
-            t = transforms.record.pca(s,0.9,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.pca(s,0.9);
+            s_p = t.code(s);
             
             assert(check.same(s_p,s_s(:,1)'));
             assert(check.same(mean(s_p,2),0,0.1));
@@ -130,20 +107,15 @@ classdef pca < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With 100%% kept energy.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.correlated_cloud();
             [~,s_s,p_latent] = princomp(s');
             
-            t = transforms.record.pca(s,1,logg);            
-            s_p = t.code(s,logg);
+            t = transforms.record.pca(s,1);            
+            s_p = t.code(s);
             
             assert(check.same(s_p,s_s'));
             assert(check.same(mean(s_p,2),[0;0],0.1));
@@ -164,24 +136,19 @@ classdef pca < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Apply PCA on image patches.\n');
             
             fprintf('    With 95%% kept energy.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s1 = utils.testing.scenes_small();
-            t1 = transforms.image.patch_extract(s1,200,10,10,0.0001,logg);
-            s2 = t1.code(s1,logg);
+            t1 = transforms.image.patch_extract(s1,200,10,10,0.0001);
+            s2 = t1.code(s1);
             s3 = dataset.flatten_image(s2);
             
-            t2 = transforms.record.pca(s3,0.95,logg);
-            s3_p = t2.code(s3,logg);
+            t2 = transforms.record.pca(s3,0.95);
+            s3_p = t2.code(s3);
             coeffs_t = t2.coeffs';
             s3_aaa = coeffs_t(:,1:t2.coded_features_count) * s3_p;
             s3_r = bsxfun(@plus,s3_aaa,t2.sample_mean);           
@@ -203,22 +170,17 @@ classdef pca < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With 100%% kept energy.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s1 = utils.testing.scenes_small();
-            t1 = transforms.image.patch_extract(s1,200,10,10,0.0001,logg);
-            s2 = t1.code(s1,logg);
+            t1 = transforms.image.patch_extract(s1,200,10,10,0.0001);
+            s2 = t1.code(s1);
             s3 = dataset.flatten_image(s2);
             
-            t2 = transforms.record.pca(s3,1,logg);
-            s3_p = t2.code(s3,logg);
+            t2 = transforms.record.pca(s3,1);
+            s3_p = t2.code(s3);
             coeffs_t = t2.coeffs';
             s3_aaa = coeffs_t(:,1:t2.coded_features_count) * s3_p;
             s3_r = bsxfun(@plus,s3_aaa,t2.sample_mean);     
@@ -237,9 +199,6 @@ classdef pca < transform
                 title('Reconstructed images.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

@@ -1,6 +1,6 @@
 classdef filters < transforms.record.dictionary
     methods (Access=public)
-        function [obj] = filters(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers,logger)
+        function [obj] = filters(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
@@ -13,14 +13,11 @@ classdef filters < transforms.record.dictionary
             assert(check.scalar(num_workers));
             assert(check.natural(num_workers));
             assert(num_workers >= 1);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             
             d = dataset.geometry(train_sample_plain);
             dict = utils.common.rand_range(-1,1,word_count,d);
             
-            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers,logger);
+            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers);
         end
     end
     
@@ -30,11 +27,9 @@ classdef filters < transforms.record.dictionary
             
             fprintf('  Proper construction.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary.random.filters(s,3,'Corr',[],3,2,logg);
+            t = transforms.record.dictionary.random.filters(s,3,'Corr',[],3,2);
             
             assert(check.matrix(t.dict));
             assert(check.same(size(t.dict),[3 2]));
@@ -55,7 +50,7 @@ classdef filters < transforms.record.dictionary
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,3));
 
-            s_p = t.code(s,logg);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
 
             if test_figure ~= -1
@@ -85,9 +80,6 @@ classdef filters < transforms.record.dictionary
                 pause(5);
             end
 
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
         end
     end

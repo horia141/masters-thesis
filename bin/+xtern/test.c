@@ -13,19 +13,6 @@
 #include "image_coder.h"
 #include "task_control.h"
 
-struct task_info {
-    int  o_result;
-    int  value;
-};
-
-static void
-_do_work(
-    struct task_info*  task_info) {
-    task_info->o_result = 2 * task_info->value;
-
-    sleep(3);
-}
-
 struct global_info_x {
     int  alpha;
     int  beta;
@@ -1764,43 +1751,6 @@ main(
     }
 
     printf("Testing \"task_control\".\n");
-
-    printf("  Function \"run_workers\".\n");
-
-    {
-        struct task_info  task_info[4];
-        struct timeval    start_time;
-        struct timeval    end_time;
-        time_t            time_used_sec;
-
-        task_info[0].o_result = -1;
-        task_info[0].value = 10;
-        task_info[1].o_result = -1;
-        task_info[1].value = 20;
-        task_info[2].o_result = -1;
-        task_info[2].value = 30;
-        task_info[3].o_result = -1;
-        task_info[3].value = 40;
-
-        gettimeofday(&start_time,NULL);
-
-        run_workers(2,(task_fn_t)_do_work,4,task_info,sizeof(struct task_info));
-
-        gettimeofday(&end_time,NULL);
-
-        time_used_sec = end_time.tv_sec - start_time.tv_sec;
-
-        assert(task_info[0].o_result == 20);
-        assert(task_info[0].value == 10);
-        assert(task_info[1].o_result == 40);
-        assert(task_info[1].value == 20);
-        assert(task_info[2].o_result == 60);
-        assert(task_info[2].value == 30);
-        assert(task_info[3].o_result == 80);
-        assert(task_info[3].value == 40);
-        assert(time_used_sec  >= 6);
-        assert(time_used_sec <= 9);
-    }
 
     printf("  Function \"run_workers_x\".\n");
 

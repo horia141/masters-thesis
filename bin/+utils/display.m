@@ -161,9 +161,6 @@ classdef display
             assert(ci_tr.compatible(sample_tr));
             assert(ci_ts.compatible(sample_ts));
             
-            hnd = logging.handlers.zero(logging.level.Experiment);
-            logg = logging.logger({hnd});
-
             clf(gcf());
             subplot(2,2,1);
             hold on;
@@ -173,8 +170,8 @@ classdef display
             ptmp = sparse([ptmp_x(:),ptmp_y(:)]');
             [ptmp2_x,ptmp2_y] = meshgrid(-1:0.2:5,-1:0.2:5);
             ptmp2 = sparse([ptmp2_x(:),ptmp2_y(:)]');
-            l = cl.classify(ptmp,-1,logg);
-            [~,cfd] = cl.classify(ptmp2,-1,logg);
+            l = cl.classify(ptmp,-1);
+            [~,cfd] = cl.classify(ptmp2,-1);
             gscatter(ptmp(1,:),ptmp(2,:),l,'rgb','*',2);
             hold off;
             axis(range);

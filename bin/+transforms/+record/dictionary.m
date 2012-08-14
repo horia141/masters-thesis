@@ -13,7 +13,7 @@ classdef dictionary < transform
     end
 
     methods (Access=public)
-        function [obj] = dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers,logger)
+        function [obj] = dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers)
             assert(check.dataset_record(train_sample_plain));
             assert(check.matrix(dict));
             assert(size(dict,2) == dataset.geometry(train_sample_plain));
@@ -25,9 +25,6 @@ classdef dictionary < transform
             assert(check.scalar(num_workers));
             assert(check.natural(num_workers));
             assert(num_workers >= 1);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             
             dict_t = transforms.record.dictionary.normalize_dict(dict);
             dict_transp_t = dict_t';
@@ -38,7 +35,7 @@ classdef dictionary < transform
             input_geometry = dataset.geometry(train_sample_plain);
             output_geometry = word_count_t;
 
-            obj = obj@transform(input_geometry,output_geometry,logger);
+            obj = obj@transform(input_geometry,output_geometry);
             obj.dict = dict_t;
             obj.dict_transp = dict_transp_t;
             obj.dict_x_dict_transp = dict_x_dict_transp_t;
@@ -130,11 +127,9 @@ classdef dictionary < transform
             
             fprintf('    Correlation.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'Corr',[],3,1,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'Corr',[],3,1);
             
             assert(check.same(t.dict,[1 0; 0 1; 0.7071 0.7071],1e-3));
             assert(check.same(t.dict_transp,[1 0 0.7071; 0 1 0.7071],1e-3));
@@ -149,18 +144,13 @@ classdef dictionary < transform
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,3));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Correlation and Order.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'CorrOrder',0.25,3,1,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'CorrOrder',0.25,3,1);
             
             assert(check.same(t.dict,[1 0; 0 1; 0.7071 0.7071],1e-3));
             assert(check.same(t.dict_transp,[1 0 0.7071; 0 1 0.7071],1e-3));
@@ -176,18 +166,13 @@ classdef dictionary < transform
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,3));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Matching Pursuit.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],3,1,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],3,1);
             
             assert(check.same(t.dict,[1 0; 0 1; 0.7071 0.7071],1e-3));
             assert(check.same(t.dict_transp,[1 0 0.7071; 0 1 0.7071],1e-3));
@@ -202,22 +187,17 @@ classdef dictionary < transform
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,3));
 
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
             fprintf('    Correlation with one kept coefficient and single thread.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'Corr',[],1,1,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'Corr',[],1,1);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -255,21 +235,16 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    Correlation with one kept coefficient and multiple threads.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'Corr',[],1,10,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'Corr',[],1,10);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -308,20 +283,15 @@ classdef dictionary < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Correlation with two kept coefficients and single thread.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'Corr',[],2,1,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'Corr',[],2,1);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -359,21 +329,16 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    Correlation with two kept coefficients and multiple threads.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'Corr',[],2,10,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'Corr',[],2,10);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -412,20 +377,15 @@ classdef dictionary < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Correlation and Order with one kept coefficient and single thread.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,1,1,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,1,1);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -463,21 +423,16 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    Correlation and Order with one kept coefficient and multiples threads.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,1,10,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,1,10);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -516,20 +471,15 @@ classdef dictionary < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Correlation and Order with two kept coefficients and single thread.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,2,1,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,2,1);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -567,21 +517,16 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    Correlation and Order with two kept coefficients and multiples threads.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,2,10,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,dict_t,'CorrOrder',0.25,2,10);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -620,20 +565,15 @@ classdef dictionary < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Matching Pursuit with one kept coefficient and single thread.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],1,1,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],1,1);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -671,21 +611,16 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    Matching Pursuit with one kept coefficient and multiple threads.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],1,10,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],1,10);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -724,20 +659,15 @@ classdef dictionary < transform
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Matching Pursuit with two kept coefficients and single thread.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],2,1,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],2,1);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -775,21 +705,16 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    Matching Pursuit with two kept coefficients and multiple threads.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],2,10,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],2,10);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
             
             assert(check.matrix(s_p));
@@ -827,9 +752,6 @@ classdef dictionary < transform
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

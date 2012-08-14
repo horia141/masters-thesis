@@ -35,7 +35,7 @@ classdef recoder < transform
     
     methods (Access=public)
         function [obj] = recoder(train_sample_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,do_patch_zca,...
-                                  resize_type,new_row_count,new_col_count,dictionary_type,dictionary_params,nonlinear_type,polarity_split_type,reduce_type,reduce_spread,num_workers,logger)
+                                  resize_type,new_row_count,new_col_count,dictionary_type,dictionary_params,nonlinear_type,polarity_split_type,reduce_type,reduce_spread,num_workers)
             assert(check.dataset_image(train_sample_plain));
             assert(size(train_sample_plain,3) == 1); % A BIT OF A HACK
             assert(check.scalar(patches_count));
@@ -100,9 +100,6 @@ classdef recoder < transform
             assert(check.scalar(num_workers));
             assert(check.natural(num_workers));
             assert(num_workers >= 1);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             
             [d,dr,dc,~] = dataset.geometry(train_sample_plain);
             
@@ -188,25 +185,25 @@ classdef recoder < transform
             aftreduce_row_count_t = aftcoding_row_count_t / reduce_spread;
             aftreduce_col_count_t = aftcoding_col_count_t / reduce_spread;
             
-            t_patches = transforms.image.patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,logger.new_transform('Building patch extract transform'));
-            patches_1 = t_patches.code(train_sample_plain,logger.new_transform('Extracting patches'));
+            t_patches = transforms.image.patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance);
+            patches_1 = t_patches.code(train_sample_plain);
             patches_2 = dataset.flatten_image(patches_1);
             patches_3 = bsxfun(@minus,patches_2,mean(patches_2,1));
             
             if do_patch_zca
-                t_zca_t = transforms.record.zca(patches_3,logger.new_transform('Building ZCA transform'));
-                patches_4 = t_zca_t.code(patches_3,logger.new_transform('Applying ZCA transform'));
+                t_zca_t = transforms.record.zca(patches_3);
+                patches_4 = t_zca_t.code(patches_3);
             else
                 t_zca_t = {};
                 patches_4 = patches_3;
             end
 
-            t_dictionary_t = dictionary_ctor_fn_t(patches_4,dictionary_params{:},logger.new_transform('Building patches dictionary'));
+            t_dictionary_t = dictionary_ctor_fn_t(patches_4,dictionary_params{:});
             
             input_geometry = [d,dr,dc,1];
             output_geometry = polarity_split_multiplier_t * aftreduce_row_count_t * aftreduce_col_count_t * word_count_t;
             
-            obj = obj@transform(input_geometry,output_geometry,logger);
+            obj = obj@transform(input_geometry,output_geometry);
             obj.resize_code = resize_code_t;
             obj.aftresize_row_count = aftresize_row_count_t;
             obj.aftresize_col_count = aftresize_col_count_t;

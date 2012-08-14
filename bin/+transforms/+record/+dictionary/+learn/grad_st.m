@@ -8,7 +8,7 @@ classdef grad_st < transforms.record.dictionary
     end
 
     methods (Access=public)
-        function [obj] = grad_st(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers,selection_size,initial_learning_rate,final_learning_rate,max_iter_count,logger)
+        function [obj] = grad_st(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers,selection_size,initial_learning_rate,final_learning_rate,max_iter_count)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
@@ -35,9 +35,6 @@ classdef grad_st < transforms.record.dictionary
             assert(check.scalar(max_iter_count));
             assert(check.natural(max_iter_count));
             assert(max_iter_count >= 1);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
 
             [coding_fn_t,coding_params_cell_t] = transforms.record.dictionary.coding_setup(word_count,coding_method,coding_params,coeff_count);
             
@@ -49,11 +46,7 @@ classdef grad_st < transforms.record.dictionary
             saved_mse_t = zeros(1,max_iter_count);
             learning_rate_schedule = utils.common.schedule(initial_learning_rate,final_learning_rate,max_iter_count);
             
-            logger.beg_node('Learning sparse dictionary');
-
             for iter = 1:max_iter_count
-                logger.message('Iteration %d.',iter);
-                
                 selected = randi(N,1,selection_size);
                 iter_sample = dataset.subsample(train_sample_plain,selected);
 
@@ -68,7 +61,6 @@ classdef grad_st < transforms.record.dictionary
                 
                 mean_error = sum(mean((diff .^ 2)));
                 saved_mse_t(iter) = mean_error;
-                logger.message('Mean error: %.0f',mean_error);
                 % if mod(iter - 1,1) == 0
                 %     sz = sqrt(size(dict,2));
                 %     subplot(2,1,1);
@@ -80,9 +72,7 @@ classdef grad_st < transforms.record.dictionary
                 % end
             end
             
-            logger.end_node();
-            
-            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers,logger);
+            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers);
             obj.saved_mse = saved_mse_t;
             obj.selection_size = selection_size;
             obj.initial_learning_rate = initial_learning_rate;
@@ -97,11 +87,9 @@ classdef grad_st < transforms.record.dictionary
             
             fprintf('  Proper constuction.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
 
-            t = transforms.record.dictionary.learn.grad_st(s,3,'MP',[],1,2,1,1,1e-2,100,logg);
+            t = transforms.record.dictionary.learn.grad_st(s,3,'MP',[],1,2,1,1,1e-2,100);
             
             assert(check.vector(t.saved_mse));
             assert(length(t.saved_mse) == 100);
@@ -130,7 +118,7 @@ classdef grad_st < transforms.record.dictionary
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,3));
 
-            s_p = t.code(s,logg);
+            s_p = t.code(s);
             s_r = t.dict_transp * s_p;
 
             if test_figure ~= -1
@@ -159,9 +147,6 @@ classdef grad_st < transforms.record.dictionary
                 title('Restored samples.');
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

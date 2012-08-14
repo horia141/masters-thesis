@@ -1,22 +1,17 @@
 classdef dc_offset < transform
     methods (Access=public)
-        function [obj] = dc_offset(train_sample_plain,logger)
+        function [obj] = dc_offset(train_sample_plain)
             assert(check.dataset_record(train_sample_plain));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             
             input_geometry = dataset.geometry(train_sample_plain);
             output_geometry = input_geometry;
 
-            obj = obj@transform(input_geometry,output_geometry,logger);
+            obj = obj@transform(input_geometry,output_geometry);
         end
     end
     
     methods (Access=protected)        
-        function [sample_coded] = do_code(~,sample_plain,logger)
-            logger.message('Substracting DC component from each sample.');
-
+        function [sample_coded] = do_code(~,sample_plain)
             sample_coded = bsxfun(@minus,sample_plain,mean(sample_plain,1));
         end
     end
@@ -27,34 +22,27 @@ classdef dc_offset < transform
             
             fprintf('  Proper construction.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = [mvnrnd(randi(5) - 3,2,50),...
                  mvnrnd(randi(5) - 3,2,50),...
                  mvnrnd(randi(5) - 3,2,50),...
                  mvnrnd(randi(5) - 3,2,50)];
             
-            t = transforms.record.dc_offset(s,logg);
+            t = transforms.record.dc_offset(s);
             
             assert(check.same(t.input_geometry,50));
             assert(check.same(t.output_geometry,50));
 
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = [mvnrnd(randi(5) - 3,2,50),...
                  mvnrnd(randi(5) - 3,2,50),...
                  mvnrnd(randi(5) - 3,2,50),...
                  mvnrnd(randi(5) - 3,2,50)];
             
-            t = transforms.record.dc_offset(s,logg);
-            s_p = t.code(s,logg);
+            t = transforms.record.dc_offset(s);
+            s_p = t.code(s);
             
             assert(check.same(s_p,s - repmat(mean(s,1),50,1)));
             assert(check.same(mean(s_p,1),zeros(1,4)));
@@ -71,9 +59,6 @@ classdef dc_offset < transform
                 end
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

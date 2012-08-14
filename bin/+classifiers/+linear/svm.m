@@ -14,7 +14,7 @@ classdef svm < classifier
     end
     
     methods (Access=public)
-        function [obj] = svm(train_sample,class_info,problem_form,loss_type,reg_type,reg_param,multiclass_form,num_workers,logger)
+        function [obj] = svm(train_sample,class_info,problem_form,loss_type,reg_type,reg_param,multiclass_form,num_workers)
             assert(check.dataset_record(train_sample));
             assert(issparse(train_sample));
             assert(check.scalar(class_info));
@@ -39,9 +39,6 @@ classdef svm < classifier
             assert(check.scalar(num_workers) || (check.vector(num_workers) && (length(num_workers) == 2)));
             assert(check.natural(num_workers));
             assert(check.checkv(num_workers >= 1));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             assert(class_info.compatible(train_sample));
             
             if class_info.labels_count == 2
@@ -101,7 +98,7 @@ classdef svm < classifier
             
             input_geometry = dataset.geometry(train_sample);
             
-            obj = obj@classifier(input_geometry,class_info.labels,logger);
+            obj = obj@classifier(input_geometry,class_info.labels);
             obj.classifiers_count = classifiers_count_t;
             obj.saved_class_pair = saved_class_pair_t;
             obj.method_code = method_code_t;
@@ -117,15 +114,12 @@ classdef svm < classifier
     end
     
     methods (Access=protected)
-        function [labels_idx_hat,labels_confidence] = do_classify(obj,sample,logger)
+        function [labels_idx_hat,labels_confidence] = do_classify(obj,sample)
             assert(issparse(sample));
             
             N = dataset.count(sample);
             
             classifiers_decisions = xtern.x_classifiers_liblinear_classify(sample,obj.model_weights,obj.method_code,obj.reg_param,obj.classify_num_workers);
-            
-            logger.message('Determining most probable class.');
-            
             
             if obj.saved_labels_count == 2
                 classifiers_probs_t1 = 1 ./ (1 + 2.71828183 .^ (-classifiers_decisions));
@@ -167,12 +161,9 @@ classdef svm < classifier
             
             fprintf('    In primal form, L2 loss, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -199,20 +190,14 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    In primal form, L2 loss, L1 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -236,20 +221,14 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    In primal form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L2',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L2',1,'1va',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -276,20 +255,14 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    In primal form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L2',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L2',1,'1v1',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -314,19 +287,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    In dual form, L1 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Dual','L1','L2',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Dual','L1','L2',1,'1va',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -353,20 +320,14 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    In dual form, L1 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Dual','L1','L2',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Dual','L1','L2',1,'1v1',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -391,19 +352,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    In dual form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Dual','L2','L2',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Dual','L2','L2',1,'1va',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -430,20 +385,14 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    In dual form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Dual','L2','L2',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Dual','L2','L2',1,'1v1',1);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -468,19 +417,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With multiple threads and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',3,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',3);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -507,20 +450,14 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    With multiple threads and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',3,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',3);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -545,19 +482,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With multiple train and classify threads and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',[3 2],logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',[3 2]);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 0; 2 0; 3 0]));
@@ -585,19 +516,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With multiple train and classify threads and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
             
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',[3 2],logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',[3 2]);
 
             assert(cl.classifiers_count == 3);
             assert(check.same(cl.saved_class_pair,[1 2; 1 3; 2 3]));
@@ -622,19 +547,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With two classes and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_2();
 
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1va',1);
 
             assert(cl.classifiers_count == 1);
             assert(check.same(cl.saved_class_pair,[1 2]));
@@ -655,19 +574,13 @@ classdef svm < classifier
             assert(check.same(cl.saved_labels,{'1' '2'}));
             assert(cl.saved_labels_count == 2);
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With two classes and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_2();
 
-            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s,ci,'Primal','L2','L1',1,'1v1',1);
 
             assert(cl.classifiers_count == 1);
             assert(check.same(cl.saved_class_pair,[1 2]));
@@ -687,9 +600,6 @@ classdef svm < classifier
             assert(check.same(cl.input_geometry,2));
             assert(check.same(cl.saved_labels,{'1' '2'}));
             assert(cl.saved_labels_count == 2);
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
@@ -699,13 +609,10 @@ classdef svm < classifier
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -727,21 +634,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -763,21 +664,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -799,21 +694,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -835,21 +724,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -871,21 +754,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -907,21 +784,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -943,21 +814,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -979,9 +844,6 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
 
@@ -989,13 +851,10 @@ classdef svm < classifier
 	    
 	        fprintf('      In primal form, L2 loss, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1013,21 +872,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1045,21 +898,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1077,21 +924,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
 
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1109,21 +950,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1141,21 +976,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1173,21 +1002,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1205,21 +1028,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -1237,9 +1054,6 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
@@ -1247,13 +1061,10 @@ classdef svm < classifier
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1295,21 +1106,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1351,21 +1156,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1407,21 +1206,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1463,21 +1256,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1519,21 +1306,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1575,21 +1356,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1631,21 +1406,15 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1,logg);
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1);
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -1687,9 +1456,6 @@ classdef svm < classifier
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
 
@@ -1697,161 +1463,113 @@ classdef svm < classifier
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1va',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L1 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L1',1,'1v1',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1va',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In primal form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Primal','L2','L2',1,'1v1',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1va',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L1 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L1','L2',1,'1v1',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1va',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('      In dual form, L2 loss, L2 regularization and One-vs-One multiclass handling.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1,logg);
+            cl = classifiers.linear.svm(s_tr,ci_tr,'Dual','L2','L2',1,'1v1',1);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

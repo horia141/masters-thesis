@@ -7,7 +7,7 @@ classdef patch_extract < transform
     end
     
     methods (Access=public)
-        function [obj] = patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,required_variance,logger)
+        function [obj] = patch_extract(train_sample_plain,patches_count,patch_row_count,patch_col_count,required_variance)
             assert(check.dataset_image(train_sample_plain));
             assert(check.scalar(patches_count));
             assert(check.natural(patches_count));
@@ -21,16 +21,13 @@ classdef patch_extract < transform
             assert(check.scalar(required_variance));
             assert(check.number(required_variance));
             assert(required_variance >= 0);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             
             [d dr dc dl] = dataset.geometry(train_sample_plain);
             
             input_geometry = [d dr dc dl];
             output_geometry = [patch_row_count*patch_col_count*dl patch_row_count patch_col_count dl];
             
-            obj = obj@transform(input_geometry,output_geometry,logger);
+            obj = obj@transform(input_geometry,output_geometry);
             obj.patches_count = patches_count;
             obj.patch_row_count = patch_row_count;
             obj.patch_col_count = patch_col_count;
@@ -39,7 +36,7 @@ classdef patch_extract < transform
     end
     
     methods (Access=protected)
-        function [sample_coded] = do_code(obj,sample_plain,logger)
+        function [sample_coded] = do_code(obj,sample_plain)
             N = dataset.count(sample_plain);
             [~,dr,dc,dl] = dataset.geometry(sample_plain);
             
@@ -47,8 +44,6 @@ classdef patch_extract < transform
             sample_coded = zeros(obj.patch_row_count,obj.patch_col_count,dl,obj.patches_count);
             
             curr_patches_count = 1;
-            
-            logger.beg_node('Extracting patches');
             
             while curr_patches_count <= obj.patches_count
                 image_idx = randi(N);
@@ -60,16 +55,10 @@ classdef patch_extract < transform
                                      :,image_idx);
                 
                 if var(patch(:)) >= obj.required_variance
-                    if mod(curr_patches_count - 1,log_batch_size) == 0
-                        logger.message('Patches %d to %d.',curr_patches_count,min(curr_patches_count + log_batch_size - 1,obj.patches_count));
-                    end
-
                     sample_coded(:,:,:,curr_patches_count) = patch;
                     curr_patches_count = curr_patches_count + 1;
                 end
             end
-            
-            logger.end_node();
         end
     end
     
@@ -79,11 +68,9 @@ classdef patch_extract < transform
             
             fprintf('  Proper construction.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.scenes_small();
             
-            t = transforms.image.patch_extract(s,10,5,5,0.01,logg);
+            t = transforms.image.patch_extract(s,10,5,5,0.01);
             
             assert(t.patches_count == 10);
             assert(t.patch_row_count == 5);
@@ -92,19 +79,14 @@ classdef patch_extract < transform
             assert(check.same(t.input_geometry,[192*256*3 192 256 3]));
             assert(check.same(t.output_geometry,[5*5*3 5 5 3]));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = utils.testing.scenes_small();
             
-            t = transforms.image.patch_extract(s,50,40,40,0.01,logg);
-            s_p = t.code(s,logg);
+            t = transforms.image.patch_extract(s,50,40,40,0.01);
+            s_p = t.code(s);
             
             assert(check.tensor(s_p,4));
             assert(check.same(size(s_p),[40 40 3 50]));
@@ -117,9 +99,6 @@ classdef patch_extract < transform
                 utils.display.as_tiles(s_p,[5 10]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

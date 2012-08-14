@@ -8,7 +8,7 @@ classdef deform < transform
     end
     
     methods (Access=public)
-        function [obj] = deform(train_sample_plain,scaling_max,rotation_max,field_smoothness_factor,field_intensity,logger)
+        function [obj] = deform(train_sample_plain,scaling_max,rotation_max,field_smoothness_factor,field_intensity)
             assert(check.dataset_image(train_sample_plain));
             assert(size(train_sample_plain,3) == 1); % A BIT OF A HACK
             assert(size(train_sample_plain,1) == size(train_sample_plain,2)); % A BIT OF A HACK
@@ -26,9 +26,6 @@ classdef deform < transform
             assert(check.empty(field_intensity) || check.scalar(field_intensity));
             assert(check.empty(field_intensity) || check.number(field_intensity));
             assert(check.empty(field_intensity) || field_intensity > 0);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             assert((check.empty(field_smoothness_factor) && check.empty(field_intensity)) || ...
                    (~check.empty(field_smoothness_factor) && ~check.empty(field_intensity)));
                
@@ -41,7 +38,7 @@ classdef deform < transform
             input_geometry = dataset.geometry(train_sample_plain);
             output_geometry = input_geometry;
             
-            obj = obj@transform(input_geometry,output_geometry,logger);
+            obj = obj@transform(input_geometry,output_geometry);
             obj.scaling_max = scaling_max;
             obj.rotation_max = rotation_max;
             obj.field_smoothness_factor = field_smoothness_factor;
@@ -51,7 +48,7 @@ classdef deform < transform
     end
     
     methods (Access=protected)
-        function [sample_coded] = do_code(obj,sample_plain,logger)
+        function [sample_coded] = do_code(obj,sample_plain)
             N = dataset.count(sample_plain);
             [~,dr,dc,~] = dataset.geometry(sample_plain);
             [col_i,row_i] = meshgrid(1:dr,1:dc);
@@ -63,13 +60,7 @@ classdef deform < transform
 
             sample_coded = zeros(dr,dc,1,N);
             
-            logger.beg_node('Building new images');
-            
             for ii = 1:N
-                if mod(ii - 1,log_batch_size) == 0
-                    logger.message('Images %d to %d.',ii,min(ii + log_batch_size - 1,N));
-                end
-
                 scaling_factor_row = utils.common.rand_range(1 - obj.scaling_max/100,1 + obj.scaling_max/100);
                 scaling_factor_col = utils.common.rand_range(1 - obj.scaling_max/100,1 + obj.scaling_max/100);
                 rotation_angle = utils.common.rand_range(-obj.rotation_max,obj.rotation_max);
@@ -104,8 +95,6 @@ classdef deform < transform
                 
                 sample_coded(:,:,:,ii) = deformed_instance;
             end
-            
-            logger.end_node();
         end
     end
     
@@ -134,11 +123,9 @@ classdef deform < transform
             
             fprintf('    With field deformations.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = rand(16,16,1,100);
             
-            t = transforms.image.digit.deform(s,10,15,5,2.4,logg);
+            t = transforms.image.digit.deform(s,10,15,5,2.4);
             
             assert(t.scaling_max == 10);
             assert(t.rotation_max == 15);
@@ -148,18 +135,13 @@ classdef deform < transform
             assert(check.same(t.input_geometry,[16*16*1 16 16 1]));
             assert(check.same(t.output_geometry,[16*16*1 16 16 1]));
 
-            logg.close();
-            hnd.close();
-
             clearvars -except test_figure;
 
             fprintf('    Without field deformations.\n');
 
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s = rand(16,16,1,100);
 
-            t = transforms.image.digit.deform(s,10,15,[],[],logg);
+            t = transforms.image.digit.deform(s,10,15,[],[]);
 
             assert(t.scaling_max == 10);
             assert(t.rotation_max == 15);
@@ -169,22 +151,17 @@ classdef deform < transform
             assert(check.same(t.input_geometry,[16*16*1 16 16 1]));
             assert(check.same(t.output_geometry,[16*16*1 16 16 1]));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "code".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             s_1 = rand(16,16,1,16);
             s = zeros(24,24,1,16);
             s(5:20,5:20,:,:) = s_1;
             
-            t = transforms.image.digit.deform(s,10,15,[],[],logg);
+            t = transforms.image.digit.deform(s,10,15,[],[]);
             
-            s_p = t.code(s,logg);
+            s_p = t.code(s);
             
             assert(check.tensor(s_p,4));
             assert(check.same(size(s_p),[24 24 1 16]));
@@ -198,9 +175,6 @@ classdef deform < transform
                 utils.display.as_tiles(s_p);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end

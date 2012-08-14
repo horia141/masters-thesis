@@ -10,7 +10,7 @@ classdef neural_gas < transforms.record.dictionary
     end
     
     methods (Access=public)
-        function [obj] = neural_gas(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers,version,initial_learn_rate,final_learn_rate,initial_neight_size,final_neight_size,max_iter_count,logger)
+        function [obj] = neural_gas(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers,version,initial_learn_rate,final_learn_rate,initial_neight_size,final_neight_size,max_iter_count)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
@@ -38,9 +38,6 @@ classdef neural_gas < transforms.record.dictionary
             assert(check.scalar(final_neight_size));
             assert(check.number(final_neight_size));
             assert(final_neight_size > 0);
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             assert(final_learn_rate <= initial_learn_rate);
             assert(final_neight_size <= initial_neight_size);
 
@@ -55,8 +52,6 @@ classdef neural_gas < transforms.record.dictionary
             learn_rate_sch = utils.common.schedule(initial_learn_rate,final_learn_rate,max_iter_count);
             neight_size_sch = utils.common.schedule(initial_neight_size,final_neight_size,max_iter_count);
             ranks = zeros(1,word_count);
-
-            logger.beg_node('Learning sparse dictionary');
 
             if check.same(version,'V1')
                 for iter = 1:max_iter_count
@@ -89,9 +84,7 @@ classdef neural_gas < transforms.record.dictionary
                 assert(false);
             end
             
-            logger.end_node();
-            
-            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers,logger);
+            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers);
             obj.saved_mse = saved_mse_t;
             obj.version = version;
             obj.initial_learn_rate = initial_learn_rate;

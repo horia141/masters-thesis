@@ -4,16 +4,11 @@ classdef cmeans < classifier
     end
 
     methods (Access=public)
-        function [obj] = cmeans(train_sample,class_info,logger)
+        function [obj] = cmeans(train_sample,class_info)
             assert(check.dataset_record(train_sample));
             assert(check.scalar(class_info));
             assert(check.classifier_info(class_info));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             assert(class_info.compatible(train_sample));
-            
-            logger.message('Computing dataset class centers.');
             
             d = dataset.geometry(train_sample);
             centers_t = zeros(d,class_info.labels_count);
@@ -24,28 +19,20 @@ classdef cmeans < classifier
             
             input_geometry = d;
             
-            obj = obj@classifier(input_geometry,class_info.labels,logger);
+            obj = obj@classifier(input_geometry,class_info.labels);
             obj.centers = centers_t;
         end
     end
 
     methods (Access=protected)
-        function [labels_idx_hat,labels_confidence] = do_classify(obj,sample,logger)
+        function [labels_idx_hat,labels_confidence] = do_classify(obj,sample)
             N = dataset.count(sample);
 
             distances = zeros(obj.saved_labels_count,N);
             
-            logger.beg_node('Computing distances to each class center');
-            
             for ii = 1:obj.saved_labels_count
-                logger.message('Class %s.',obj.saved_labels{ii});
-                
                 distances(ii,:) = sum((sample - repmat(obj.centers(:,ii),1,N)) .^ 2,1);
             end
-            
-            logger.end_node();
-            
-            logger.message('Selecting class for each sample.');
             
             reciproc_distances = 1 ./ distances;
             [~,min_index] = max(reciproc_distances,[],1);
@@ -61,12 +48,9 @@ classdef cmeans < classifier
             
             fprintf('  Proper construction.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s,ci] = utils.testing.classifier_data_3();
 
-            cl = classifiers.cmeans(s,ci,logg);
+            cl = classifiers.cmeans(s,ci);
             
             assert(check.checkv(arrayfun(@(ii)check.same(cl.centers(:,ii),mean(s(:,ci.labels_idx == ii),2)),1:3)));
             assert(check.same(cl.centers,[3 1;3 3;1 3]',0.1));
@@ -74,22 +58,16 @@ classdef cmeans < classifier
             assert(check.same(cl.saved_labels,{'1' '2' '3'}));
             assert(cl.saved_labels_count == 3);
 
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "classify".\n');
             
             fprintf('    With clearly separated data.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
             
-            cl = classifiers.cmeans(s_tr,ci_tr,logg);            
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.cmeans(s_tr,ci_tr);            
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat,ci_ts.labels_idx));
             assert(check.matrix(labels_confidence));
@@ -112,20 +90,14 @@ classdef cmeans < classifier
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With mostly clearly separated data.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
             
-            cl = classifiers.cmeans(s_tr,ci_tr,logg);            
-            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts,logg);
+            cl = classifiers.cmeans(s_tr,ci_tr);            
+            [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
             
             assert(check.same(labels_idx_hat(1:18),ci_ts.labels_idx(1:18)));
             assert(check.same(labels_idx_hat(21:38),ci_ts.labels_idx(21:38)));
@@ -168,28 +140,19 @@ classdef cmeans < classifier
                 pause(5);
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    Without clearly separated data.\n');
-            
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
 
             [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
             
-            cl = classifiers.cmeans(s_tr,ci_tr,logg);
+            cl = classifiers.cmeans(s_tr,ci_tr);
             
             if test_figure ~= -1
                 figure(test_figure);
                 utils.display.classification_border(cl,s_tr,s_ts,ci_tr,ci_ts,[-1 5 -1 5]);
                 pause(5);
             end
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
         end
