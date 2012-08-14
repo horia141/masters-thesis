@@ -1,27 +1,29 @@
 %% Setup experiment-wide constants.
 
 MODEL_SELECTION_RATIO = 'full';
-CODER_REP_COUNT = 100;
+CODER_REP_COUNT = 1;
 CLASSIFIER_REG = 0.0025;
-RESULTS_PATH = '../explogs/mnist/massive_boost/results_2.mat';
+RESULTS_PATH = '../explogs/mnist/sparse_coding_neural_gas/test_1_2.mat';
 
 TRAIN_WORKER_COUNT = 45;
 CLASSIFY_WORKER_COUNT = 48;
 
 %% Build the list of coder configurations to test.
 
+load ../explogs/mnist/saved_neural_gas_dict_2.mat
+
 % Coding method.
 param_desc_coder.patches_count = 10;
 param_desc_coder.do_patch_zca = false;
-param_desc_coder.dictionary_type = 'Random:Filters';
-param_desc_coder.dictionary_params = {{512 'CorrOrder' [0.05 0.01 48]}};
+param_desc_coder.dictionary_type = 'Dict';
+param_desc_coder.dictionary_params = {{saved_dict 'MP' 11}};
 % Coder transforms.
 param_desc_coder.do_polarity_split = false;
-param_desc_coder.nonlinear_type = 'Linear';
+param_desc_coder.nonlinear_type = 'Logistic';
 param_desc_coder.nonlinear_params = {};
 param_desc_coder.reduce_type = 'Sqr';
 % Coder geometry.
-param_desc_coder.window_size = 9;
+param_desc_coder.window_size = 11;
 param_desc_coder.window_step = 1;
 param_desc_coder.reduce_spread = 4;
 
@@ -34,7 +36,7 @@ param_list_coder = utils.params.gen_all(param_desc_coder,...
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Massive Boost"');
+logg.beg_node('Experiment "MNIST - Sparse Coding Neural Gas - Test 1"');
 
 %% Make sure we can write to the results file.
 
@@ -110,9 +112,7 @@ for coder_idx = 1:length(param_list_coder)
         logg.beg_node('Parameters');
         p_coder_config = rmfield(param_list_coder(coder_idx),{'dictionary_type' 'dictionary_params'});
         p_coder_config.coding_method = param_list_coder(coder_idx).dictionary_params{2};
-        p_coder_config.desired_sparsity = param_list_coder(coder_idx).dictionary_params{3}(1);
-        p_coder_config.minimum_non_zero = param_list_coder(coder_idx).dictionary_params{3}(2);
-        p_coder_config.num_threads = param_list_coder(coder_idx).dictionary_params{3}(3);
+        p_coder_config.coding_params = param_list_coder(coder_idx).dictionary_params{3};
         logg.message(utils.params.to_string(p_coder_config));
         logg.end_node();
         

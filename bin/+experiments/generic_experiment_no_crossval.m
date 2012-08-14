@@ -1,9 +1,10 @@
 %% Setup experiment-wide constants.
 
-MODEL_SELECTION_RATIO = 'full';
-CODER_REP_COUNT = 100;
+MODEL_SELECTION_RATIO = [[[unitreal or "full"]]];
+CODER_REP_COUNT = [[[natural > 0]]];
 CLASSIFIER_REG = 0.0025;
-RESULTS_PATH = '../explogs/mnist/massive_boost/results_2.mat';
+RESULTS_PATH = '../explogs/[[[dataset directory]]]/[[[experiment directory]]]/[[[run results file]]].mat';
+SAVED_SUBSAMPLE_COUNT = 20;
 
 TRAIN_WORKER_COUNT = 45;
 CLASSIFY_WORKER_COUNT = 48;
@@ -14,14 +15,14 @@ CLASSIFY_WORKER_COUNT = 48;
 param_desc_coder.patches_count = 10;
 param_desc_coder.do_patch_zca = false;
 param_desc_coder.dictionary_type = 'Random:Filters';
-param_desc_coder.dictionary_params = {{512 'CorrOrder' [0.05 0.01 48]}};
+param_desc_coder.dictionary_params = {{100 'MP' 5}};
 % Coder transforms.
 param_desc_coder.do_polarity_split = false;
-param_desc_coder.nonlinear_type = 'Linear';
+param_desc_coder.nonlinear_type = 'Logistic';
 param_desc_coder.nonlinear_params = {};
 param_desc_coder.reduce_type = 'Sqr';
 % Coder geometry.
-param_desc_coder.window_size = 9;
+param_desc_coder.window_size = [9 11];
 param_desc_coder.window_step = 1;
 param_desc_coder.reduce_spread = 4;
 
@@ -34,7 +35,7 @@ param_list_coder = utils.params.gen_all(param_desc_coder,...
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Massive Boost"');
+logg.beg_node('Experiment "[[[dataset name]]] - [[[experiment name]]]"');
 
 %% Make sure we can write to the results file.
 
@@ -56,7 +57,7 @@ end
 
 %% Load the experiment data, separating it into the part used for model selection and the part used for final testing.
 
-[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.mnist(logg.new_node('Loading MNIST dataset'));
+[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.[[[dataset name]]](logg.new_node('Loading [[[dataset name]]] dataset'));
 
 %% Filter the experiment model selection data, retaining only a subsample from it.
 
@@ -79,9 +80,10 @@ end
 coders = cell(CODER_REP_COUNT,length(param_list_coder));
 coders_dicts = cell(CODER_REP_COUNT,length(param_list_coder));
 sparse_rate = zeros(CODER_REP_COUNT,length(param_list_coder));
+saved_coded_subsample = cell(CODER_REP_COUNT,length(param_list_coder));
+saved_coded_subsample_ci = cell(CODER_REP_COUNT,length(param_list_coder));
 final_classifier = cell(CODER_REP_COUNT,length(param_list_coder));
 final_labels = cell(CODER_REP_COUNT,length(param_list_coder));
-saved_coded_subsample = cell(CODER_REP_COUNT,length(param_list_coder));
 
 coder_scores = zeros(CODER_REP_COUNT,length(param_list_coder));
 coder_scores_avg = zeros(1,length(param_list_coder));
@@ -137,6 +139,8 @@ for coder_idx = 1:length(param_list_coder)
 
         coders_dicts{coder_rep_idx,coder_idx} = coders{coder_rep_idx,coder_idx}.t_dictionary.dict;
         sparse_rate(coder_rep_idx,coder_idx) = sum(sum(d_coder_useful_coded ~= 0)) / numel(d_coder_useful_coded);
+        saved_coded_subsample{coder_rep_idx,coder_idx} = dataset.subsample(d_coder_useful_coded,1:SAVED_SUBSAMPLE_COUNT);
+        saved_coded_subsample_ci{coder_rep_idx,coder_idx} = d_coder_useful_ci.subsample(1:SAVED_SUBSAMPLE_COUNT);
 
         coder_code_times(coder_rep_idx,coder_idx) = toc(coder_code_times_obj);
 
@@ -158,10 +162,10 @@ for coder_idx = 1:length(param_list_coder)
         logg.message('Saving intermediate results.');
     
         save(RESULTS_PATH,'-v7.3','coder_idx',...
-                                  'MODEL_SELECTION_RATIO','CODER_REP_COUNT',...
+                                  'MODEL_SELECTION_RATIO','CODER_REP_COUNT','CLASSIFIER_REG','RESULTS_PATH','SAVED_SUBSAMPLE_COUNT',...
                                   'coder_useful_idx',...
                                   'param_desc_coder','param_list_coder',...
-                                  'coders','coders_dicts','sparse_rate','final_classifier','final_labels',...
+                                  'coders','coders_dicts','sparse_rate','saved_coded_subsample','saved_coded_subsample_ci','final_classifier','final_labels',...
                                   'coder_scores','coder_scores_avg','coder_scores_std');
         
         clear d_coder_useful_coded;
@@ -188,10 +192,10 @@ for coder_idx = 1:length(param_list_coder)
     logg.message('Saving intermediate results.');
     
     save(RESULTS_PATH,'-v7.3','coder_idx',...
-                              'MODEL_SELECTION_RATIO','CODER_REP_COUNT',...
+                              'MODEL_SELECTION_RATIO','CODER_REP_COUNT','CLASSIFIER_REG','RESULTS_PATH','SAVED_SUBSAMPLE_COUNT',...
                               'coder_useful_idx',...
                               'param_desc_coder','param_list_coder',...
-                              'coders','coders_dicts','sparse_rate','final_classifier','final_labels',...
+                              'coders','coders_dicts','sparse_rate','saved_coded_subsample','saved_coded_subsample_ci','final_classifier','final_labels',...
                               'coder_scores','coder_scores_avg','coder_scores_std');
 
     logg.end_node();
@@ -208,7 +212,7 @@ logg.message('Total search time: %.2fs',total_time);
 logg.message('Saving final results.');
 
 save(RESULTS_PATH,'-v7.3','coder_idx',...
-                          'MODEL_SELECTION_RATIO','CODER_REP_COUNT',...
+                          'MODEL_SELECTION_RATIO','CODER_REP_COUNT','CLASSIFIER_REG','RESULTS_PATH','SAVED_SUBSAMPLE_COUNT',...
                           'coder_useful_idx',...
                           'param_desc_coder','param_list_coder',...
                           'coders','coders_dicts','sparse_rate','final_classifier','final_labels',...

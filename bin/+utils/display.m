@@ -108,7 +108,8 @@ classdef display
             end
             
             N = dataset.count(sample_plain);
-            sample_reshaped_t1 = reshape(sample_coded,pooled_patch_row_count,pooled_patch_col_count,1,reshape_mult_factor*word_count*N);
+            sample_coded_full = full(sample_coded);
+            sample_reshaped_t1 = reshape(sample_coded_full,pooled_patch_row_count,pooled_patch_col_count,1,reshape_mult_factor*word_count*N);
             sample_reshaped_t2 = utils.common.remap_images_to_unit(sample_reshaped_t1);
             sample_reshaped = reshape(sample_reshaped_t2,pooled_patch_row_count,pooled_patch_col_count,reshape_mult_factor,word_count,N);
             
@@ -169,9 +170,9 @@ classdef display
             gscatter(sample_tr(1,:),sample_tr(2,:),ci_tr.labels_idx,'rgb','o',6);
             gscatter(sample_ts(1,:),sample_ts(2,:),ci_ts.labels_idx,'rgb','o',6);
             [ptmp_x,ptmp_y] = meshgrid(-1:0.05:5,-1:0.05:5);
-            ptmp = [ptmp_x(:),ptmp_y(:)]';
+            ptmp = sparse([ptmp_x(:),ptmp_y(:)]');
             [ptmp2_x,ptmp2_y] = meshgrid(-1:0.2:5,-1:0.2:5);
-            ptmp2 = [ptmp2_x(:),ptmp2_y(:)]';
+            ptmp2 = sparse([ptmp2_x(:),ptmp2_y(:)]');
             l = cl.classify(ptmp,-1,logg);
             [~,cfd] = cl.classify(ptmp2,-1,logg);
             gscatter(ptmp(1,:),ptmp(2,:),l,'rgb','*',2);

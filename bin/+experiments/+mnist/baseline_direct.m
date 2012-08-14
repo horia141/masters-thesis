@@ -4,10 +4,10 @@ MODEL_SELECTION_RATIO = {'full' 0.2};
 TRAIN_VALIDATION_RATIO = 0.5;
 CODER_REP_COUNT = 1;
 CLASSIFIER_REP_COUNT = 5;
-RESULTS_PATH = '../explogs/mnist/baseline_direct/results.mat';
+RESULTS_PATH = '../explogs/mnist/baseline_direct/results_1v1_2.mat';
 
-TRAIN_WORKER_COUNT = 45;
-CLASSIFY_WORKER_COUNT = 48;
+TRAIN_WORKER_COUNT = 16;
+CLASSIFY_WORKER_COUNT = 16;
 
 %% Build the list of coder configurations to test.
 
@@ -93,6 +93,7 @@ coders_dicts = cell(CODER_REP_COUNT,length(param_list_coder));
 sparse_rate = zeros(CODER_REP_COUNT,length(param_list_coder));
 final_classifier = cell(CODER_REP_COUNT,length(param_list_coder));
 final_labels = cell(CODER_REP_COUNT,length(param_list_coder));
+saved_coded_subsample = cell(CODER_REP_COUNT,length(param_list_coder));
 
 classifier_scores = zeros(CLASSIFIER_REP_COUNT,length(param_list_classifier),CODER_REP_COUNT,length(param_list_coder));
 classifier_scores_avg = zeros(length(param_list_classifier),CODER_REP_COUNT,length(param_list_coder));

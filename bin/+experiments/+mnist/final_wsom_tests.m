@@ -2,9 +2,9 @@
 
 MODEL_SELECTION_RATIO = {'full' 0.2};
 TRAIN_VALIDATION_RATIO = 0.5;
-CODER_REP_COUNT = 10;
+CODER_REP_COUNT = 1;
 CLASSIFIER_REP_COUNT = 5;
-RESULTS_PATH = '../explogs/mnist/baseline_intuitive/results_1.mat';
+RESULTS_PATH = '../explogs/mnist/final_wsom_tests/results_3_SCNG_MP25_alpha.mat';
 
 TRAIN_WORKER_COUNT = 45;
 CLASSIFY_WORKER_COUNT = 48;
@@ -12,17 +12,17 @@ CLASSIFY_WORKER_COUNT = 48;
 %% Build the list of coder configurations to test.
 
 % Coding method.
-param_desc_coder.patches_count = 100000;
-param_desc_coder.do_patch_zca = false;
-param_desc_coder.dictionary_type = 'Learn:Grad';
-param_desc_coder.dictionary_params = {{128 'MP' 7 10 1 20}};
+param_desc_coder.patches_count = 400000;
+param_desc_coder.do_patch_zca = true;
+param_desc_coder.dictionary_type = 'Learn:NeuralGas';
+param_desc_coder.dictionary_params = {{1024 'MP' 25 'V1' 5 0.01 10 0.01 400000}};
 % Coder transforms.
 param_desc_coder.do_polarity_split = false;
 param_desc_coder.nonlinear_type = 'Logistic';
 param_desc_coder.nonlinear_params = {};
 param_desc_coder.reduce_type = 'Sqr';
 % Coder geometry.
-param_desc_coder.window_size = 9;
+param_desc_coder.window_size = 11;
 param_desc_coder.window_step = 1;
 param_desc_coder.reduce_spread = 4;
 
@@ -32,7 +32,7 @@ param_list_coder = utils.params.gen_all(param_desc_coder,...
                         
 %% Build the list of classifier configurations to test.
 
-param_desc_classifier.reg = logspace(-3,-1,10);
+param_desc_classifier.reg = logspace(-3,-1,20);
 
 param_list_classifier = utils.params.gen_all(param_desc_classifier);
 
@@ -41,7 +41,7 @@ param_list_classifier = utils.params.gen_all(param_desc_classifier);
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Baseline Intuitive"');
+logg.beg_node('Experiment "MNIST - Final WSOM Tests"');
 
 %% Make sure we can write to the results file.
 

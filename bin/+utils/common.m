@@ -130,7 +130,11 @@ classdef common
             assert(T_max >= 1);
             assert(final <= initial);
 
-            sched = initial * (final / initial) .^ ((0:(T_max - 1)) / (T_max - 1));
+            if T_max ~= 1
+                sched = initial * (final / initial) .^ ((0:(T_max - 1)) / (T_max - 1));
+            else
+                sched = initial;
+            end
         end
     end
     
@@ -296,6 +300,7 @@ classdef common
             
             assert(check.same(utils.common.schedule(1,0.5,2),[1 0.5]));
             assert(check.same(utils.common.schedule(1,0.1,3),[1 0.3162 0.1],1e-2));
+            assert(check.same(utils.common.schedule(1,0.1,1),1));
             
             if test_figure ~= -1
                 figure(test_figure);

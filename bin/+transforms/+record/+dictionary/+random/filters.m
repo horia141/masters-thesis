@@ -1,13 +1,18 @@
 classdef filters < transforms.record.dictionary
     methods (Access=public)
-        function [obj] = filters(train_sample_plain,word_count,coding_method,coding_params,do_polarity_split,logger)
+        function [obj] = filters(train_sample_plain,word_count,coding_method,coding_params,coeff_count,num_workers,logger)
             assert(check.dataset_record(train_sample_plain));
             assert(check.scalar(word_count));
             assert(check.natural(word_count));
             assert(word_count > 0);
-            assert(transforms.record.dictionary.coding_setup_ok(word_count,coding_method,coding_params));
-            assert(check.scalar(do_polarity_split));
-            assert(check.logical(do_polarity_split));
+            assert(transforms.record.dictionary.coding_setup_ok(coding_method,coding_params));
+            assert(check.scalar(coeff_count));
+            assert(check.natural(coeff_count));
+            assert(coeff_count >= 1);
+            assert(coeff_count <= word_count);
+            assert(check.scalar(num_workers));
+            assert(check.natural(num_workers));
+            assert(num_workers >= 1);
             assert(check.scalar(logger));
             assert(check.logging_logger(logger));
             assert(logger.active);
@@ -15,7 +20,7 @@ classdef filters < transforms.record.dictionary
             d = dataset.geometry(train_sample_plain);
             dict = utils.common.rand_range(-1,1,word_count,d);
             
-            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,do_polarity_split,logger);
+            obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers,logger);
         end
     end
     
@@ -29,7 +34,7 @@ classdef filters < transforms.record.dictionary
             logg = logging.logger({hnd});
             s = utils.testing.three_component_cloud();
             
-            t = transforms.record.dictionary.random.filters(s,3,'Corr',[],false,logg);
+            t = transforms.record.dictionary.random.filters(s,3,'Corr',[],3,2,logg);
             
             assert(check.matrix(t.dict));
             assert(check.same(size(t.dict),[3 2]));
@@ -41,10 +46,12 @@ classdef filters < transforms.record.dictionary
             assert(check.checkf(@(ii)check.same(norm(t.dict_transp(:,ii)),1),1:3));
             assert(check.same(t.dict',t.dict_transp));
             assert(t.word_count == 3);
-            assert(check.same(t.coding_fn,@transforms.record.dictionary.correlation));
+            assert(check.same(t.coding_fn,@xtern.x_dictionary_correlation));
             assert(check.same(t.coding_params_cell,{}));
             assert(check.same(t.coding_method,'Corr'));
             assert(check.same(t.coding_params,[]));
+            assert(t.coeff_count == 3);
+            assert(t.num_workers == 2);
             assert(check.same(t.input_geometry,2));
             assert(check.same(t.output_geometry,3));
 

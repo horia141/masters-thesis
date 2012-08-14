@@ -93,6 +93,7 @@ coders_dicts = cell(CODER_REP_COUNT,length(param_list_coder));
 sparse_rate = zeros(CODER_REP_COUNT,length(param_list_coder));
 final_classifier = cell(CODER_REP_COUNT,length(param_list_coder));
 final_labels = cell(CODER_REP_COUNT,length(param_list_coder));
+saved_coded_subsample = cell(CODER_REP_COUNT,length(param_list_coder));
 
 classifier_scores = zeros(CLASSIFIER_REP_COUNT,length(param_list_classifier),CODER_REP_COUNT,length(param_list_coder));
 classifier_scores_avg = zeros(length(param_list_classifier),CODER_REP_COUNT,length(param_list_coder));
@@ -143,6 +144,8 @@ for coder_idx = 1:length(param_list_coder)
         d_ts_coded = dataset.flatten_image(d_ts);
 
         d_classifier_useful_coded = dataset.subsample(d_coder_useful_coded,classifier_useful_idx);
+
+        saved_coded_subsample{coder_rep_idx,coder_idx} = dataset.subsample(d_classifier_useful_coded,1:20);
         
         coders_dicts{coder_rep_idx,coder_idx} = [];
         sparse_rate(coder_rep_idx,coder_idx) = sum(sum(d_coder_useful_coded ~= 0)) / numel(d_coder_useful_coded);

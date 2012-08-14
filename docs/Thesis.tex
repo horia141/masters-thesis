@@ -1,0 +1,100 @@
+\documentclass[12pt,a4paper,oneside,english]{UPBThesis}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+\usepackage[
+  bookmarksnumbered,
+  bookmarks,
+  bookmarksopen=true,
+  pdftitle={Dissertation},
+  linktocpage,
+  dvips]{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{inputenc}
+
+\singlespacing
+
+\begin{document}
+
+\author{Horia COMAN}
+
+\title{Neural Networks for Fun And Profit}
+
+\facultatea{Faculty of Electronics, Telecommunications and Information Technology}
+\tiplucrare{Dissertation}
+\domeniu{Applied Electronics and Information Engineering}
+\catedra{Applied Electronics}
+\campus{Leu}
+\program{Advanced Curriculum Master Program in Imaging, Bioinformatics and Complex Systems}
+\titlulobtinut{Master of Science}
+\director{As. Dr. Ing. \c{S}erban OPRI\c{S}ESCU\\Prof. Dr. Ing. Erhardt BARTH}
+
+\submissionmonth{September}
+\submissionyear{2012}
+
+\beforepreface
+\listoffigures
+\listoftables
+\abbreviations {
+  CNN = Convolutional Neural Network\\
+}
+%\preface{}
+\afterpreface
+
+\unnumberedsection{Introduction}
+
+This work presents a guide on building an image classifier based on state of the art convolutional neural networks.
+
+\chapter{General Architecture of a Classifier}
+
+\chapter{Coding and Different Coding Methods}
+
+The simplest coding method is just performing a ``similarity'' between the two signal patch and the weights. The inner product is the most common way to achieve this. The corresponding filter outputs are independent. Furthermore, each filter sub-image is the correlation of the input image with the weights. This is the setup of a general Convolutional Neural Network.
+
+In general, we flatten the images. We assume the simplest kind of generative model, that is, a linear additive one with noise.
+
+\begin{equation}
+\hat{\textbf{x}} = \sum_{i=1}^w {a_i \textbf{C}^i} = \textbf{C}\textbf{a}~.
+\end{equation}
+
+We have an inverse problem. The naive way of solving this is $a = \textbf{C}^{-1}x$. This works only in the case of square and invertible $C$. For example, DCT bases have this property. They furthemore have the property that $C$ is orthogonal so there is no need for computing the inverse of the matrix, as it is just the orthogonal one. In general, there is only the requirement that the columns and lines of $C$ are independent one from another.
+
+There is also the case of an undercomplete $C$, that is $C$ is taller than it is tall. However, our case is that of an overcomplete $C$, that is $C$ is wider than it is tall. A single solution does not exist. The first solution is to compute $a$ that minimizes an error norm. This leads us to the least squares formulation of the problem. For under systems, that is when we have less features than there are dimensions in the system, solving by least squares is OK. The Normal method exists for this one, or gradient descent on the convex error surface can be utilized, depending on the computational setup. In any case, the $a$ found yields the optimal reconstruction wrt our cost function of $x$ onto the columnspace of $C$. For underdetermined systems this is not the case. The thing does not hold.
+
+For such systems, it has been remarked that good solutions are often sparse. This has an practical and biological base. A way is needed to obtain sparseness. One way to do this is to enforce a regularization term on the cost function which favors sparse solutions over non-sparse ones. Probabilistically speaking, we are forcing the priors of the $a$ distribution to have a special ``sparse'' form - Laplacian distribution etc.
+
+One way to do this, the SparseNet coding method, adds a special regularization term. [Derive SparseNet coding here].
+
+The canonical formulation is that of the $0$-norm minimization. This problem is NP-complete unfortunately. A good approximation is $1$-norm minimization, which has been shown to yield the best results under certain conditions. The LASSO is the techique uesed here.
+
+Since these are NP-problems, optimal solvers are not expected. However, approximate solvers are useful. A class of greedy methods, called Pursuits, has been introduced in the signal processing literature as solvers for this problem. In general, they solve the problem ... which can be seen as the Lagrange dual to the $0$-norm minimization. They have a general setup and there are different parameterizations which lead to any of a number of variants: MP, OMP, OOMP.
+
+The algorithms as given are not very computationally effective. However, they can be sped up. Starting with MP, the basic algorithm has run time ... Noticing that ... we can rewrite the algorithm as and obtain an algorithmic speedup to ...
+
+For OMP, a least squares problem must be solved at each iteration. This will not do ... enter the QR decomposition. This can be updated iteratively, so that the runtime is reduced to ...
+
+Again, OOMP can be improved in the same fashion, taking the runtime from ... to ...
+
+\chapter{Learning a Sparse Code}
+
+Until now we have assume a feature set is given. This is not always the case.
+
+\chapter{Statistics of Natural Scenes}
+
+\chapter{Experiments}
+
+\section{MNIST}
+
+\section{NORB and SmallNORB}
+
+\section{Text Detection Application}
+
+\chapter{Conclusions}
+
+\bibliographystyle{unsrt}
+\bibliography{Bibliography}
+
+\appendix
+
+\end{document}

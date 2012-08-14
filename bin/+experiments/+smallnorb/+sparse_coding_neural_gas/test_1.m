@@ -2,37 +2,41 @@
 
 MODEL_SELECTION_RATIO = {'full' 0.2};
 TRAIN_VALIDATION_RATIO = 0.5;
-CODER_REP_COUNT = 10;
+CODER_REP_COUNT = 1;
 CLASSIFIER_REP_COUNT = 5;
-RESULTS_PATH = '../explogs/mnist/baseline_intuitive/results_1.mat';
+RESULTS_PATH = '../explogs/smallnorb/sparse_coding_neural_gas/test_1/results_3_CCmp11_w1024_p13_k11_s3_zca_dict.mat';
+SAVED_SUBSAMPLE_COUNT = 20;
 
 TRAIN_WORKER_COUNT = 45;
 CLASSIFY_WORKER_COUNT = 48;
 
 %% Build the list of coder configurations to test.
 
+load ../explogs/smallnorb/sparse_coding_neural_gas/saved_dict_mp17_13x13_1024.mat
+size(saved_dict)
+
 % Coding method.
-param_desc_coder.patches_count = 100000;
+param_desc_coder.patches_count = 10;
 param_desc_coder.do_patch_zca = false;
-param_desc_coder.dictionary_type = 'Learn:Grad';
-param_desc_coder.dictionary_params = {{128 'MP' 7 10 1 20}};
+param_desc_coder.dictionary_type = 'Dict';
+param_desc_coder.dictionary_params = {{saved_dict 'MP' 17}};
 % Coder transforms.
 param_desc_coder.do_polarity_split = false;
 param_desc_coder.nonlinear_type = 'Logistic';
 param_desc_coder.nonlinear_params = {};
 param_desc_coder.reduce_type = 'Sqr';
 % Coder geometry.
-param_desc_coder.window_size = 9;
-param_desc_coder.window_step = 1;
-param_desc_coder.reduce_spread = 4;
+param_desc_coder.window_size = 13;
+param_desc_coder.window_step = 3;
+param_desc_coder.reduce_spread = 11;
 
 param_list_coder = utils.params.gen_all(param_desc_coder,...
-                                        @(p)mod(28 - 1,p.window_step) == 0,...
-                                        @(p)mod((28 - 1) / p.window_step + 1,p.reduce_spread) == 0);
+                                        @(p)mod(97 - 1,p.window_step) == 0,...
+                                        @(p)mod((97 - 1) / p.window_step + 1,p.reduce_spread) == 0);
                         
 %% Build the list of classifier configurations to test.
 
-param_desc_classifier.reg = logspace(-3,-1,10);
+param_desc_classifier.reg = logspace(-2,0,20);
 
 param_list_classifier = utils.params.gen_all(param_desc_classifier);
 
@@ -41,7 +45,7 @@ param_list_classifier = utils.params.gen_all(param_desc_classifier);
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Baseline Intuitive"');
+logg.beg_node('Experiment "SmallNORB - Sparse Coding Neural Gas - Test 1"');
 
 %% Make sure we can write to the results file.
 
@@ -63,7 +67,11 @@ end
 
 %% Load the experiment data, separating it into the part used for model selection and the part used for final testing.
 
-[d_tr,d_tr_ci,d_ts,d_ts_ci] = utils.load_dataset.mnist(logg.new_node('Loading MNIST dataset'));
+[d_tr_t,d_tr_ci,d_ts_t,d_ts_ci] = utils.load_dataset.smallnorb(logg.new_node('Loading SmallNORB dataset'));
+d_tr = zeros(97,97,1,dataset.count(d_tr_t));
+d_tr(1:96,1:96,1,:) = d_tr_t(:,:,1,:);
+d_ts = zeros(97,97,1,dataset.count(d_ts_t));
+d_ts(1:96,1:96,1,:) = d_ts_t(:,:,1,:);
 
 %% Filter the experiment model selection data, retaining only a subsample from it.
 
@@ -107,9 +115,10 @@ end
 coders = cell(CODER_REP_COUNT,length(param_list_coder));
 coders_dicts = cell(CODER_REP_COUNT,length(param_list_coder));
 sparse_rate = zeros(CODER_REP_COUNT,length(param_list_coder));
+saved_coded_subsample = cell(CODER_REP_COUNT,length(param_list_coder));
+saved_coded_subsample_ci = cell(CODER_REP_COUNT,length(param_list_coder));
 final_classifier = cell(CODER_REP_COUNT,length(param_list_coder));
 final_labels = cell(CODER_REP_COUNT,length(param_list_coder));
-saved_coded_subsample = cell(CODER_REP_COUNT,length(param_list_coder));
 
 classifier_scores = zeros(CLASSIFIER_REP_COUNT,length(param_list_classifier),CODER_REP_COUNT,length(param_list_coder));
 classifier_scores_avg = zeros(length(param_list_classifier),CODER_REP_COUNT,length(param_list_coder));
@@ -146,7 +155,7 @@ total_time_obj = tic();
 
 for coder_idx = 1:length(param_list_coder)
     logg.beg_node('Configuration %d/%d',coder_idx,length(param_list_coder));
-    
+
     for coder_rep_idx = 1:CODER_REP_COUNT
         logg.beg_node('Repetition %d/%d',coder_rep_idx,CODER_REP_COUNT);
         
@@ -177,9 +186,11 @@ for coder_idx = 1:length(param_list_coder)
         d_ts_coded = coders{coder_rep_idx,coder_idx}.code(d_ts,logg.new_node('Coding final testing data'));
 
         d_classifier_useful_coded = dataset.subsample(d_coder_useful_coded,classifier_useful_idx);
-        
+
         coders_dicts{coder_rep_idx,coder_idx} = coders{coder_rep_idx,coder_idx}.t_dictionary.dict;
         sparse_rate(coder_rep_idx,coder_idx) = sum(sum(d_coder_useful_coded ~= 0)) / numel(d_coder_useful_coded);
+        saved_coded_subsample{coder_rep_idx,coder_idx} = dataset.subsample(d_coder_useful_coded,1:SAVED_SUBSAMPLE_COUNT);
+        saved_coded_subsample_ci{coder_rep_idx,coder_idx} = d_coder_useful_ci.subsample(1:SAVED_SUBSAMPLE_COUNT);
         
         coder_code_times(coder_rep_idx,coder_idx) = toc(coder_code_times_obj);
 
@@ -210,7 +221,7 @@ for coder_idx = 1:length(param_list_coder)
                 d_validation_coded = dataset.subsample(d_classifier_useful_coded,validation_idx(:,classifier_rep_idx)');
                 d_validation_ci = d_classifier_useful_ci.subsample(validation_idx(:,classifier_rep_idx));
                 
-                cl = classifiers.svm_linear(d_train_coded,d_train_ci,'Primal','L2','L2',param_list_classifier(classifier_idx).reg,'1va',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on training subsample'));
+                cl = classifiers.svm_linear(d_train_coded,d_train_ci,'Primal','L2','L2',param_list_classifier(classifier_idx).reg,'1v1',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on training subsample'));
                 [~,~,classifier_scores(classifier_rep_idx,classifier_idx,coder_rep_idx,coder_idx),~,~] = cl.classify(d_validation_coded,d_validation_ci,logg.new_classifier('Classifying validation subsample'));
                 
                 classifier_times(classifier_rep_idx,classifier_idx,coder_rep_idx,coder_idx) = toc(classifier_times_obj);
@@ -258,7 +269,7 @@ for coder_idx = 1:length(param_list_coder)
         
         coder_classifyfinal_times_obj = tic();
         
-        final_classifier{coder_rep_idx,coder_idx} = classifiers.svm_linear(d_coder_useful_coded,d_coder_useful_ci,'Primal','L2','L2',param_list_classifier(best_classifier_idx(coder_rep_idx,coder_idx)).reg,'1va',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on full model selection data'));
+        final_classifier{coder_rep_idx,coder_idx} = classifiers.svm_linear(d_coder_useful_coded,d_coder_useful_ci,'Primal','L2','L2',param_list_classifier(best_classifier_idx(coder_rep_idx,coder_idx)).reg,'1v1',[TRAIN_WORKER_COUNT CLASSIFY_WORKER_COUNT],logg.new_classifier('Building classifier on full model selection data'));
         [final_labels{coder_rep_idx,coder_idx},~,coder_scores(coder_rep_idx,coder_idx),~,~] = final_classifier{coder_rep_idx,coder_idx}.classify(d_ts_coded,d_ts_ci,logg.new_classifier('Classifying final testing data'));
         
         coder_classifyfinal_times(coder_rep_idx,coder_idx) = toc(coder_classifyfinal_times_obj);
@@ -276,14 +287,14 @@ for coder_idx = 1:length(param_list_coder)
         logg.message('Saving intermediate results.');
     
         save(RESULTS_PATH,'-v7.3','coder_idx',...
-                                  'MODEL_SELECTION_RATIO','TRAIN_VALIDATION_RATIO','CODER_REP_COUNT','CLASSIFIER_REP_COUNT',...
+                                  'MODEL_SELECTION_RATIO','TRAIN_VALIDATION_RATIO','CODER_REP_COUNT','CLASSIFIER_REP_COUNT','RESULTS_PATH','SAVED_SUBSAMPLE_COUNT',...
                                   'coder_useful_idx','classifier_useful_idx','train_idx','validation_idx',...
                                   'param_desc_coder','param_list_coder','param_desc_classifier','param_list_classifier',...
-                                  'coders','coders_dicts','sparse_rate','final_classifier','final_labels',...
+                                  'coders','coders_dicts','sparse_rate','saved_coded_subsample','saved_coded_subsample_ci','final_classifier','final_labels',...
                                   'classifier_scores','classifier_scores_avg','classifier_scores_std',...
                                   'best_classifier_score_avg','best_classifier_idx',...
                                   'coder_scores','coder_scores_avg','coder_scores_std');
-                              
+        
         clear d_coder_useful_coded;
         clear d_ts_coded;
         clear d_classifier_useful_coded;
@@ -315,10 +326,10 @@ for coder_idx = 1:length(param_list_coder)
     logg.message('Saving intermediate results.');
     
     save(RESULTS_PATH,'-v7.3','coder_idx',...
-                              'MODEL_SELECTION_RATIO','TRAIN_VALIDATION_RATIO','CODER_REP_COUNT','CLASSIFIER_REP_COUNT',...
+                              'MODEL_SELECTION_RATIO','TRAIN_VALIDATION_RATIO','CODER_REP_COUNT','CLASSIFIER_REP_COUNT','RESULTS_PATH','SAVED_SUBSAMPLE_COUNT',...
                               'coder_useful_idx','classifier_useful_idx','train_idx','validation_idx',...
                               'param_desc_coder','param_list_coder','param_desc_classifier','param_list_classifier',...
-                              'coders','coders_dicts','sparse_rate','final_classifier','final_labels',...
+                              'coders','coders_dicts','sparse_rate','saved_coded_subsample','saved_coded_subsample_ci','final_classifier','final_labels',...
                               'classifier_scores','classifier_scores_avg','classifier_scores_std',...
                               'best_classifier_score_avg','best_classifier_idx',...
                               'coder_scores','coder_scores_avg','coder_scores_std');
@@ -336,10 +347,10 @@ logg.message('Total search time: %.2fs',total_time);
 
 logg.message('Saving final results.');
 
-save(RESULTS_PATH,'-v7.3','MODEL_SELECTION_RATIO','TRAIN_VALIDATION_RATIO','CODER_REP_COUNT','CLASSIFIER_REP_COUNT',...
+save(RESULTS_PATH,'-v7.3','MODEL_SELECTION_RATIO','TRAIN_VALIDATION_RATIO','CODER_REP_COUNT','CLASSIFIER_REP_COUNT','RESULTS_PATH','SAVED_SUBSAMPLE_COUNT',...
                           'coder_useful_idx','train_idx','validation_idx',...
                           'param_desc_coder','param_list_coder','param_desc_classifier','param_list_classifier',...
-                          'coders','coders_dicts','sparse_rate','final_classifier','final_labels',...
+                          'coders','coders_dicts','sparse_rate','saved_coded_subsample','saved_coded_subsample_ci','final_classifier','final_labels',...
                           'classifier_scores','classifier_scores_avg','classifier_scores_std',...
                           'best_classifier_score_avg','best_classifier_idx',...
                           'coder_scores','coder_scores_avg','coder_scores_std');

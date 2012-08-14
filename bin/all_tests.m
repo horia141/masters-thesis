@@ -15,7 +15,7 @@ end
 check.test(test_figure);
 utils.common.test(test_figure);
 utils.display.test(test_figure);
-utils.load_dataset.test(test_figure);
+%utils.load_dataset.test(test_figure);
 utils.params.test(test_figure);
 utils.testing.test(test_figure);
 logging.level.test(test_figure);
@@ -55,9 +55,12 @@ transforms.image.recoder.test(test_figure);
 
 classifiers.cmeans.test(test_figure);
 classifiers.knn.test(test_figure);
-classifiers.logistic.test(test_figure);
-classifiers.svm_linear.test(test_figure);
-classifiers.svm_kernel.test(test_figure);
+classifiers.linear.logistic.test(test_figure);
+classifiers.linear.svm.test(test_figure);
+
+%% Tests for external stuff.
+
+system('./+xtern/test');
 
 %% Print timing results.
 

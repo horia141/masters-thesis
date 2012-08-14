@@ -1,9 +1,9 @@
 %% Setup experiment-wide constants.
 
 MODEL_SELECTION_RATIO = 'full';
-CODER_REP_COUNT = 100;
+CODER_REP_COUNT = 5;
 CLASSIFIER_REG = 0.0025;
-RESULTS_PATH = '../explogs/mnist/massive_boost/results_2.mat';
+RESULTS_PATH = '../explogs/mnist/correlation_order/best2_coder_geometry/results_1.mat';
 
 TRAIN_WORKER_COUNT = 45;
 CLASSIFY_WORKER_COUNT = 48;
@@ -19,11 +19,11 @@ param_desc_coder.dictionary_params = {{512 'CorrOrder' [0.05 0.01 48]}};
 param_desc_coder.do_polarity_split = false;
 param_desc_coder.nonlinear_type = 'Linear';
 param_desc_coder.nonlinear_params = {};
-param_desc_coder.reduce_type = 'Sqr';
+param_desc_coder.reduce_type = 'MaxMagnitude';
 % Coder geometry.
-param_desc_coder.window_size = 9;
+param_desc_coder.window_size = [3 5 7 9 11 13 15 17 19 21 23];
 param_desc_coder.window_step = 1;
-param_desc_coder.reduce_spread = 4;
+param_desc_coder.reduce_spread = [2 4 7 14 28];
 
 param_list_coder = utils.params.gen_all(param_desc_coder,...
                                         @(p)mod(28 - 1,p.window_step) == 0,...
@@ -34,7 +34,7 @@ param_list_coder = utils.params.gen_all(param_desc_coder,...
 hnd = logging.handlers.stdout(logging.level.Experiment);
 logg = logging.logger({hnd});
 
-logg.beg_node('Experiment "MNIST - Massive Boost"');
+logg.beg_node('Experiment "MNIST - Correlation Order - Best Coder Geometry"');
 
 %% Make sure we can write to the results file.
 

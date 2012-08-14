@@ -1,48 +1,53 @@
 CXX ?= g++
 CC ?= gcc
-CFLAGS = -O3 -Wall -Wconversion -fPIC -lpthread -D_GNU_SOURCE
-MEX = /opt/local-ubuntu/MATLAB/R2011a/bin/mex
-MEXFLAGS = -O CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -largeArrayDims
-XTERN = +xtern
+CFLAGS = -fstrict-aliasing -Wstrict-aliasing -g -Wall -Wconversion -fPIC -lpthread -lm -D_GNU_SOURCE
+#MEX = /opt/local-ubuntu/MATLAB/R2011a/bin/mex
+MEX = /opt/MatLAB/R2012a/bin/mex
+MEXFLAGS = -g CC\#$(CXX) CXX\#$(CXX) CFLAGS\#"$(CFLAGS)" CXXFLAGS\#"$(CFLAGS)" -largeArrayDims
+XTERN_BASE_H = +xtern/base_defines.h +xtern/latools.h +xtern/coding_methods.h +xtern/image_coder.h +xtern/task_control.h
+XTERN_BASE_C = +xtern/latools.c +xtern/coding_methods.c +xtern/image_coder.c +xtern/task_control.c
+XTERN_H = +xtern/x_mex_interface.h $(XTERN_BASE_H)
+XTERN_C = +xtern/x_mex_interface.c $(XTERN_BASE_C)
 
-all: +classifiers/+liblinear/x_do_train_one_vs_all.mexa64 +classifiers/+liblinear/x_do_train_one_vs_one.mexa64 +classifiers/+liblinear/x_do_classify.mexa64 +classifiers/+libsvm/x_do_train_one_vs_all.mexa64 +classifiers/+libsvm/x_do_train_one_vs_one.mexa64 +classifiers/+libsvm/x_do_classify.mexa64 +transforms/+record/dictionary_correlation_order.mexa64
+all: +xtern/test +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblinear/blas/blas.a +xtern/x_classifiers_liblinear_classify.mexa64 +xtern/x_classifiers_liblinear_train_one_vs_all.mexa64 +xtern/x_classifiers_liblinear_train_one_vs_one.mexa64 +xtern/x_dictionary_correlation.mexa64 +xtern/x_dictionary_correlation_order.mexa64 +xtern/x_dictionary_matching_pursuit.mexa64 +xtern/x_image_recoder_code.mexa64
 
-+classifiers/+liblinear/x_do_train_one_vs_all.mexa64: +classifiers/+liblinear/x_do_train_one_vs_all.c +classifiers/+liblinear/x_defines.h +classifiers/+liblinear/tron.o +classifiers/+liblinear/linear.o +classifiers/+liblinear/blas/blas.a +xtern/x_common.c +xtern/x_common.h 
-	$(MEX) $(MEXFLAGS) -outdir +classifiers/+liblinear -I+xtern +classifiers/+liblinear/x_do_train_one_vs_all.c +classifiers/+liblinear/blas/blas.a +classifiers/+liblinear/tron.o +classifiers/+liblinear/linear.o +xtern/x_common.c $(LIBS)
++xtern/test: +xtern/test.c $(XTERN_BASE_C) $(XTERN_BASE_H)
+	gcc $(CFLAGS) -o +xtern/test -I+xtern +xtern/test.c $(XTERN_BASE_C) -lpthread -lm
 
-+classifiers/+liblinear/x_do_train_one_vs_one.mexa64: +classifiers/+liblinear/x_do_train_one_vs_one.c +classifiers/+liblinear/x_defines.h +classifiers/+liblinear/tron.o +classifiers/+liblinear/linear.o +classifiers/+liblinear/blas/blas.a +xtern/x_common.c +xtern/x_common.h
-	$(MEX) $(MEXFLAGS) -outdir +classifiers/+liblinear -I+xtern +classifiers/+liblinear/x_do_train_one_vs_one.c +classifiers/+liblinear/blas/blas.a +classifiers/+liblinear/tron.o +classifiers/+liblinear/linear.o +xtern/x_common.c $(LIBS)
++xtern/liblinear/tron.o: +xtern/liblinear/tron.cpp +xtern/liblinear/tron.h
+	$(CXX) $(CFLAGS) -c -o +xtern/liblinear/tron.o +xtern/liblinear/tron.cpp
 
-+classifiers/+liblinear/x_do_classify.mexa64: +classifiers/+liblinear/x_do_classify.c +classifiers/+liblinear/x_defines.h +classifiers/+liblinear/tron.o +classifiers/+liblinear/linear.o +classifiers/+liblinear/blas/blas.a +xtern/x_common.c +xtern/x_common.h
-	$(MEX) $(MEXFLAGS) -outdir +classifiers/+liblinear -I+xtern +classifiers/+liblinear/x_do_classify.c +classifiers/+liblinear/blas/blas.a +classifiers/+liblinear/tron.o +classifiers/+liblinear/linear.o +xtern/x_common.c $(LIBS)
++xtern/liblinear/linear.o: +xtern/liblinear/linear.cpp +xtern/liblinear/linear.h
+	$(CXX) $(CFLAGS) -c -o +xtern/liblinear/linear.o +xtern/liblinear/linear.cpp
 
-+classifiers/+liblinear/tron.o: +classifiers/+liblinear/tron.cpp +classifiers/+liblinear/tron.h
-	$(CXX) $(CFLAGS) -c -o +classifiers/+liblinear/tron.o +classifiers/+liblinear/tron.cpp
++xtern/liblinear/blas/blas.a: +xtern/liblinear/blas/*.c +xtern/liblinear/blas/*.h
+	make -C +xtern/liblinear/blas OPTFLAGS='$(CFLAGS)' CC='$(CC)'
 
-+classifiers/+liblinear/linear.o: +classifiers/+liblinear/linear.cpp +classifiers/+liblinear/linear.h
-	$(CXX) $(CFLAGS) -c -o +classifiers/+liblinear/linear.o +classifiers/+liblinear/linear.cpp
++xtern/x_classifiers_liblinear_classify.mexa64: +xtern/x_classifiers_liblinear_classify.c +xtern/x_classifiers_liblinear_defines.h +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblinear/blas/blas.a $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_classifiers_liblinear_classify.c +xtern/liblinear/blas/blas.a +xtern/liblinear/tron.o +xtern/liblinear/linear.o $(XTERN_C)
 
-+classifiers/+liblinear/blas/blas.a: +classifiers/+liblinear/blas/*.c +classifiers/+liblinear/blas/*.h
-	make -C +classifiers/+liblinear/blas OPTFLAGS='$(CFLAGS)' CC='$(CC)'
++xtern/x_classifiers_liblinear_train_one_vs_all.mexa64: +xtern/x_classifiers_liblinear_train_one_vs_all.c +xtern/x_classifiers_liblinear_defines.h +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblinear/blas/blas.a $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_classifiers_liblinear_train_one_vs_all.c +xtern/liblinear/blas/blas.a +xtern/liblinear/tron.o +xtern/liblinear/linear.o $(XTERN_C)
 
-+classifiers/+libsvm/x_do_train_one_vs_all.mexa64: +classifiers/+libsvm/x_do_train_one_vs_all.c +classifiers/+libsvm/x_defines.h +classifiers/+libsvm/svm.o +xtern/x_common.c +xtern/x_common.h
-	$(MEX) $(MEXFLAGS) -outdir +classifiers/+libsvm -I+xtern +classifiers/+libsvm/x_do_train_one_vs_all.c +classifiers/+libsvm/svm.o +xtern/x_common.c
++xtern/x_classifiers_liblinear_train_one_vs_one.mexa64: +xtern/x_classifiers_liblinear_train_one_vs_one.c +xtern/x_classifiers_liblinear_defines.h +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblinear/blas/blas.a $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_classifiers_liblinear_train_one_vs_one.c +xtern/liblinear/blas/blas.a +xtern/liblinear/tron.o +xtern/liblinear/linear.o $(XTERN_C)
 
-+classifiers/+libsvm/x_do_train_one_vs_one.mexa64: +classifiers/+libsvm/x_do_train_one_vs_one.c +classifiers/+libsvm/x_defines.h +classifiers/+libsvm/svm.o +xtern/x_common.c +xtern/x_common.h
-	$(MEX) $(MEXFLAGS) -outdir +classifiers/+libsvm -I+xtern +classifiers/+libsvm/x_do_train_one_vs_one.c +classifiers/+libsvm/svm.o +xtern/x_common.c
++xtern/x_dictionary_correlation.mexa64: +xtern/x_dictionary_correlation.c $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_dictionary_correlation.c $(XTERN_C)
 
-+classifiers/+libsvm/x_do_classify.mexa64: +classifiers/+libsvm/x_do_classify.c +classifiers/+libsvm/x_defines.h +classifiers/+libsvm/svm.o +xtern/x_common.c +xtern/x_common.h
-	$(MEX) $(MEXFLAGS) -outdir +classifiers/+libsvm -I+xtern +classifiers/+libsvm/x_do_classify.c +classifiers/+libsvm/svm.o +xtern/x_common.c
++xtern/x_dictionary_correlation_order.mexa64: +xtern/x_dictionary_correlation_order.c $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_dictionary_correlation_order.c $(XTERN_C)
 
-+classifiers/+libsvm/svm.o: +classifiers/+libsvm/svm.cpp +classifiers/+libsvm/svm.h
-	$(CXX) $(CFLAGS) -c -o +classifiers/+libsvm/svm.o +classifiers/+libsvm/svm.cpp
++xtern/x_dictionary_matching_pursuit.mexa64: +xtern/x_dictionary_matching_pursuit.c $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_dictionary_matching_pursuit.c $(XTERN_C)
 
-+transforms/+record/dictionary_correlation_order.mexa64: +transforms/+record/dictionary_correlation_order.c +xtern/x_common.c +xtern/x_common.h
-	$(MEX) $(MEXFLAGS) -outdir +transforms/+record -I+xtern +transforms/+record/dictionary_correlation_order.c +xtern/x_common.c
++xtern/x_image_recoder_code.mexa64: +xtern/x_image_recoder_code.c $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_image_recoder_code.c $(XTERN_C)
 
 clean:
-	make -C +classifiers/+liblinear/blas clean
-	rm -f +classifiers/+liblinear/*.mexa64
-	rm -f +classifiers/+liblinear/*.o
-	rm -f +classifiers/+libsvm/*.mexa64
-	rm -f +classifiers/+libsvm/*.o
+	rm -f +xtern/test
+	rm -f +xtern/*.o
+	rm -f +xtern/liblinear/*.o
+	rm -f +xtern/*.mexa64
+	rm -f +xtern/*.mexglx
+	make -C +xtern/liblinear/blas clean

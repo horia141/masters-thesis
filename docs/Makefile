@@ -1,15 +1,13 @@
-WSOM_Paper.dvi: WSOM_Paper.tex
-	pdflatex WSOM_Paper.tex
-	bibtex WSOM_Paper.aux
-	pdflatex WSOM_Paper.tex
-	pdflatex WSOM_Paper.tex
+all: Thesis.pdf WSOM_Paper.pdf
 
-view: WSOM_Paper.dvi
-	okular WSOM_Paper.pdf
+Thesis.pdf: Thesis.tex
+	pdflatex Thesis.tex
+
+WSOM_Paper.pdf: WSOM_Paper.tex
+	pdflatex WSOM_Paper.tex
 
 clean:
 	rm *.aux
 	rm *.bbl
 	rm *.blg
-	rm *.dvi
 	rm *.log
