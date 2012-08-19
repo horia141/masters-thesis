@@ -41,6 +41,7 @@ transforms.record.standardize.test(test_figure);
 transforms.record.pca.test(test_figure);
 transforms.record.zca.test(test_figure);
 transforms.record.dictionary.test(test_figure);
+transforms.record.dictionary.given.dct(test_figures);
 transforms.record.dictionary.random.filters.test(test_figure);
 transforms.record.dictionary.random.instances.test(test_figure);
 transforms.record.dictionary.learn.grad.test(test_figure);
