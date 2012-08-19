@@ -1,14 +1,12 @@
 classdef recoder < transform
     properties (GetAccess=public,SetAccess=immutable)
-        resize_code;
-        aftresize_row_count;
-        aftresize_col_count;
         dictionary_ctor_fn;
         word_count;
         coding_code;
         aftcoding_row_count;
         aftcoding_col_count;
         nonlinear_code;
+        nonlinear_modulator;
         polarity_split_code;
         polarity_split_multiplier;
         reduce_code;
@@ -21,12 +19,10 @@ classdef recoder < transform
         patch_col_count;
         patch_required_variance;
         do_patch_zca;
-        resize_type;
-        new_row_count;
-        new_col_count;
         dictionary_type;
         dictionary_params;
         nonlinear_type;
+        nonlinear_params;
         polarity_split_type;
         reduce_type;
         reduce_spread;
@@ -35,7 +31,7 @@ classdef recoder < transform
     
     methods (Access=public)
         function [obj] = recoder(train_sample_plain,patches_count,patch_row_count,patch_col_count,patch_required_variance,do_patch_zca,...
-                                  resize_type,new_row_count,new_col_count,dictionary_type,dictionary_params,nonlinear_type,polarity_split_type,reduce_type,reduce_spread,num_workers)
+                                 dictionary_type,dictionary_params,nonlinear_type,nonlinear_params,polarity_split_type,reduce_type,reduce_spread,num_workers)
             assert(check.dataset_image(train_sample_plain));
             assert(size(train_sample_plain,3) == 1); % A BIT OF A HACK
             assert(check.scalar(patches_count));
@@ -55,22 +51,11 @@ classdef recoder < transform
             assert(patch_required_variance >= 0);
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
-            assert(check.scalar(resize_type));
-            assert(check.string(resize_type));
-            assert(check.one_of(resize_type,'Identity','Closest'));
-            assert(check.scalar(new_row_count));
-            assert(check.natural(new_row_count));
-            assert(~check.same(resize_type,'Closest') || (new_row_count >= 1));
-            assert(new_row_count <= size(train_sample_plain,1)); % A BIT OF A HACK
-            assert(check.scalar(new_col_count));
-            assert(check.natural(new_col_count));
-            assert(~check.same(resize_type,'Closest') || (new_col_count >= 1));
-            assert(new_col_count <= size(train_sample_plain,2)); % A BIT OF A HACK
             assert(check.scalar(dictionary_type));
             assert(check.string(dictionary_type));
             assert(check.one_of(dictionary_type,'Dict','Random:Filters','Random:Instances','Learn:Grad','Learn:GradSt'));
             assert((check.same(dictionary_type,'Dict') && check.matrix(dictionary_params{1}) && ...
-                    (size(dictionary_params{1},2) == patch_row_count * patch_col_count) && check.number(dictionary_params{1})) || ...
+                   (size(dictionary_params{1},2) == patch_row_count * patch_col_count) && check.number(dictionary_params{1})) || ...
                    (check.one_of(dictionary_type,'Random:Filters','Random:Instances','Learn:Grad','Learn:GradSt') && ...
                     check.scalar(dictionary_params{1}) && check.natural(dictionary_params{1}) && dictionary_params{1} >= 1));
             assert(check.vector(dictionary_params));
@@ -78,7 +63,7 @@ classdef recoder < transform
             assert(check.cell(dictionary_params));
             assert(check.scalar(dictionary_params{2}));
             assert(check.string(dictionary_params{2}));
-            assert(check.one_of(dictionary_params{2},'Corr','CorrOrder','MP'));
+            assert(check.one_of(dictionary_params{2},'Corr','MP'));
             assert(check.scalar(dictionary_params{4}));
             assert(check.natural(dictionary_params{4}));
             assert(dictionary_params{4} >= 1);
@@ -87,7 +72,11 @@ classdef recoder < transform
             assert(dictionary_params{5} >= 1);
             assert(check.scalar(nonlinear_type));
             assert(check.string(nonlinear_type));
-            assert(check.one_of(nonlinear_type,'Linear','Logistic'));
+            assert(check.one_of(nonlinear_type,'Linear','Logistic','GlobalOrder'));
+            assert((check.same(nonlinear_type,'Linear') && check.empty(nonlinear_params)) || ...
+                   (check.same(nonlinear_type,'Logistic') && check.empty(nonlinear_params)) || ...
+                   (check.same(nonlinear_type,'GlobalOrder') && check.scalar(nonlinear_params) && ...
+                    check.number(nonlinear_params) && (nonlinear_params > 0)));
             assert(check.scalar(polarity_split_type));
             assert(check.string(polarity_split_type));
             assert(check.one_of(polarity_split_type,'None','NoSign','KeepSign'));
@@ -102,18 +91,6 @@ classdef recoder < transform
             assert(num_workers >= 1);
             
             [d,dr,dc,~] = dataset.geometry(train_sample_plain);
-            
-            if check.same(resize_type,'Identity')
-                resize_code_t = 0;
-                aftresize_row_count_t = dr;
-                aftresize_col_count_t = dc;
-            elseif check.same(resize_type,'Closest')
-                resize_code_t = 1;
-                aftresize_row_count_t = new_row_count;
-                aftresize_col_count_t = new_col_count;
-            else
-                assert(false);
-            end
             
             if check.same(dictionary_type,'Dict')
                 dictionary_ctor_fn_t = @transforms.record.dictionary;
@@ -136,21 +113,24 @@ classdef recoder < transform
             
             if check.same(dictionary_params{2},'Corr')
                 coding_code_t = 0;
-            elseif check.same(dictionary_params{2},'CorrOrder')
-                coding_code_t = 1;
             elseif check.same(dictionary_params{2},'MP')
-                coding_code_t = 2;
+                coding_code_t = 1;
             else
                 assert(false);
             end
             
-            aftcoding_row_count_t = aftresize_row_count_t - mod(aftresize_row_count_t,reduce_spread);
-            aftcoding_col_count_t = aftresize_col_count_t - mod(aftresize_col_count_t,reduce_spread);
+            aftcoding_row_count_t = dr - mod(dr,reduce_spread);
+            aftcoding_col_count_t = dc - mod(dc,reduce_spread);
             
             if check.same(nonlinear_type,'Linear')
                 nonlinear_code_t = 0;
+                nonlinear_modulator_t = [];
             elseif check.same(nonlinear_type,'Logistic')
                 nonlinear_code_t = 1;
+                nonlinear_modulator_t = [];
+            elseif check.same(nonlinear_type,'GlobalOrder')
+                nonlinear_code_t = 2;
+                nonlinear_modulator_t = utils.common.schedule(1,nonlinear_params,dictionary_params{4});
             else
                 assert(false);
             end
@@ -204,15 +184,13 @@ classdef recoder < transform
             output_geometry = polarity_split_multiplier_t * aftreduce_row_count_t * aftreduce_col_count_t * word_count_t;
             
             obj = obj@transform(input_geometry,output_geometry);
-            obj.resize_code = resize_code_t;
-            obj.aftresize_row_count = aftresize_row_count_t;
-            obj.aftresize_col_count = aftresize_col_count_t;
             obj.dictionary_ctor_fn = dictionary_ctor_fn_t;
             obj.word_count = word_count_t;
             obj.coding_code = coding_code_t;
             obj.aftcoding_row_count = aftcoding_row_count_t;
             obj.aftcoding_col_count = aftcoding_col_count_t;
             obj.nonlinear_code = nonlinear_code_t;
+            obj.nonlinear_modulator = nonlinear_modulator_t;
             obj.polarity_split_code = polarity_split_code_t;
             obj.polarity_split_multiplier = polarity_split_multiplier_t;
             obj.reduce_code = reduce_code_t;
@@ -225,12 +203,10 @@ classdef recoder < transform
             obj.patch_col_count = patch_col_count;
             obj.patch_required_variance = patch_required_variance;
             obj.do_patch_zca = do_patch_zca;
-            obj.resize_type = resize_type;
-            obj.new_row_count = new_row_count;
-            obj.new_col_count = new_col_count;
             obj.dictionary_type = dictionary_type;
             obj.dictionary_params = dictionary_params;
             obj.nonlinear_type = nonlinear_type;
+            obj.nonlinear_params = nonlinear_params;
             obj.polarity_split_type = polarity_split_type;
             obj.reduce_type = reduce_type;
             obj.reduce_spread = reduce_spread;
@@ -239,17 +215,16 @@ classdef recoder < transform
     end
     
     methods (Access=protected)
-        function [sample_coded] = do_code(obj,sample_plain,~)
+        function [sample_coded] = do_code(obj,sample_plain)
             [d,dr,dc,~] = dataset.geometry(sample_plain);
             sample_plain_flattened = reshape(sample_plain,d,[]);
             [sample_coded_t,observations_perm] = ...
                 xtern.x_image_recoder_code(dr,dc,obj.patch_row_count,obj.patch_col_count,...
-                                           obj.resize_code,obj.new_row_count,obj.new_col_count,...
                                            obj.coding_code,obj.t_dictionary.dict,obj.t_dictionary.dict_transp,obj.t_dictionary.dict_x_dict_transp,...
-                                           obj.t_dictionary.coeff_count,obj.t_dictionary.coding_params,...
-                                           obj.nonlinear_code,obj.polarity_split_code,obj.reduce_code,obj.reduce_spread,...
+                                           obj.t_dictionary.coeff_count,obj.t_dictionary.coding_params_cell{:},...
+                                           obj.nonlinear_code,obj.nonlinear_modulator,obj.polarity_split_code,obj.reduce_code,obj.reduce_spread,...
                                            sample_plain_flattened,obj.num_workers);
-            sample_coded(:,observations_perm+1) = sample_coded_t;                       
+            sample_coded(:,observations_perm+1) = sample_coded_t;
         end
     end
     

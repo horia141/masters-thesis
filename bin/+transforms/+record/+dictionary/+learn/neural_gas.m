@@ -41,7 +41,7 @@ classdef neural_gas < transforms.record.dictionary
             assert(final_learn_rate <= initial_learn_rate);
             assert(final_neight_size <= initial_neight_size);
 
-            [coding_fn_t,coding_params_cell_t] = transforms.record.dictionary.coding_setup(word_count,coding_method,coding_params,coeff_count);
+            coding_fn_t = transforms.record.dictionary.coding_setup(coding_method);
 
             N = dataset.count(train_sample_plain);
             d = dataset.geometry(train_sample_plain);
@@ -57,7 +57,7 @@ classdef neural_gas < transforms.record.dictionary
                 for iter = 1:max_iter_count
                     target_observation = train_sample_plain(:,randi(N));
                     
-                    similarities = coding_fn_t(dict,dict_transp,dict_x_dict_transp,coeff_count,target_observation,num_workers);
+                    similarities = coding_fn_t(dict,dict_transp,dict_x_dict_transp,coding_params,coeff_count,target_observation,num_workers);
                     [~,sorted_similarities_idx] = sort(-abs(similarities),'ascend');
                     ranks(sorted_similarities_idx) = 1:word_count;
                     similarities_big = repmat(similarities,1,d);
@@ -100,8 +100,6 @@ classdef neural_gas < transforms.record.dictionary
             fprintf('Testing "transforms.record.dictionary.learn.neural_gas".\n');
             
             fprintf('  Proper construction.\n');
-            
-            fprintf('  Function "code".\n');
         end
     end
 end

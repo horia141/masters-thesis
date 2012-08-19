@@ -21,21 +21,19 @@ enum input_decoder {
     I_COL_COUNT            = 1,
     I_PATCH_ROW_COUNT      = 2,
     I_PATCH_COL_COUNT      = 3,
-    I_RESIZE_TYPE          = 4,
-    I_NEW_ROW_COUNT        = 5,
-    I_NEW_COL_COUNT        = 6,
-    I_CODING_TYPE          = 7,
-    I_DICT                 = 8,
-    I_DICT_TRANSP          = 9,
-    I_DICT_X_DICT_TRANSP   = 10,
-    I_COEFF_COUNT          = 11,
-    I_CODING_PARAMS        = 12,
-    I_NONLINEAR_TYPE       = 13,
-    I_POLARITY_SPLIT_TYPE  = 14,
-    I_REDUCE_TYPE          = 15,
-    I_REDUCE_SPREAD        = 16,
-    I_SAMPLE               = 17,
-    I_NUM_WORKERS          = 18,
+    I_CODING_TYPE          = 4,
+    I_DICT                 = 5,
+    I_DICT_TRANSP          = 6,
+    I_DICT_X_DICT_TRANSP   = 7,
+    I_COEFF_COUNT          = 8,
+    I_CODING_PARAMS        = 9,
+    I_NONLINEAR_TYPE       = 10,
+    I_NONLINEAR_MODULATOR  = 11,
+    I_POLARITY_SPLIT_TYPE  = 12,
+    I_REDUCE_TYPE          = 13,
+    I_REDUCE_SPREAD        = 14,
+    I_SAMPLE               = 15,
+    I_NUM_WORKERS          = 16,
     INPUTS_COUNT
 };
 
@@ -46,9 +44,6 @@ struct global_info {
     size_t                    col_count;
     size_t                    patch_row_count;
     size_t                    patch_col_count;
-    enum resize_type          resize_type;
-    size_t                    new_row_count;
-    size_t                    new_col_count;
     enum coding_type          coding_type;
     size_t                    word_count;
     const double*             dict;
@@ -57,6 +52,7 @@ struct global_info {
     size_t                    coeff_count;
     const void*               coding_params;
     enum nonlinear_type       nonlinear_type;
+    const double*             nonlinear_modulator;
     enum polarity_split_type  polarity_split_type;
     enum reduce_type          reduce_type;
     size_t                    reduce_spread;
@@ -95,15 +91,14 @@ do_task(
     o_coeffs = (double*)malloc(global_info->new_geometry * sizeof(double));
     o_coeffs_idx = (size_t*)malloc(global_info->new_geometry * sizeof(double));
     coding_tmps = (char*)malloc(code_image_coding_tmps_length(global_info->row_count,global_info->col_count,global_info->patch_row_count,global_info->patch_col_count,
-							      global_info->resize_type,global_info->new_row_count,global_info->new_col_count,
 							      global_info->coding_type,global_info->word_count,global_info->coeff_count,global_info->reduce_spread));
 
     for (ii = 0; ii < task_info_count; ii++) {
 	code_image(&o_coeffs_count,o_coeffs,o_coeffs_idx,
-		   global_info->geometry,global_info->row_count,global_info->col_count,global_info->patch_row_count,global_info->patch_col_count,
-		   global_info->resize_type,global_info->new_row_count,global_info->new_col_count,
+		   global_info->geometry,global_info->row_count,global_info->col_count,
+		   global_info->patch_row_count,global_info->patch_col_count,
 		   global_info->coding_type,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,global_info->coeff_count,global_info->coding_params,
-		   global_info->nonlinear_type,global_info->polarity_split_type,global_info->reduce_type,global_info->reduce_spread,
+		   global_info->nonlinear_type,global_info->nonlinear_modulator,global_info->polarity_split_type,global_info->reduce_type,global_info->reduce_spread,
 		   task_info[ii].observation,coding_tmps);
 
 	pthread_mutex_lock(&global_vars->coeffs_queue_control);
@@ -135,9 +130,6 @@ mexFunction(
     size_t                    col_count;
     size_t                    patch_row_count;
     size_t                    patch_col_count;
-    enum resize_type          resize_type;
-    size_t                    new_row_count;
-    size_t                    new_col_count;
     enum coding_type          coding_type;
     size_t                    word_count;
     const double*             dict;
@@ -146,6 +138,7 @@ mexFunction(
     size_t                    coeff_count;
     const void*               coding_params;
     enum nonlinear_type       nonlinear_type;
+    const double*             nonlinear_modulator;
     enum polarity_split_type  polarity_split_type;
     enum reduce_type          reduce_type;
     size_t                    reduce_spread;
@@ -166,9 +159,6 @@ mexFunction(
     col_count = (size_t)mxGetScalar(input[I_COL_COUNT]);
     patch_row_count = (size_t)mxGetScalar(input[I_PATCH_ROW_COUNT]);
     patch_col_count = (size_t)mxGetScalar(input[I_PATCH_COL_COUNT]);
-    resize_type = (enum resize_type)mxGetScalar(input[I_RESIZE_TYPE]);
-    new_row_count = (size_t)mxGetScalar(input[I_NEW_ROW_COUNT]);
-    new_col_count = (size_t)mxGetScalar(input[I_NEW_COL_COUNT]);
     coding_type = (enum coding_type)mxGetScalar(input[I_CODING_TYPE]);
     word_count = mxGetM(input[I_DICT]);
     dict = mxGetPr(input[I_DICT]);
@@ -177,6 +167,7 @@ mexFunction(
     coeff_count = (size_t)mxGetScalar(input[I_COEFF_COUNT]);
     coding_params = mxGetPr(input[I_CODING_PARAMS]);
     nonlinear_type = (enum nonlinear_type)mxGetScalar(input[I_NONLINEAR_TYPE]);
+    nonlinear_modulator = mxGetPr(input[I_NONLINEAR_MODULATOR]);
     polarity_split_type = (enum polarity_split_type)mxGetScalar(input[I_POLARITY_SPLIT_TYPE]);
     reduce_type = (enum reduce_type)mxGetScalar(input[I_REDUCE_TYPE]);
     reduce_spread = (size_t)mxGetScalar(input[I_REDUCE_SPREAD]);
@@ -187,14 +178,11 @@ mexFunction(
     /* Build task distribution information. */
 
     global_info.geometry = geometry;
-    global_info.new_geometry = code_image_new_geometry(row_count,col_count,resize_type,new_row_count,new_col_count,word_count,polarity_split_type,reduce_spread);
+    global_info.new_geometry = code_image_new_geometry(row_count,col_count,word_count,polarity_split_type,reduce_spread);
     global_info.row_count = row_count;
     global_info.col_count = col_count;
     global_info.patch_row_count = patch_row_count;
     global_info.patch_col_count = patch_col_count;
-    global_info.resize_type = resize_type;
-    global_info.new_row_count = new_row_count;
-    global_info.new_col_count = new_col_count;
     global_info.coding_type = coding_type;
     global_info.word_count = word_count;
     global_info.dict = dict;
@@ -203,6 +191,7 @@ mexFunction(
     global_info.coeff_count = coeff_count;
     global_info.coding_params = coding_params;
     global_info.nonlinear_type = nonlinear_type;
+    global_info.nonlinear_modulator = nonlinear_modulator;
     global_info.polarity_split_type = polarity_split_type;
     global_info.reduce_type = reduce_type;
     global_info.reduce_spread = reduce_spread;
@@ -229,8 +218,8 @@ mexFunction(
 
     /* Build output. */
 
-    global_vars.o_sample_coded_pr = (double*)mxRealloc(global_vars.o_sample_coded_pr,global_vars.current_sample_coded_length);
-    global_vars.o_sample_coded_ir = (size_t*)mxRealloc(global_vars.o_sample_coded_ir,global_vars.current_sample_coded_length);
+    global_vars.o_sample_coded_pr = (double*)mxRealloc(global_vars.o_sample_coded_pr,global_vars.current_sample_coded_length * sizeof(double));
+    global_vars.o_sample_coded_ir = (size_t*)mxRealloc(global_vars.o_sample_coded_ir,global_vars.current_sample_coded_length * sizeof(size_t));
     global_vars.o_sample_coded_jc[sample_count] = global_vars.current_sample_coded_length;
 
     output[O_SAMPLE_CODED] = mxCreateSparse(global_info.new_geometry,sample_count,0,mxREAL);

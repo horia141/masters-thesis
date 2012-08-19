@@ -31,10 +31,7 @@ classdef testing
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
 
-            hnd = logging.handlers.zero(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            images = utils.load_dataset.g_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte',logg);
+            images = utils.load_dataset.g_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
             
             t_patch = transforms.image.patch_extract(images,patches_count,patch_row_count,patch_col_count,0.01);
             
@@ -52,9 +49,6 @@ classdef testing
                 t_zca = {};
                 patches = patches_2;
             end
-            
-            logg.close();
-            hnd.close();
         end
         
         function [patches_r,patches_g,patches_b,t_patch,t_dc_offset,t_zca] = cifar10_patches_for_dict_learning(patches_count,patch_row_count,patch_col_count,do_patch_zca)
@@ -72,10 +66,7 @@ classdef testing
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
 
-            hnd = logging.handlers.zero(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            images = utils.load_dataset.cifar10(logg);
+            images = utils.load_dataset.cifar10();
             
             t_patch_r = transforms.image.patch_extract(images(:,:,1,:),patches_count,patch_row_count,patch_col_count,0.01);
             t_patch_g = transforms.image.patch_extract(images(:,:,2,:),patches_count,patch_row_count,patch_col_count,0.01);
@@ -112,9 +103,6 @@ classdef testing
                 patches_g = patches_2_g;
                 patches_b = patches_2_b;
             end
-            
-            logg.close();
-            hnd.close();
         end
         
         function [patches,t_patch,t_dc_offset,t_zca] = smallnorb_patches_for_dict_learning(patches_count,patch_row_count,patch_col_count,do_patch_zca)
@@ -132,10 +120,7 @@ classdef testing
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
 
-            hnd = logging.handlers.zero(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            images = utils.load_dataset.smallnorb(logg);
+            images = utils.load_dataset.smallnorb();
             images = images(:,:,1,:);
             
             t_patch = transforms.image.patch_extract(images,patches_count,patch_row_count,patch_col_count,0.01);
@@ -154,19 +139,10 @@ classdef testing
                 t_zca = {};
                 patches = patches_2;
             end
-            
-            logg.close();
-            hnd.close();
         end
         
         function [images] = mnist()
-            hnd = logging.handlers.zero(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            images = utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte',logg);
-            
-            logg.close();
-            hnd.close();
+            images = utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
         end
 
         function [s] = correlated_cloud()

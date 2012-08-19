@@ -1,11 +1,10 @@
-#include <string.h>
-
 #include "mex.h"
 
 #include "x_mex_interface.h"
 #include "base_defines.h"
 #include "task_control.h"
 #include "coding_methods.h"
+#include "latools.h"
 
 enum output_decoder {
     O_COEFFS  = 0,
@@ -16,9 +15,10 @@ enum input_decoder {
     I_DICT               = 0,
     I_DICT_TRANSP        = 1,
     I_DICT_X_DICT_TRANSP = 2,
-    I_COEFF_COUNT        = 3,
-    I_SAMPLE             = 4,
-    I_NUM_WORKERS        = 5,
+    I_PARAMS             = 3,
+    I_COEFF_COUNT        = 4,
+    I_SAMPLE             = 5,
+    I_NUM_WORKERS        = 6,
     INPUTS_COUNT
 };
 
@@ -51,8 +51,9 @@ do_task(
 
     for (ii = 0; ii < task_info_count; ii++) {
         correlation(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,
-                    global_info->geometry,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,
-                    global_info->coeff_count,NULL,task_info[ii].observation,coding_tmps);
+		    global_info->geometry,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,
+		    global_info->coeff_count,NULL,task_info[ii].observation,coding_tmps);
+	sort_by_idxs(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,global_info->coeff_count);
     }
 
     free(coding_tmps);

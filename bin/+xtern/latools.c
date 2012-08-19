@@ -93,13 +93,20 @@ sort_by_abs_coeffs(
     size_t  median_idx;
     double  tmp_median;
     size_t  tmp_median_idx;
+    double  fabs_o_coeffs_ii;
+    double  fabs_o_coeffs_median_idx;
     size_t  ii;
 
     while (count > 1) {
         median_idx = 0;
 
         for (ii = 1; ii < count; ii++) {
-            if (fabs(o_coeffs[ii]) > fabs(o_coeffs[median_idx])) {
+	    fabs_o_coeffs_ii = fabs(o_coeffs[ii]);
+	    fabs_o_coeffs_median_idx = fabs(o_coeffs[median_idx]);
+
+            if ((fabs_o_coeffs_ii > fabs_o_coeffs_median_idx) || 
+		((fabs_o_coeffs_ii == fabs_o_coeffs_median_idx) &&
+		 (o_coeffs_idx[ii] < o_coeffs_idx[median_idx]))) {
 		tmp_median = o_coeffs[median_idx];
 		o_coeffs[median_idx] = o_coeffs[ii];
 		o_coeffs[ii] = o_coeffs[median_idx + 1];

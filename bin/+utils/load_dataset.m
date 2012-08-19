@@ -1,83 +1,47 @@
 classdef load_dataset
     methods (Static,Access=public)
-        function [s,s_ci] = iris(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            [s,s_ci] = utils.load_dataset.g_record_csvfile('../data/iris/iris.csv',{'%f' 4},true,',',logger);
+        function [s,s_ci] = iris()
+            [s,s_ci] = utils.load_dataset.g_record_csvfile('../data/iris/iris.csv',{'%f' 4},true,',');
         end
 
-        function [s,s_ci] = wine(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            [s,s_ci] = utils.load_dataset.g_record_csvfile('../data/wine/wine.csv',{'%f' 13},true,',',logger);
+        function [s,s_ci] = wine()
+            [s,s_ci] = utils.load_dataset.g_record_csvfile('../data/wine/wine.csv',{'%f' 13},true,',');
         end
 
-        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = mnist(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            [s_tr,s_tr_ci] = utils.load_dataset.g_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte',logger);
-            [s_ts,s_ts_ci] = utils.load_dataset.g_mnist('../data/mnist/t10k-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte',logger);
+        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = mnist()
+            [s_tr,s_tr_ci] = utils.load_dataset.g_mnist('../data/mnist/train-images-idx3-ubyte','../data/mnist/train-labels-idx1-ubyte');
+            [s_ts,s_ts_ci] = utils.load_dataset.g_mnist('../data/mnist/t10k-images-idx3-ubyte','../data/mnist/t10k-labels-idx1-ubyte');
         end
         
-        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = cifar10(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
+        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = cifar10()
             [s_tr,s_tr_ci] = utils.load_dataset.g_cifar({'../data/cifar10/data_batch_1.mat' ...
                                                          '../data/cifar10/data_batch_2.mat' ...
                                                          '../data/cifar10/data_batch_3.mat' ...
                                                          '../data/cifar10/data_batch_4.mat' ...
                                                          '../data/cifar10/data_batch_5.mat'},...
-                                                         '../data/cifar10/batches.meta.mat',logger);
-            [s_ts,s_ts_ci] = utils.load_dataset.g_cifar('../data/cifar10/test_batch.mat','../data/cifar10/batches.meta.mat',logger);
+                                                         '../data/cifar10/batches.meta.mat');
+            [s_ts,s_ts_ci] = utils.load_dataset.g_cifar('../data/cifar10/test_batch.mat','../data/cifar10/batches.meta.mat');
         end
 
-        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = cifar100(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            [s_tr,s_tr_ci] = utils.load_dataset.g_cifar('../data/cifar100/train.mat','../data/cifar100/meta.mat',logger);
-            [s_ts,s_ts_ci] = utils.load_dataset.g_cifar('../data/cifar100/test.mat','../data/cifar100/meta.mat',logger);
+        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = cifar100()
+            [s_tr,s_tr_ci] = utils.load_dataset.g_cifar('../data/cifar100/train.mat','../data/cifar100/meta.mat');
+            [s_ts,s_ts_ci] = utils.load_dataset.g_cifar('../data/cifar100/test.mat','../data/cifar100/meta.mat');
         end
 
-        function [s,s_ci] = orl_faces(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            [s,s_ci] = utils.load_dataset.g_image_from_dirs('../data/orl_faces',[-1 -1],logger);
+        function [s,s_ci] = orl_faces()
+            [s,s_ci] = utils.load_dataset.g_image_from_dirs('../data/orl_faces',[-1 -1]);
         end
         
-        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = smallnorb(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            [s_tr,s_tr_ci] = utils.load_dataset.g_norb('../data/smallnorb/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat','../data/smallnorb/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat',logger);
-            [s_ts,s_ts_ci] = utils.load_dataset.g_norb('../data/smallnorb/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat','../data/smallnorb/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat',logger);
+        function [s_tr,s_tr_ci,s_ts,s_ts_ci] = smallnorb()
+            [s_tr,s_tr_ci] = utils.load_dataset.g_norb('../data/smallnorb/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat','../data/smallnorb/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat');
+            [s_ts,s_ts_ci] = utils.load_dataset.g_norb('../data/smallnorb/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat','../data/smallnorb/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat');
         end
 
-        function [s] = scenes(logger)
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            s = utils.load_dataset.g_image_from_dir('../data/scenes',[1200 1600],logger);
+        function [s] = scenes()
+            s = utils.load_dataset.g_image_from_dir('../data/scenes',[1200 1600]);
         end
 
-        function [s,varargout] = g_record_csvfile(path,instance_format,has_classifier_info,delimiter,logger)
+        function [s,varargout] = g_record_csvfile(path,instance_format,has_classifier_info,delimiter)
             assert(check.scalar(path));
             assert(check.string(path));
             assert(check.scalar(instance_format) || check.vector(instance_format));
@@ -92,10 +56,7 @@ classdef load_dataset
             assert(check.logical(has_classifier_info));
             assert(check.scalar(delimiter));
             assert(check.string(delimiter));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
+
             if check.scalar(instance_format)
                 instance_format_t = {instance_format 1};
             else
@@ -113,16 +74,12 @@ classdef load_dataset
             end
             
             try
-                logger.message('Opening CSV file "%s".',path);
-                
                 [file_fid,file_msg] = fopen(path,'rt');
                 
                 if file_fid == -1
                     throw(MException('master:NoLoad',...
                              sprintf('Could not load CSV file "%s": %s!',path,file_msg)));
                 end
-                
-                logger.message('Bulk reading of CSV data.');
                 
                 sample_raw = textscan(file_fid,full_format,'delimiter',delimiter);
                 
@@ -136,8 +93,6 @@ classdef load_dataset
                     throw(MException('master:NoLoad',...
                              sprintf('File "%s" has an invalid format!',path)));
                 end
-                
-                logger.message('Building dataset and labels information.');
                 
                 [labels_idx,labels] = grp2idx(sample_raw{:,1});
                 
@@ -153,25 +108,18 @@ classdef load_dataset
             end
         end
         
-        function [s,s_ci] = g_mnist(data_path,meta_path,logger)
+        function [s,s_ci] = g_mnist(data_path,meta_path)
             assert(check.scalar(data_path));
             assert(check.string(data_path));
             assert(check.scalar(meta_path));
             assert(check.string(meta_path));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            logger.message('Opening images file "%s".',data_path);
-            
+
             [data_fid,data_msg] = fopen(data_path,'rb');
             
             if data_fid == -1
                 throw(MException('master:NoLoad',...
                          sprintf('Could not load images in "%s": %s!',data_path,data_msg)))
             end
-            
-            logger.message('Opening labels file "%s".',meta_path);
             
             [meta_fid,meta_msg] = fopen(meta_path,'rb');
             
@@ -182,16 +130,12 @@ classdef load_dataset
             end
             
             try
-                logger.message('Reading images file magic number.');
-
                 data_magic = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
                 
                 if data_magic ~= 2051
                     throw(MException('master:NoLoad',...
                              sprintf('Images file "%s" not in MNIST format!',data_path)));
                 end
-                
-                logger.message('Reading labels file magic number.');
                 
                 meta_magic = utils.load_dataset.high2low(fread(meta_fid,4,'uint8=>uint32'));
                 
@@ -200,21 +144,10 @@ classdef load_dataset
                              sprintf('Labels file "%s" not in MNIST format!',meta_path)));
                 end
                 
-                logger.beg_node('Reading images geometry');
-                
                 data_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
                 layer_count = 1;
                 row_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
                 col_count = utils.load_dataset.high2low(fread(data_fid,4,'uint8=>uint32'));
-                
-                logger.message('Row count: %d',row_count);
-                logger.message('Col count: %d',col_count);
-                logger.message('Layer count: %d',layer_count);
-                logger.message('Observation count: %d',data_count);
-                
-                logger.end_node();
-                
-                logger.beg_node('Reading labels geometry');
                 
                 meta_count = utils.load_dataset.high2low(fread(meta_fid,4,'uint8=>uint32'));
                 
@@ -223,16 +156,10 @@ classdef load_dataset
                              sprintf('Different number of labels in "%s" for images in "%s"!',meta_path,data_path)));
                 end
                 
-                logger.end_node();
-                
-                logger.message('Reading images.');
-                
                 images_t1 = fread(data_fid,row_count * col_count * 1 * data_count,'uint8=>double') ./ 255;
                 images_t2 = reshape(images_t1,row_count,col_count,1,data_count);
                 images = permute(images_t2,[2 1 3 4]);
 
-                logger.message('Reading labels.');
-                
                 labels = fread(meta_fid,[data_count 1],'uint8');
                 
                 fclose(data_fid);
@@ -243,20 +170,15 @@ classdef load_dataset
                 throw(MException('master:NoLoad',exp.message));
             end
             
-            logger.message('Building dataset and labels information.');
-            
             s = images;
             s_ci = classifier_info({'d0' 'd1' 'd2' 'd3' 'd4' 'd5' 'd6' 'd7' 'd8' 'd9'},labels + 1);
         end
         
-        function [s,s_ci] = g_cifar(data_paths,meta_path,logger)
+        function [s,s_ci] = g_cifar(data_paths,meta_path)
             assert((check.scalar(data_paths) && check.string(data_paths)) || ...
                    (check.vector(data_paths) && check.cell(data_paths) && check.checkf(@check.scalar,data_paths) && check.checkf(@check.string,data_paths)));
             assert(check.scalar(meta_path));
             assert(check.string(meta_path));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
             
             if check.scalar(data_paths)
                 data_paths_t = {data_paths};
@@ -264,20 +186,13 @@ classdef load_dataset
                 data_paths_t = data_paths;
             end
             
-            logger.message('Reading meta-information.');
-            
             try
                 meta_info = load(meta_path);
                 data_info = cell(1,length(data_paths_t));
                 
-                logger.beg_node('Starting reading of images');
-                
                 for ii = 1:length(data_paths_t)
-                    logger.message('Images from batch %d',ii);
                     data_info{ii} = load(data_paths_t{ii});
                 end
-                
-                logger.end_node();
                 
                 indices = [0 cumsum(cellfun(@(c)size(c.data,1),data_info))];
                 s = zeros(32,32,3,sum(cellfun(@(c)size(c.data,1),data_info)));
@@ -298,16 +213,11 @@ classdef load_dataset
             end
         end
         
-        function [s,s_ci] = g_norb(data_path,meta_path,logger)
+        function [s,s_ci] = g_norb(data_path,meta_path)
             assert(check.scalar(data_path));
             assert(check.string(data_path));
             assert(check.scalar(meta_path));
             assert(check.string(meta_path));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            logger.message('Opening images files "%s".',data_path);
             
             data_fid = fopen(data_path,'rb');
             
@@ -315,8 +225,6 @@ classdef load_dataset
                 throw(MException('master:NoLoad',...
                          sprintf('Could not load images in "%s": %s!',data_path,data_msg)))
             end
-            
-            logger.message('Opening labels file "%s".',meta_path);
             
             [meta_fid,meta_msg] = fopen(meta_path,'rb');
             
@@ -327,8 +235,6 @@ classdef load_dataset
             end
             
             try
-                logger.message('Reading images file magic number.');
-                
                 data_magic = fread(data_fid,1,'uint32');
                 
                 if ~check.same(data_magic,507333717)
@@ -336,16 +242,12 @@ classdef load_dataset
                              sprintf('Images file "%s" not in NORB format!',data_path)));
                 end
                 
-                logger.message('Reading labels file magic number.');
-                
                 meta_magic = fread(meta_fid,1,'uint32');
                 
                 if ~check.same(meta_magic,507333716)
                     throw(MException('master:NoLoad',...
                              sprintf('Labels file "%s" not in NORB format!',meta_path)));
                 end
-                
-                logger.beg_node('Reading images geometry');
                 
                 data_dims_count = fread(data_fid,1,'uint32');
                 
@@ -358,15 +260,6 @@ classdef load_dataset
                 layer_count = fread(data_fid,1,'uint32=>uint64');
                 col_count = fread(data_fid,1,'uint32=>uint64');
                 row_count = fread(data_fid,1,'uint32=>uint64');
-                
-                logger.message('Row count: %d',row_count);
-                logger.message('Col count: %d',col_count);
-                logger.message('Layer count: %d',layer_count);
-                logger.message('Observation count: %d',data_count);
-                
-                logger.end_node();
-                
-                logger.beg_node('Reading labels geometry');
                 
                 meta_dims_count = fread(meta_fid,1,'uint32');
                 
@@ -389,15 +282,9 @@ classdef load_dataset
                              sprintf('Labels file "%s" not in NORB format!',meta_path)));
                 end
 
-                logger.end_node();
-                
-                logger.message('Reading images.');
-                
                 images_t1 = fread(data_fid,row_count*col_count*layer_count*data_count,'uint8=>double') ./ 255;
                 images_t2 = reshape(images_t1,row_count,col_count,layer_count,data_count);
                 images = permute(images_t2,[2 1 3 4]);
-                
-                logger.message('Reading labels.');
                 
                 labels = fread(meta_fid,meta_count,'uint32');
                 
@@ -409,36 +296,25 @@ classdef load_dataset
                 throw(MException('master:NoLoad',exp.message));
             end
             
-            logger.message('Building dataset and labels information.');
-            
             s = images;
             s_ci = classifier_info({'animals' 'humans' 'airplanes' 'trucks' 'cars'},labels + 1);
         end
         
-        function [s] = g_image_from_dir(path,force_size,logger)
+        function [s] = g_image_from_dir(path,force_size)
             assert(check.scalar(path));
             assert(check.string(path));
             assert(check.vector(force_size));
             assert(length(force_size) == 2);
             assert((check.natural(force_size) && check.checkv(force_size >= 1)) || ...
                    check.checkv(force_size == -1));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
-            logger.message('Listing images directory "%s".',path);
 
             paths = dir(path);
             paths = paths(3:end);
             images = [];
             current_image = 1;
             
-            logger.beg_node('Starting reading of images');
-            
             for ii = 1:length(paths)
                 try
-                    logger.beg_node('Reading image in "%s"',fullfile(path,paths(ii).name));
-                    
                     image = double(imread(fullfile(path,paths(ii).name))) / 255;
                     
                     if check.checkv(force_size ~= [-1 -1])
@@ -454,20 +330,12 @@ classdef load_dataset
 
                     images = cat(4,images,image);
                     current_image = current_image + 1;
-                    
-                    logger.end_node();
                 catch exp
-                    logger.message('Not an image or corrupted.');
-
-                    logger.end_node();
-
                     if isempty(regexp(exp.identifier,'MATLAB:(.*:)?imread:.*','ONCE'))
                         throw(MException('master:NoLoad',exp.message));
                     end
                 end
             end
-            
-            logger.end_node();
             
             if isempty(images)
                 throw(MException('master:NoLoad',...
@@ -477,17 +345,14 @@ classdef load_dataset
             s = images;
         end
         
-        function [s,s_ci] = g_image_from_dirs(path,force_size,logger)
+        function [s,s_ci] = g_image_from_dirs(path,force_size)
             assert(check.scalar(path));
             assert(check.string(path));
             assert(check.vector(force_size));
             assert(length(force_size) == 2);
             assert((check.natural(force_size) && check.checkv(force_size >= 1)) || ...
                    check.checkv(force_size == -1));
-            assert(check.scalar(logger));
-            assert(check.logging_logger(logger));
-            assert(logger.active);
-            
+
             paths = dir(path);
             paths = paths(3:end);
             images = [];
@@ -498,7 +363,7 @@ classdef load_dataset
             
             for ii = 1:length(paths)
                 if paths(ii).isdir
-                    local_images = utils.load_dataset.g_image_from_dir(fullfile(path,paths(ii).name),force_size,logger.new_node('Class "%s"',paths(ii).name));
+                    local_images = utils.load_dataset.g_image_from_dir(fullfile(path,paths(ii).name),force_size);
                     images = cat(4,images,local_images);
                     labels = cat(2,labels,paths(ii).name);
                     labels_idx = cat(2,labels_idx,current_class * ones(1,dataset.count(local_images)));
@@ -524,10 +389,7 @@ classdef load_dataset
             
             fprintf('  Function "iris".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.iris(logg);
+            [s,s_ci] = utils.load_dataset.iris();
             
             assert(check.checkv(size(s) == [4 150]));
             assert(check.number(s));
@@ -535,17 +397,11 @@ classdef load_dataset
             assert(s_ci.labels_count == 3);
             assert(s_ci.compatible(s));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "wine".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.wine(logg);
+            [s,s_ci] = utils.load_dataset.wine();
             
             assert(check.checkv(size(s) == [13 178]));
             assert(check.number(s));
@@ -553,17 +409,11 @@ classdef load_dataset
             assert(s_ci.labels_count == 3);
             assert(s_ci.compatible(s));
             
-            logg.close(); 
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "mnist".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s_tr,s_tr_ci,s_ts,s_ts_ci] = utils.load_dataset.mnist(logg);
+            [s_tr,s_tr_ci,s_ts,s_ts_ci] = utils.load_dataset.mnist();
             
             assert(check.checkv(size(s_tr) == [28 28 1 60000]));
             assert(check.unitreal(s_tr));
@@ -576,17 +426,11 @@ classdef load_dataset
             assert(s_ts_ci.labels_count == 10);
             assert(s_ts_ci.compatible(s_ts));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "cifar10".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s_tr,s_tr_ci,s_ts,s_ts_ci] = utils.load_dataset.cifar10(logg);
+            [s_tr,s_tr_ci,s_ts,s_ts_ci] = utils.load_dataset.cifar10();
             
             assert(check.checkv(size(s_tr) == [32 32 3 50000]));
             assert(check.unitreal(s_tr));
@@ -599,17 +443,11 @@ classdef load_dataset
             assert(s_ts_ci.labels_count == 10);
             assert(s_ts_ci.compatible(s_ts));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "cifar100".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s_tr,s_tr_ci,s_ts,s_ts_ci] = utils.load_dataset.cifar100(logg);
+            [s_tr,s_tr_ci,s_ts,s_ts_ci] = utils.load_dataset.cifar100();
             
             assert(check.checkv(size(s_tr) == [32 32 3 50000]));
             assert(check.unitreal(s_tr));
@@ -642,9 +480,6 @@ classdef load_dataset
             assert(s_ts_ci.labels_count == 100);
             assert(s_ts_ci.compatible(s_ts));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "smallnorb".\n');
@@ -654,10 +489,7 @@ classdef load_dataset
             
             fprintf('  Function "orl_faces".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.orl_faces(logg);
+            [s,s_ci] = utils.load_dataset.orl_faces();
             
             assert(check.checkv(size(s) == [112 92 1 400]));
             assert(check.unitreal(s));
@@ -667,52 +499,34 @@ classdef load_dataset
             assert(s_ci.labels_count == 40);
             assert(s_ci.compatible(s));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "scenes".\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            s = utils.load_dataset.scenes(logg);
+            s = utils.load_dataset.scenes();
             
             assert(check.checkv(size(s) == [1200 1600 3 9]));
             assert(check.unitreal(s));
 
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "g_record_csvfile".\n');
             
             fprintf('    With Iris data and simple format.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.g_record_csvfile('../test/iris/iris.csv','%f%f%f%f',true,',',logg);
+            [s,s_ci] = utils.load_dataset.g_record_csvfile('../test/iris/iris.csv','%f%f%f%f',true,',');
             
             assert(check.checkv(size(s) == [4 150]));
             assert(check.number(s));
             assert(check.same(s_ci.labels,{'Iris-setosa' 'Iris-versicolor' 'Iris-virginica'}));
             assert(s_ci.labels_count == 3);
             assert(s_ci.compatible(s));
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             
             fprintf('    With Iris data and complex format.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.g_record_csvfile('../test/iris/iris.csv',{'%f' 2 '%f' 2},true,',',logg);
+            [s,s_ci] = utils.load_dataset.g_record_csvfile('../test/iris/iris.csv',{'%f' 2 '%f' 2},true,',');
             
             assert(check.checkv(size(s) == [4 150]));
             assert(check.number(s));
@@ -720,18 +534,12 @@ classdef load_dataset
             assert(s_ci.labels_count == 3);
             assert(s_ci.compatible(s));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With invalid external inputs.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             try
-                utils.load_dataset.g_record_csvfile('../test/wine/wine.csv',{'%s' 2 '%f' 11},true,',',logg);
+                utils.load_dataset.g_record_csvfile('../test/wine/wine.csv',{'%s' 2 '%f' 11},true,',');
                 assert(false);
             catch exp
                 if strcmp(exp.message,'File "../test/wine/wine.csv" has an invalid format!')
@@ -741,19 +549,13 @@ classdef load_dataset
                 end
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "g_mnist".\n');
             
             fprintf('    With MNIST test data.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte',logg);
+            [s,s_ci] = utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
             
             assert(check.checkv(size(s) == [28 28 1 10000]));
             assert(check.unitreal(s));
@@ -761,18 +563,12 @@ classdef load_dataset
             assert(s_ci.labels_count == 10);
             assert(s_ci.compatible(s));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With invalid external inputs.\n');
 
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
             try
-                utils.load_dataset.g_mnist('../test/scenes_small/scenes_small1.jpg','../test/mnist/t10k-labels-idx1-ubyte',logg);
+                utils.load_dataset.g_mnist('../test/scenes_small/scenes_small1.jpg','../test/mnist/t10k-labels-idx1-ubyte');
             catch exp
                 if strcmp(exp.message,'Images file "../test/scenes_small/scenes_small1.jpg" not in MNIST format!')
                     fprintf('      Passes "Not in MNIST format!" for images file.\n');
@@ -782,7 +578,7 @@ classdef load_dataset
             end
             
             try
-                utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/scenes_small/scenes_small1.jpg',logg);
+                utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/scenes_small/scenes_small1.jpg');
             catch exp
                 if strcmp(exp.message,'Labels file "../test/scenes_small/scenes_small1.jpg" not in MNIST format!')
                     fprintf('      Passes "Not in MNIST format!" for labels file.\n');
@@ -792,7 +588,7 @@ classdef load_dataset
             end
             
             try
-                utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte',logg);
+                utils.load_dataset.g_mnist('../test/mnist/t10k-images-idx3-ubyte','../test/mnist/t10k-labels-idx1-ubyte');
             catch exp
                 if strcmp(exp.message,'Different number of labels in "../test/mnist/t10k-labels-idx1-ubyte" for images in "../test/mnist/t10k-images-idx3-ubyte"!')
                     fprintf('      Passes "Different number of labels!".\n');
@@ -801,19 +597,13 @@ classdef load_dataset
                 end
             end
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('  Function "g_cifar".\n');
             
             fprintf('    With CIFAR10 test data.\n');
             
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
-            
-            [s,s_ci] = utils.load_dataset.g_cifar('../test/cifar/test.mat','../test/cifar/meta.mat',logg);
+            [s,s_ci] = utils.load_dataset.g_cifar('../test/cifar/test.mat','../test/cifar/meta.mat');
             
             assert(check.checkv(size(s) == [32 32 3 10000]));
             assert(check.unitreal(s));
@@ -821,15 +611,9 @@ classdef load_dataset
             assert(s_ci.labels_count == 10);
             assert(s_ci.compatible(s));
             
-            logg.close();
-            hnd.close();
-            
             clearvars -except test_figure;
             
             fprintf('    With invalid external inputs.\n');
-            
-            hnd = logging.handlers.testing(logging.level.Experiment);
-            logg = logging.logger({hnd});
             
             % test for data file not with required fields
             % test for data stores in data file not good (various size
@@ -838,9 +622,6 @@ classdef load_dataset
             % test for data stored in meta file not good.
             % test for incompatibilities between data file and meta file.
             % test for incompatibilities between two data files.
-            
-            logg.close();
-            hnd.close();
             
             clearvars -except test_figure;
             

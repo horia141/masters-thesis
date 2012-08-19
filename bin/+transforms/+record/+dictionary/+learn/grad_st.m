@@ -36,7 +36,7 @@ classdef grad_st < transforms.record.dictionary
             assert(check.natural(max_iter_count));
             assert(max_iter_count >= 1);
 
-            [coding_fn_t,coding_params_cell_t] = transforms.record.dictionary.coding_setup(word_count,coding_method,coding_params,coeff_count);
+            coding_fn_t = transforms.record.dictionary.coding_setup(coding_method);
             
             N = dataset.count(train_sample_plain);
             d = dataset.geometry(train_sample_plain);
@@ -50,7 +50,7 @@ classdef grad_st < transforms.record.dictionary
                 selected = randi(N,1,selection_size);
                 iter_sample = dataset.subsample(train_sample_plain,selected);
 
-                coeffs = coding_fn_t(dict,dict_transp,dict_x_dict_transp,coeff_count,iter_sample,num_workers);
+                coeffs = coding_fn_t(dict,dict_transp,dict_x_dict_transp,coding_params,coeff_count,iter_sample,num_workers);
 
                 diff = iter_sample - dict_transp * coeffs;
                 delta_dict = coeffs * diff';
@@ -110,7 +110,7 @@ classdef grad_st < transforms.record.dictionary
             assert(check.same(t.dict_transp,t.dict'));
             assert(t.word_count == 3);
             assert(check.same(t.coding_fn,@xtern.x_dictionary_matching_pursuit));
-            assert(check.same(t.coding_params_cell,{}));
+            assert(check.same(t.coding_params_cell,{[]}));
             assert(check.same(t.coding_method,'MP'));
             assert(check.same(t.coding_params,[]));
             assert(t.coeff_count == 1);

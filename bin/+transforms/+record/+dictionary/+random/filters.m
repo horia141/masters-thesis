@@ -42,7 +42,7 @@ classdef filters < transforms.record.dictionary
             assert(check.same(t.dict',t.dict_transp));
             assert(t.word_count == 3);
             assert(check.same(t.coding_fn,@xtern.x_dictionary_correlation));
-            assert(check.same(t.coding_params_cell,{}));
+            assert(check.same(t.coding_params_cell,{[]}));
             assert(check.same(t.coding_method,'Corr'));
             assert(check.same(t.coding_params,[]));
             assert(t.coeff_count == 3);

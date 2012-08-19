@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
@@ -52,37 +53,24 @@ size_t
 code_image_new_geometry(
     size_t                    row_count,
     size_t                    col_count,
-    enum resize_type          resize_type,
-    size_t                    new_row_count,
-    size_t                    new_col_count,
     size_t                    word_count,
     enum polarity_split_type  polarity_split_type,
     size_t                    reduce_spread) {
-    size_t  aftresize_row_count;
-    size_t  aftresize_col_count;
     size_t  aftcoding_row_count;
     size_t  aftcoding_col_count;
     size_t  polarity_split_multiplier;
     size_t  aftreduce_row_count;
     size_t  aftreduce_col_count;
 
-    if (resize_type == IDENTITY) {
-	aftresize_row_count = row_count;
-	aftresize_col_count = col_count;
-    } else if (resize_type == CLOSEST) {
-	aftresize_row_count = new_row_count;
-	aftresize_col_count = new_col_count;
-    } else {
-    }
-
-    aftcoding_row_count = aftresize_row_count - (aftresize_row_count % reduce_spread);
-    aftcoding_col_count = aftresize_col_count - (aftresize_col_count % reduce_spread);
+    aftcoding_row_count = row_count - (row_count % reduce_spread);
+    aftcoding_col_count = col_count - (col_count % reduce_spread);
 
     if (polarity_split_type == NONE) {
 	polarity_split_multiplier = 1;
     } else if (polarity_split_type == NO_SIGN || polarity_split_type == KEEP_SIGN) {
 	polarity_split_multiplier = 2;
     } else {
+	exit(EXIT_FAILURE);
     }
 
     aftreduce_row_count = aftcoding_row_count / reduce_spread;
@@ -97,34 +85,18 @@ code_image_coding_tmps_length(
     size_t col_count,
     size_t patch_row_count,
     size_t patch_col_count,
-    enum resize_type resize_type,
-    size_t new_row_count,
-    size_t new_col_count,
     enum coding_type coding_type,
     size_t word_count,
     size_t coeff_count,
     size_t reduce_spread) {
     size_t  coding_tmps_length;
-    size_t  aftresize_row_count;
-    size_t  aftresize_col_count;
     size_t  aftcoding_row_count;
     size_t  aftcoding_col_count;
 
     coding_tmps_length = 0;
 
-    if (resize_type == IDENTITY) {
-	aftresize_row_count = row_count;
-	aftresize_col_count = col_count;
-	coding_tmps_length += 0;
-    } else if (resize_type == CLOSEST) {
-	aftresize_row_count = new_row_count;
-	aftresize_col_count = new_col_count;
-	coding_tmps_length += aftresize_row_count * aftresize_col_count * sizeof(double);
-    } else {
-    }
-
-    aftcoding_row_count = aftresize_row_count - (aftresize_row_count % reduce_spread);
-    aftcoding_col_count = aftresize_col_count - (aftresize_col_count % reduce_spread);
+    aftcoding_row_count = row_count - (row_count % reduce_spread);
+    aftcoding_col_count = col_count - (col_count % reduce_spread);
 
     coding_tmps_length += patch_row_count * patch_col_count * sizeof(double);
     coding_tmps_length += coeff_count * aftcoding_row_count * aftcoding_col_count * sizeof(double);
@@ -132,11 +104,10 @@ code_image_coding_tmps_length(
 
     if (coding_type == CORRELATION) {
 	coding_tmps_length += word_count * sizeof(double) + word_count * sizeof(size_t);
-    } else if (coding_type == CORRELATION_ORDER) {
-	coding_tmps_length += word_count * sizeof(double) + word_count * sizeof(size_t);
     } else if (coding_type == MATCHING_PURSUIT) {
 	coding_tmps_length += word_count * sizeof(double);
     } else {
+	exit(EXIT_FAILURE);
     }
 
     coding_tmps_length += reduce_spread * reduce_spread * sizeof(size_t);
@@ -154,9 +125,6 @@ code_image(
     size_t                    col_count,
     size_t                    patch_row_count,
     size_t                    patch_col_count,
-    enum resize_type          resize_type,
-    size_t                    new_row_count,
-    size_t                    new_col_count,
     enum coding_type          coding_type,
     size_t                    word_count,
     const double* restrict    dict,
@@ -165,14 +133,12 @@ code_image(
     size_t                    coeff_count,
     const void* restrict      coding_params,
     enum nonlinear_type       nonlinear_type,
+    const double* restrict    nonlinear_modulator,
     enum polarity_split_type  polarity_split_type,
     enum reduce_type          reduce_type,
     size_t                    reduce_spread,
     const double* restrict    observation,
     void* restrict            coding_tmps) {
-    size_t                  aftresize_row_count;
-    size_t                  aftresize_col_count;
-    const double* restrict  resized_observation;
     char* restrict          curr_coding_tmps;
     size_t                  aftcoding_row_count;
     size_t                  aftcoding_col_count;
@@ -183,53 +149,6 @@ code_image(
     size_t                  aftreduce_col_count;
 
     curr_coding_tmps = (char* restrict)coding_tmps;
-
-    /* Resizing layer. */
-
-    if (resize_type == IDENTITY) {
-	/* Nothing to do so just build stage output. */
-
-	aftresize_row_count = row_count;
-	aftresize_col_count = col_count;
-	resized_observation = observation;
-    } else if (resize_type == CLOSEST) {
-	size_t                  row_skip;
-	size_t                  col_skip;
-	size_t                  actual_row_count;
-	size_t                  actual_col_count;
-	double* restrict        resized_observation_t;
-	double* restrict        resized_observation_ptr;
-	const double* restrict  curr_observation_col;
-	size_t                  cc;
-	size_t                  rr;
-
-	/* Make a resized version of the orginal image. */
-
-	aftresize_row_count = new_row_count;
-	aftresize_col_count = new_col_count;
-
-	row_skip = row_count / new_row_count;
-	col_skip = col_count / new_col_count;
-
-	actual_row_count = row_count - (row_count % row_skip);
-	actual_col_count = col_count - (col_count % col_skip);
-
-	resized_observation_t = (double* restrict)coding_tmps;
-	curr_coding_tmps += aftresize_row_count * aftresize_col_count * sizeof(double);
-	resized_observation_ptr = resized_observation_t;
-	curr_observation_col = observation;
-	resized_observation = resized_observation_t;
-
-	for (cc = 0; cc < actual_col_count; cc += col_skip) {
-	    for (rr = 0; rr < actual_row_count; rr += row_skip) {
-		*resized_observation_ptr = *(curr_observation_col + rr);
-		resized_observation_ptr++;
-	    }
-
-	    curr_observation_col += row_count * col_skip;
-	}
-    } else {
-    }
 
     /* Coding layer. */
 
@@ -254,8 +173,8 @@ code_image(
 	size_t                   rr_1;
 	size_t                   cc_1;
 
-	aftcoding_row_count = aftresize_row_count - (aftresize_row_count % reduce_spread);
-	aftcoding_col_count = aftresize_col_count - (aftresize_col_count % reduce_spread);
+	aftcoding_row_count = row_count - (row_count % reduce_spread);
+	aftcoding_col_count = col_count - (col_count % reduce_spread);
 
 	patch_for_coding = (double* restrict)curr_coding_tmps;
 	curr_coding_tmps += patch_row_count * patch_col_count * sizeof(double);
@@ -268,40 +187,36 @@ code_image(
 	    coding_method = correlation;
 	    coder_coding_tmps = curr_coding_tmps;
 	    curr_coding_tmps += word_count * sizeof(double) + word_count * sizeof(size_t);
-	} else if (coding_type == CORRELATION_ORDER) {
-	    coding_method = correlation_order;
-	    coder_coding_tmps = curr_coding_tmps;
-	    curr_coding_tmps += word_count * sizeof(double) + word_count * sizeof(size_t);
 	} else if (coding_type == MATCHING_PURSUIT) {
 	    coding_method = matching_pursuit;
 	    coder_coding_tmps = curr_coding_tmps;
 	    curr_coding_tmps += word_count * sizeof(double);
 	} else {
+	    exit(EXIT_FAILURE);
 	}
 
 	for (cc = 0; cc < aftcoding_col_count; cc++) {
 	    for (rr = 0; rr < aftcoding_row_count; rr++) {
 		/* Copy patch to temporary storage before actual coding. */
 
-		/* We're using "aftresize_(row|col)_count" here becase we can allow
-		   patches to extend in the whole image, not just the pixels in the
-		   reduce areas. */
+		/* We're using "(row|col)_count" here becase we can allow patches
+		   to extend in the whole image, not just the pixels in the reduce areas. */
 
 		patch_side_row = (patch_row_count - 1) / 2;
 		patch_init_row = rr < patch_side_row ? 0 : (rr - patch_side_row);
-		patch_final_row = aftresize_row_count < (rr + patch_side_row + 1) ? aftresize_row_count : (rr + patch_side_row + 1);
+		patch_final_row = row_count < (rr + patch_side_row + 1) ? row_count : (rr + patch_side_row + 1);
 		patch_skipped_initial_rows = rr < patch_side_row ? (patch_side_row - rr) : 0;
-		patch_skipped_final_rows = aftresize_row_count < (rr + patch_side_row + 1) ? (rr + patch_side_row + 1 - aftresize_row_count) : 0;
+		patch_skipped_final_rows = row_count < (rr + patch_side_row + 1) ? (rr + patch_side_row + 1 - row_count) : 0;
 
 		patch_side_col = (patch_col_count - 1) / 2;
 		patch_init_col = cc < patch_side_col ? 0 : (cc - patch_side_col);
-		patch_final_col = aftresize_col_count < (cc + patch_side_col + 1) ? aftresize_col_count : (cc + patch_side_col + 1);
+		patch_final_col = col_count < (cc + patch_side_col + 1) ? col_count : (cc + patch_side_col + 1);
 		patch_skipped_initial_cols = cc < patch_side_col ? (patch_side_col - cc) : 0;
 
 		memset(patch_for_coding,0,patch_row_count * patch_col_count * sizeof(double));
 
 		patch_for_coding_ptr = patch_for_coding + patch_skipped_initial_cols * patch_row_count + patch_skipped_initial_rows;
-		curr_observation_col = resized_observation + patch_init_col * aftresize_row_count;
+		curr_observation_col = observation + patch_init_col * row_count;
 
 		for (cc_1 = patch_init_col; cc_1 < patch_final_col; cc_1++) {
 		    for (rr_1 = patch_init_row; rr_1 < patch_final_row; rr_1++) {
@@ -310,12 +225,12 @@ code_image(
 		    }
 
 		    patch_for_coding_ptr += patch_skipped_initial_rows + patch_skipped_final_rows;
-		    curr_observation_col += aftresize_row_count;
+		    curr_observation_col += row_count;
 		}
 
 		/* Perform actual coding. */
 
-		curr_patch_offset = (cc / reduce_spread) * (aftresize_row_count / reduce_spread) * (reduce_spread * reduce_spread) +
+		curr_patch_offset = (cc / reduce_spread) * (row_count / reduce_spread) * (reduce_spread * reduce_spread) +
 		                    (rr / reduce_spread) * (reduce_spread * reduce_spread) +
 		                    (cc % reduce_spread) * reduce_spread + (rr % reduce_spread);
 
@@ -335,7 +250,37 @@ code_image(
     	for (ii = 0; ii < aftcoding_row_count * aftcoding_col_count * coeff_count; ii++) {
     	    coded_patches[ii] = 1 / (1 + exp(-coded_patches[ii])) - 0.5;
     	}
+    } else if (nonlinear_type == GLOBAL_ORDER) {
+	double* restrict  coded_patches_curr;
+	size_t            ii;
+	size_t            jj;
+
+	coded_patches_curr = coded_patches;
+
+	for (ii = 0; ii < aftcoding_row_count * aftcoding_col_count; ii++) {
+	    for (jj = 0; jj < coeff_count; jj++) {
+		coded_patches_curr[jj] = (coded_patches_curr[jj] > 0) ? nonlinear_modulator[jj] : -nonlinear_modulator[jj];
+	    }
+
+	    coded_patches_curr += coeff_count;
+	}
     } else {
+	exit(EXIT_FAILURE);
+    }
+
+    {
+	double* restrict  coded_patches_curr;
+	size_t* restrict  coded_patches_idx_curr;
+	size_t            ii;
+
+	coded_patches_curr = coded_patches;
+	coded_patches_idx_curr = coded_patches_idx;
+
+	for (ii = 0; ii < aftcoding_row_count * aftcoding_col_count; ii++) {
+	    sort_by_idxs(coded_patches_curr,coded_patches_idx_curr,coeff_count);
+	    coded_patches_curr += coeff_count;
+	    coded_patches_idx_curr += coeff_count;
+	}
     }
 
     /* Polarity split layer. */
@@ -371,6 +316,7 @@ code_image(
 
 	polarity_split_multiplier = 2;
     } else {
+	exit(EXIT_FAILURE);
     }
 
     /* Reduce layer - HERE BE DRAGONS. */
@@ -415,18 +361,17 @@ code_image(
 
 	    sort_by_idxs(o_coeffs,o_coeffs_idx,coeffs_count);
 	    *o_coeffs_count = coeffs_count;
-	} else {
+	} else if (reduce_type == MAX_NO_SIGN || reduce_type == MAX_KEEP_SIGN || reduce_type == SUM_ABS || reduce_type == SUM_SQR) {
 	    if (reduce_type == MAX_NO_SIGN) {
 		reduce_function = _max_no_sign;
 	    } else if (reduce_type == MAX_KEEP_SIGN) {
 		reduce_function = _max_keep_sign;
 	    } else if (reduce_type == SUM_ABS) {
 		reduce_function = _sum_abs;
-	    } else if (reduce_type == SUM_SQR) {
-		reduce_function = _sum_sqr;
 	    } else {
+		reduce_function = _sum_sqr;
 	    }
-	    
+
 	    for (ii = 0; ii < aftreduce_row_count * aftreduce_col_count; ii++) {
 		memset(curr_indices,0,reduce_spread_2 * sizeof(size_t));
 
@@ -455,6 +400,8 @@ code_image(
 
 	    sort_by_idxs(o_coeffs,o_coeffs_idx,coeffs_count);
 	    *o_coeffs_count = coeffs_count;
+	} else {
+	    exit(EXIT_FAILURE);
 	}
     }
 }
