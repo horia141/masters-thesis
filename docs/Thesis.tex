@@ -17,6 +17,7 @@
 \usepackage{algorithm}
 \usepackage{tabularx}
 \usepackage{array}
+\usepackage{subfigure}
 
 \floatstyle{boxed}
 \restylefloat{figure}
@@ -197,11 +198,73 @@ We now turn to the problem of learning the feature set $\textbf{C}$, given a cod
 
 The simplest solution is to use a set of randomly generated features. Each element from $\textbf{C}^i$ is generated independently. The only constraint is that the distribution allow positive and negative values and be unimodal. Other shape constraints do not influence performance (cite Ng and co. here). Although un-intuitive, random features work surprisingly well (cite Ng and co. here), hinting that the performance of this approach comes more from the architecture described in a previous section than the particular choice of features. Nevertheless, for best performance, a more structured feature set seems to be required. A correlation between feature extractor performance (as measured in classification tasks) with fixed architecture and, in turn, random features and trained features exists, and it can be employed for faster architecture selection.
 
-Figure (figure here) shows an example of 10 randomly chosen features. We have for a particular feature $i$ that $C^i_{\alpha\beta} \leftarrow U[-1,1]$. A normalization also occurs. As expected, the filters do not show specific structure. However, they can be seen as selecting for sinusoids components of the inputs corresponding to the highest amplitude spectral component of the filter (cite Ng again here).
+Figure \ref{fig:RandomAndHandmadeFeatures}\subref{fig:RandomFeatures} shows an example of 16 randomly chosen features. We have for a particular feature $i$ that $C^i_{\alpha\beta} \leftarrow U[-1,1]$. A normalization also occurs. As expected, the filters do not show specific structure. However, they can be seen as selecting for sinusoids components of the inputs corresponding to the highest amplitude spectral component of the filter (cite Ng again here).
 
-A feature set can be, of course, crafted by hand. Figure (figure here) shows an example of 10 designed features, similar to Haar Wavelets. Needless to say, this is not a scalable strategy for the common case of thousands of features currently employed in state of the art methods. A well known set can be emplyed then. Figure (figure here) shows several DCT features, while (figure here) shows several Gabor Wavelet features. The former are more computationally easy to work with while the latter allow overcomplete representations, thanks to their parametrization.
+\begin{figure}
+\centering
+\subfigure[Random features.]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/RandomFeatures.png}
+  \label{fig:RandomFeatures}
+}
+~~~~~~
+\subfigure[Handmade features.]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/HandmadeFeatures.png}
+  \label{fig:HandmadeFeatures}
+}
+\caption{Examples of simple features. Features are arranged in a $\hctimes{4}{4}$ array and scaled for presentation such that the highest intensity component corresponds to $1$ while the lowest intensity component corresponds to $0$.}
+\label{fig:RandomAndHandmadeFeatures}
+\end{figure}
 
-The focus of this chapter is, however, on learned feature sets. We select as a training set for this purpose a set of $10000$ patches of size $d = \hctimes{11}{11}$ randomly extracted from images of natural scenes as in (cite here). A sample of these can be seen in image (cite here). Two pre-processing steps are applied. First, from each image the DC component is subtracted. Second, the mean of all the patches is extracted from each patch, such that $E[final_patch] = \textbf{O}_{\hctimes{11}{11}}$. The final training set can be seen in figure (fig here).
+
+A feature set can be, of course, crafted by hand. Figure \ref{fig:RandomAndHandmadeFeatures}\subref{fig:HandmadeFeatures} shows an example of 10 designed features, similar to Haar Wavelets. Needless to say, this is not a scalable strategy for the common case of thousands of features currently employed in state of the art methods. A well known set can be emplyed then. Figure \ref{fig:DCTFeatures} shows several DCT features, while (figure here) shows several Gabor Wavelet features. The former are more computationally easy to work with while the latter allow overcomplete representations, thanks to their parametrization.
+
+\begin{figure}
+\includegraphics[width=0.35\textwidth]{ThesisData/DCTFeatures.png}
+\caption{DCT Features.}
+\label{fig:DCTFeatures}
+\end{figure}
+
+The focus of this chapter is, however, on learned feature sets. We select as a training set for this purpose a set of $100000$ patches of size $d = \hctimes{11}{11}$ randomly extracted from the MNIST and SmallNORB datasets, respectively. A sample of these can be seen in image (cite here). Two pre-processing steps are applied. First, from each image the DC component is subtracted. Second, the mean of all the patches is extracted from each patch, such that $E[final_patch] = \textbf{O}_{\hctimes{11}{11}}$. The final training set can be seen in figure (fig here). See the experiments section for how the patches were extracted. Another dataset will be employed as well, for didactic purposes. It can be seen in Figure \ref{fig:ThreeComponentPointCloud}. It consists of three slightly overlapping subsets generated from a different gaussian each. The set has a relatively complicated topology and is useful for illustrating the differences in learning algorithms.
+
+\begin{figure}
+\centering
+\subfigure[Original MNIST patches]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/MNISTPatches.png}
+  \label{fig:MNISTPatches}
+}
+~~~~~~
+\subfigure[Original SmallNORB patches]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/NORBSmallPatches.png}
+  \label{fig:NORBSmallPatches}
+}
+\subfigure[MNIST patches with no DC component and mean substracted]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/MNISTPatchesDcMean.png}
+  \label{fig:MNISTPatchesDcMean}
+}
+~~~~~~
+\subfigure[SmallNORB patches with no DC component and mean substracted]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/NORBSmallPatchesDcMean.png}
+  \label{fig:NORBSmallPatchesDCMean}
+}
+\subfigure[MNIST patches with no DC component and ZCA applied]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/MNISTPatchesDcMeanZCA.png}
+  \label{fig:MNISTPatchesDcMeanZCA}
+}
+~~~~~~
+\subfigure[SmallNORB patches with no DC component and ZCA applied]{
+  \includegraphics[width=0.35\textwidth]{ThesisData/NORBSmallPatchesDcMeanZCA.png}
+  \label{fig:NORBSmallPatchesDcMeanZCA}
+}
+\caption{Patches from the MNIST and SmallNORB datasets, in different stages of pre-processing.}
+\label{fig:Patches}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{ThesisData/ThreeComponentPointCloud.png}
+\caption{The three component dataset.}
+\label{fig:ThreeComponentPointColud}
+\end{figure}
 
 The simplest learning method is PCA. It finds the directions of maximum variance in the dataset. The results of applying PCA to learn a feature set can be seen in Figure (alal). PCA has several problems however. First, it cannot ``learn'' more than $d$ features. Second, it assumes an unrealistic model for image data: a Gaussian point cloud. The distribution of natural images is assumed to lie on a lower dimensional manifold embedded in the $d$-dimensional space and the Gaussian approximation is very crude. Comparing the features from PCA and Gabor Wavelets we can see clear distinctions. The latter perform better.
 
@@ -284,6 +347,8 @@ A further improvement is possible considering the fact that many coding methods 
 \end{algorithm}
 
 \chapter{Experiments}
+
+Talk about how to extract patches here. Minimum required variance and all.
 
 \section{Coding and Sparseness}
 
