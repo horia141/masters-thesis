@@ -15,7 +15,7 @@ classdef testing
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
 
-            images = dataset.load('../data/mnist.train.mat');
+            images = dataset.load('../../data/mnist.train.mat');
             
             t_patch = transforms.image.patch_extract(images,patches_count,patch_row_count,patch_col_count,0.01);
             
@@ -50,7 +50,7 @@ classdef testing
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
 
-            images = dataset.load('../data/cifar10.train.mat');
+            images = dataset.load('../../data/cifar10.train.mat');
             
             t_patch_r = transforms.image.patch_extract(images(:,:,1,:),patches_count,patch_row_count,patch_col_count,0.01);
             t_patch_g = transforms.image.patch_extract(images(:,:,2,:),patches_count,patch_row_count,patch_col_count,0.01);
@@ -104,7 +104,7 @@ classdef testing
             assert(check.scalar(do_patch_zca));
             assert(check.logical(do_patch_zca));
 
-            images = dataset.load('../data/norbsmall.train.mat');
+            images = dataset.load('../../data/norbsmall.train.mat');
             images = images(:,:,1,:);
             
             t_patch = transforms.image.patch_extract(images,patches_count,patch_row_count,patch_col_count,0.01);

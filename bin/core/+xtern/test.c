@@ -125,38 +125,6 @@ main(
         assert(o_idx[6] == 0);
     }
 
-    printf("  Function \"partition_greatest\".\n");
-
-    {
-	double  o_coeffs[] =     {1,3,-2,4,9,-5,7,6,0,-8};
-        size_t  o_coeffs_idx[] = {0,1, 2,3,4, 5,6,7,8, 9};
-        size_t  count = 10;
-	size_t  greatest_count = 4;
-
-	partition_greatest(o_coeffs,o_coeffs_idx,count,greatest_count);
-
-	assert(o_coeffs[0] == 4);
-	assert(o_coeffs[1] == 3);
-	assert(o_coeffs[2] == -2);
-	assert(o_coeffs[3] == 9);
-	assert(o_coeffs[4] == -5);
-	assert(o_coeffs[5] == 7);
-	assert(o_coeffs[6] == 6);
-	assert(o_coeffs[7] == 0);
-	assert(o_coeffs[8] == -8);
-	assert(o_coeffs[9] == 1);
-	assert(o_coeffs_idx[0] == 3);
-	assert(o_coeffs_idx[1] == 1);
-	assert(o_coeffs_idx[2] == 2);
-	assert(o_coeffs_idx[3] == 4);
-	assert(o_coeffs_idx[4] == 5);
-	assert(o_coeffs_idx[5] == 6);
-	assert(o_coeffs_idx[6] == 7);
-	assert(o_coeffs_idx[7] == 8);
-	assert(o_coeffs_idx[8] == 9);
-	assert(o_coeffs_idx[9] == 0);
-    }
-
     printf("  Function \"sort_by_abs_coeffs\".\n");
 
     {

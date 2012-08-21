@@ -32,6 +32,7 @@ transforms.record.dictionary.test(test_figure);
 transforms.record.dictionary.given.dct.test(test_figure);
 transforms.record.dictionary.random.filters.test(test_figure);
 transforms.record.dictionary.random.instances.test(test_figure);
+transforms.record.dictionary.learn.pca.test(test_figure);
 transforms.record.dictionary.learn.grad.test(test_figure);
 transforms.record.dictionary.learn.grad_st.test(test_figure);
 transforms.record.dictionary.learn.neural_gas.test(test_figure);

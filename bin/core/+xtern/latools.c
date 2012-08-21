@@ -84,60 +84,6 @@ fill_idx_1n(
     }
 }
 
-
-void
-partition_greatest(
-    double* restrict  o_coeffs,
-    size_t* restrict  o_coeffs_idx,
-    size_t            count,
-    size_t            greatest_count) {
-    size_t  start_idx;
-    size_t  end_idx;
-    size_t  median_idx;
-    double  fabs_o_coeffs_ii;
-    double  fabs_o_coeffs_median_idx;
-    double  tmp_median;
-    size_t  tmp_median_idx;
-    size_t  ii;
-
-    start_idx = 0;
-    end_idx = count;
-    median_idx = start_idx;
-
-    while (median_idx != (greatest_count - 1)) {
-	for (ii = start_idx + 1; ii < end_idx; ii++) {
-	    fabs_o_coeffs_ii = fabs(o_coeffs[ii]);
-	    fabs_o_coeffs_median_idx = fabs(o_coeffs[median_idx]);
-
-	    if ((fabs_o_coeffs_ii > fabs_o_coeffs_median_idx) || 
-		((fabs_o_coeffs_ii == fabs_o_coeffs_median_idx) &&
-		 (o_coeffs_idx[ii] < o_coeffs_idx[median_idx]))) {
-		tmp_median = o_coeffs[median_idx];
-		o_coeffs[median_idx] = o_coeffs[ii];
-		o_coeffs[ii] = o_coeffs[median_idx + 1];
-		o_coeffs[median_idx + 1] = tmp_median;
-		tmp_median_idx = o_coeffs_idx[median_idx];
-		o_coeffs_idx[median_idx] = o_coeffs_idx[ii];
-		o_coeffs_idx[ii] = o_coeffs_idx[median_idx + 1];
-		o_coeffs_idx[median_idx + 1] = tmp_median_idx;
-		median_idx = median_idx + 1;
-	    }
-	}
-
-	if (median_idx == greatest_count) {
-	    return;
-	} else if (median_idx < greatest_count) {
-	    start_idx = median_idx + 1;
-	    end_idx = end_idx;
-	    median_idx = start_idx;
-	} else {
-	    start_idx = start_idx;
-	    end_idx = median_idx;
-	    median_idx = start_idx;
-	}
-    }
-}
-
 void
 sort_by_abs_coeffs(
     double* restrict  o_coeffs,
