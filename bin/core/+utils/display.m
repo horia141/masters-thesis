@@ -282,13 +282,9 @@ classdef display
             
             fprintf('    NOT YET TESTED!!!\n');
             
-            clearvars -except test_figure;
-            
             fprintf('  Function "classification_border".\n');
             
             fprintf('    NOT YET TESTED!!!\n');
-            
-            clearvars -except test_figure;
         end
     end
 end
