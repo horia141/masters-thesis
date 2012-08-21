@@ -156,7 +156,7 @@ classdef logistic < classifier
             
             fprintf('    In primal form, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1va',1);
 
@@ -189,7 +189,7 @@ classdef logistic < classifier
             
             fprintf('    In primal form, L1 regularization and One-vs-One multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1v1',1);
 
@@ -219,7 +219,7 @@ classdef logistic < classifier
             
             fprintf('    In primal form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L2',1,'1va',1);
 
@@ -252,7 +252,7 @@ classdef logistic < classifier
             
             fprintf('    In primal form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L2',1,'1v1',1);
 
@@ -282,7 +282,7 @@ classdef logistic < classifier
             
             fprintf('    In dual form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Dual','L2',1,'1va',1);
 
@@ -315,7 +315,7 @@ classdef logistic < classifier
 
             fprintf('    In dual form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Dual','L2',1,'1v1',1);
 
@@ -345,7 +345,7 @@ classdef logistic < classifier
             
             fprintf('    With multiple threads and One-vs-Experiment multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1va',3);
 
@@ -378,7 +378,7 @@ classdef logistic < classifier
             
             fprintf('    With multiple threads and One-vs-One multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1v1',3);
 
@@ -408,7 +408,7 @@ classdef logistic < classifier
             
             fprintf('    With multiple train and classify threads and One-vs-Experiment multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1va',[3 2]);
 
@@ -441,7 +441,7 @@ classdef logistic < classifier
             
             fprintf('    With multiple train and classify threads and One-vs-One multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
             
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1v1',[3 2]);
 
@@ -471,7 +471,7 @@ classdef logistic < classifier
             
             fprintf('    With two classes and One-vs-Experiment multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_2();
+            [s,ci] = dataset.load('../test/classifier_data_2.mat');
 
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1va',1);
 
@@ -497,7 +497,7 @@ classdef logistic < classifier
             
             fprintf('    With two classes and One-vs-One multiclass handling.\n');
             
-            [s,ci] = utils.testing.classifier_data_2();
+            [s,ci] = dataset.load('../test/classifier_data_2.mat');
 
             cl = classifiers.linear.logistic(s,ci,'Primal','L1',1,'1v1',1);
 
@@ -527,7 +527,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -557,7 +558,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -587,7 +589,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -617,7 +620,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -647,7 +651,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -677,7 +682,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -709,7 +715,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_2.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_2.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -735,7 +742,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_2.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_2.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -761,7 +769,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_2.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_2.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -787,7 +796,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_2.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_2.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -813,7 +823,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_2.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_2.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -839,7 +850,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_2();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_2.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_2.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -867,7 +879,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -917,7 +930,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -967,7 +981,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -1017,7 +1032,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -1067,7 +1083,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1va',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -1117,7 +1134,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1v1',1);
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -1169,7 +1187,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1va',1);
             
@@ -1183,7 +1202,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L1 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L1',1,'1v1',1);
                                                       
@@ -1197,7 +1217,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1va',1);
             
@@ -1211,7 +1232,8 @@ classdef logistic < classifier
             
             fprintf('      In primal form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Primal','L2',1,'1v1',1);
             
@@ -1225,7 +1247,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-Experiment multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1va',1);
             
@@ -1239,7 +1262,8 @@ classdef logistic < classifier
             
             fprintf('      In dual form, L2 regularization and One-vs-One multiclass handling.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.linear.logistic(s_tr,ci_tr,'Dual','L2',1,'1v1',1);
             

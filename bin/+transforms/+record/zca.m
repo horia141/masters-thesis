@@ -50,7 +50,7 @@ classdef zca < transform
             
             fprintf('    Without specifing argument "div_epsilon".\n');
             
-            s = utils.testing.correlated_cloud();
+            s = dataset.load('../test/correlated_cloud.mat');
             [s_s,~,p_latent] = princomp(s');
 
             t = transforms.record.zca(s);
@@ -69,7 +69,7 @@ classdef zca < transform
             
             fprintf('    With specifing of argument "div_epsilon".\n');
             
-            s = utils.testing.correlated_cloud();
+            s = dataset.load('../test/correlated_cloud.mat');
             [s_s,~,p_latent] = princomp(s');
 
             t = transforms.record.zca(s,1e-5);
@@ -88,7 +88,7 @@ classdef zca < transform
             
             fprintf('  Function "code".\n');
             
-            s = utils.testing.correlated_cloud();
+            s = dataset.load('../test/correlated_cloud.mat');
             [s_s,~,p_latent] = princomp(s');
             
             t = transforms.record.zca(s);            
@@ -117,7 +117,7 @@ classdef zca < transform
             
             fprintf('  Apply ZCA on image patches.\n');
             
-            s1 = utils.testing.scenes_small();
+            s1 = dataset.load('../test/scenes_small.mat');
             t1 = transforms.image.patch_extract(s1,1500,16,16,0.01);
             s2 = t1.code(s1);
             s3 = dataset.flatten_image(s2);

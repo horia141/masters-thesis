@@ -87,7 +87,7 @@ classdef grad_st < transforms.record.dictionary
             
             fprintf('  Proper constuction.\n');
             
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
 
             t = transforms.record.dictionary.learn.grad_st(s,3,'MP',[],1,2,1,1,1e-2,100);
             

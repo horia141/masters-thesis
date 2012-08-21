@@ -48,7 +48,7 @@ classdef cmeans < classifier
             
             fprintf('  Proper construction.\n');
             
-            [s,ci] = utils.testing.classifier_data_3();
+            [s,ci] = dataset.load('../test/classifier_data_3.mat');
 
             cl = classifiers.cmeans(s,ci);
             
@@ -64,7 +64,8 @@ classdef cmeans < classifier
             
             fprintf('    With clearly separated data.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_clear_data_3.test.mat');
             
             cl = classifiers.cmeans(s_tr,ci_tr);            
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -94,7 +95,8 @@ classdef cmeans < classifier
             
             fprintf('    With mostly clearly separated data.\n');
             
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_mostly_clear_data_3();
+            [s_tr,ci_tr] = dataset.load('../test/classifier_mostly_clear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_mostly_clear_data_3.test.mat');
             
             cl = classifiers.cmeans(s_tr,ci_tr);            
             [labels_idx_hat,labels_confidence,score,conf_matrix,misclassified] = cl.classify(s_ts,ci_ts);
@@ -143,8 +145,9 @@ classdef cmeans < classifier
             clearvars -except test_figure;
             
             fprintf('    Without clearly separated data.\n');
-
-            [s_tr,s_ts,ci_tr,ci_ts] = utils.testing.classifier_unclear_data_3();
+            
+            [s_tr,ci_tr] = dataset.load('../test/classifier_unclear_data_3.train.mat');
+            [s_ts,ci_ts] = dataset.load('../test/classifier_unclear_data_3.test.mat');
             
             cl = classifiers.cmeans(s_tr,ci_tr);
             

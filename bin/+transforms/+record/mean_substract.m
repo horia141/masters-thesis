@@ -29,7 +29,7 @@ classdef mean_substract < transform
             
             fprintf('  Proper construction.\n');
             
-            s = utils.testing.correlated_cloud();
+            s = dataset.load('../test/correlated_cloud.mat');
 
             t = transforms.record.mean_substract(s);
             
@@ -41,7 +41,7 @@ classdef mean_substract < transform
             
             fprintf('  Function "code".\n');
             
-            s = utils.testing.correlated_cloud();
+            s = dataset.load('../test/correlated_cloud.mat');
             
             t = transforms.record.mean_substract(s);
             s_p = t.code(s);

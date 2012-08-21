@@ -68,7 +68,7 @@ classdef patch_extract < transform
             
             fprintf('  Proper construction.\n');
             
-            s = utils.testing.scenes_small();
+            s = dataset.load('../test/scenes_small.mat');
             
             t = transforms.image.patch_extract(s,10,5,5,0.01);
             
@@ -83,7 +83,7 @@ classdef patch_extract < transform
             
             fprintf('  Function "code".\n');
             
-            s = utils.testing.scenes_small();
+            s = dataset.load('../test/scenes_small.mat');
             
             t = transforms.image.patch_extract(s,50,40,40,0.01);
             s_p = t.code(s);

@@ -120,7 +120,7 @@ classdef dictionary < transform
             
             fprintf('    Correlation.\n');
             
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'Corr',[],3,1);
             
@@ -141,7 +141,7 @@ classdef dictionary < transform
             
             fprintf('    Matching Pursuit.\n');
             
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],3,1);
             
@@ -165,7 +165,7 @@ classdef dictionary < transform
             fprintf('    Correlation with one kept coefficient and single thread.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,dict_t,'Corr',[],1,1);
             s_p = t.code(s);
@@ -212,7 +212,7 @@ classdef dictionary < transform
             fprintf('    Correlation with one kept coefficient and multiple threads.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,dict_t,'Corr',[],1,10);
             s_p = t.code(s);
@@ -259,7 +259,7 @@ classdef dictionary < transform
             fprintf('    Correlation with two kept coefficients and single thread.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,dict_t,'Corr',[],2,1);
             s_p = t.code(s);
@@ -306,7 +306,7 @@ classdef dictionary < transform
             fprintf('    Correlation with two kept coefficients and multiple threads.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,dict_t,'Corr',[],2,10);
             s_p = t.code(s);
@@ -353,7 +353,7 @@ classdef dictionary < transform
             fprintf('    Matching Pursuit with one kept coefficient and single thread.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],1,1);
             s_p = t.code(s);
@@ -400,7 +400,7 @@ classdef dictionary < transform
             fprintf('    Matching Pursuit with one kept coefficient and multiple threads.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],1,10);
             s_p = t.code(s);
@@ -447,7 +447,7 @@ classdef dictionary < transform
             fprintf('    Matching Pursuit with two kept coefficients and single thread.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],2,1);
             s_p = t.code(s);
@@ -494,7 +494,7 @@ classdef dictionary < transform
             fprintf('    Matching Pursuit with two kept coefficients and multiple threads.\n');
             
             dict_t = transforms.record.dictionary.normalize_dict([1 0; 0 1; 1 1]);
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'MP',[],2,10);
             s_p = t.code(s);

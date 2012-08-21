@@ -197,7 +197,7 @@ classdef display
             
             fprintf('    With implicit "tiles_format".\n');
             
-            t = utils.testing.scenes_small();
+            t = dataset.load('../test/scenes_small.mat');
             
             if test_figure ~= -1
                 figure(test_figure);
@@ -210,7 +210,7 @@ classdef display
             
             fprintf('    With one value for "tiles_format".\n');
             
-            t = utils.testing.scenes_small();
+            t = dataset.load('../test/scenes_small.mat');
             
             if test_figure ~= -1
                 figure(test_figure);
@@ -223,7 +223,7 @@ classdef display
             
             fprintf('    With two values for "tiles_format".\n');
             
-            t = utils.testing.scenes_small();
+            t = dataset.load('../test/scenes_small.mat');
             
             if test_figure ~= -1
                 figure(test_figure);
@@ -238,7 +238,8 @@ classdef display
             
             fprintf('    With implicit "tiles_format".\n');
             
-            t = utils.testing.sparse_dictionary();
+            vvv = load('../test/sparse_dictionary.mat');
+            t = vvv.saved_dict_11x11_144;
             
             if test_figure ~= -1
                 figure(test_figure);
@@ -251,7 +252,8 @@ classdef display
             
             fprintf('    With one value for "tiles_format".\n');
             
-            t = utils.testing.sparse_dictionary();
+            vvv = load('../test/sparse_dictionary.mat');
+            t = vvv.saved_dict_11x11_144;
             
             if test_figure ~= -1
                 figure(test_figure);
@@ -264,7 +266,8 @@ classdef display
             
             fprintf('    With two values for "tiles_format".\n');
             
-            t = utils.testing.sparse_dictionary();
+            vvv = load('../test/sparse_dictionary.mat');
+            t = vvv.saved_dict_11x11_144;
             
             if test_figure ~= -1
                 figure(test_figure);
@@ -277,15 +280,13 @@ classdef display
             
             fprintf('  Function "coded_output".\n');
             
-            if test_figure ~= -1
-                figure(test_figure);
-                subplot(1,1,1);
-                pause(5);
-            end
+            fprintf('    NOT YET TESTED!!!\n');
             
             clearvars -except test_figure;
             
             fprintf('  Function "classification_border".\n');
+            
+            fprintf('    NOT YET TESTED!!!\n');
             
             clearvars -except test_figure;
         end

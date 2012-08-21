@@ -100,6 +100,8 @@ classdef neural_gas < transforms.record.dictionary
             fprintf('Testing "transforms.record.dictionary.learn.neural_gas".\n');
             
             fprintf('  Proper construction.\n');
+            
+            fprintf('    NOT YET TESTED!\n');
         end
     end
 end

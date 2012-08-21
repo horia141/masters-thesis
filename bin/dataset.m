@@ -1,5 +1,122 @@
 classdef dataset
     methods (Static,Access=public)
+        function [sample,varargout] = load(dataset_path)
+            assert(check.scalar(dataset_path));
+            assert(check.string(dataset_path));
+            
+            try
+                file_contents = load(dataset_path);
+            catch e
+                throw(MException('master:NoLoad',e.message));
+            end
+                
+            if ~isfield(file_contents,'PROTOCOL_VERSION') || ...
+               ~isfield(file_contents,'PROTOCOL_TYPE') || ...
+               ~isfield(file_contents,'PROTOCOL_TYPE_VERSION')
+                throw(MException('master:NoLoad','Invalid format!'));
+            end
+            
+            protocol_version = file_contents.PROTOCOL_VERSION;
+            protocol_type = file_contents.PROTOCOL_TYPE;
+            protocol_type_version = file_contents.PROTOCOL_TYPE_VERSION;
+            
+            if protocol_version == 1
+                if strcmp(protocol_type,'Record+ClassifierInfo')
+                    if protocol_type_version == 1
+                        if ~isfield(file_contents,'sample') || ...
+                           ~isfield(file_contents,'classifier_labels') || ...
+                           ~isfield(file_contents,'classifier_idxs')
+                            throw(MException('master:NoLoad','Invalid "Record+ClassifierInfo" format!'));
+                        end
+                        
+                        sample = file_contents.sample;
+                        classifier_labels = file_contents.classifier_labels;
+                        classifier_idxs = file_contents.classifier_idxs;
+                        
+                        if ~check.dataset_record(sample)
+                            throw(MException('master:NoLoad','Invalid sample!'));
+                        end
+                        
+                        if ~(check.vector(classifier_labels) && check.cell(classifier_labels) && ...
+                             check.checkf(@check.scalar,classifier_labels) && check.checkf(@check.string,classifier_labels))
+                            throw(MException('master:NoLoad','Invalid classifier labels!'));
+                        end
+                        
+                        if ~(check.vector(classifier_idxs) && check.natural(classifier_idxs) && ...
+                             check.checkv(classifier_idxs >= 1 & classifier_idxs <= length(classifier_labels)))
+                            throw(MException('master:NoLoad','Invalid classifier indices!'));
+                        end
+                        
+                        varargout{1} = classifier_info(classifier_labels,classifier_idxs);
+                        
+                        if ~varargout{1}.compatible(sample)
+                            throw(MException('master:NoLoad','Classifier info not compatible with sample!'));
+                        end
+                    else
+                        throw(MException('master:NoLoad','Unknown "Record+ClassifierInfo" version!'));
+                    end
+                elseif strcmp(protocol_type,'Record')
+                    if ~isfield(file_contents,'sample')
+                        throw(MException('master:NoLoad','Invalid "Record" format!'));
+                    end
+                    
+                    sample = file_contents.sample;
+                    
+                    if ~check.dataset_record(sample)
+                        throw(MException('master:NoLoad','Invalid sample!'));
+                    end
+                elseif strcmp(protocol_type,'Image+ClassifierInfo')
+                    if protocol_type_version == 1
+                        if ~isfield(file_contents,'sample') || ...
+                           ~isfield(file_contents,'classifier_labels') || ...
+                           ~isfield(file_contents,'classifier_idxs')
+                            throw(MException('master:NoLoad','Invalid "Image+ClassifierInfo" format!'));
+                        end
+                        
+                        sample = file_contents.sample;
+                        classifier_labels = file_contents.classifier_labels;
+                        classifier_idxs = file_contents.classifier_idxs;
+                        
+                        if ~check.dataset_image(sample)
+                            throw(MException('master:NoLoad','Invalid sample!'));
+                        end
+                        
+                        if ~(check.vector(classifier_labels) && check.cell(classifier_labels) && ...
+                             check.checkf(@check.scalar,classifier_labels) && check.checkf(@check.string,classifier_labels))
+                            throw(MException('master:NoLoad','Invalid classifier labels!'));
+                        end
+                        
+                        if ~(check.vector(classifier_idxs) && check.natural(classifier_idxs) && ...
+                             check.checkv(classifier_idxs >= 1 & classifier_idxs <= length(classifier_labels)))
+                            throw(MException('master:NoLoad','Invalid classifier indices!'));
+                        end
+                        
+                        varargout{1} = classifier_info(classifier_labels,classifier_idxs);
+                        
+                        if ~varargout{1}.compatible(sample)
+                            throw(MException('master:NoLoad','Classifier info not compatible with sample!'));
+                        end
+                    else
+                        throw(MException('master:NoLoad','Unknown "Image+ClassifierInfo" version!'));
+                    end
+                elseif strcmp(protocol_type,'Image')
+                    if ~isfield(file_contents,'sample')
+                        throw(MException('master:NoLoad','Invalid "Image" format!'));
+                    end
+                    
+                    sample = file_contents.sample;
+                    
+                    if ~check.dataset_image(sample)
+                        throw(MException('master:NoLoad','Invalid sample!'));
+                    end
+                else
+                    throw(MException('master:NoLoad','Unknown protocol type!'));
+                end
+            else
+                throw(MException('master:NoLoad','Unknown protocol version!'));
+            end
+        end
+        
         function [sample_count] = count(dataset)
             assert(check.dataset(dataset));
             
@@ -92,6 +209,255 @@ classdef dataset
     methods (Static,Access=public)
         function test(~)
             fprintf('Testing "dataset".\n');
+            
+            fprintf('  Function "load".\n');
+            
+            fprintf('    With proper record and classifier info data.\n');
+            
+            [s,ci] = dataset.load('../test/good_record_classifier_info.mat');
+            
+            assert(check.same(s,[1 0; 1 1; 0 1]'));
+            assert(check.same(ci.labels,{'1' '2' '3'}));
+            assert(check.same(ci.labels_count,3));
+            assert(check.same(ci.labels_idx,[3 2 1]));
+            
+            clearvars -except test_figure;
+            
+            fprintf('    With proper record data.\n');
+            
+            s = dataset.load('../test/good_record.mat');
+            
+            assert(check.same(s,[1 0; 1 1; 0 1]'));
+            
+            clearvars -except test_figure;
+            
+            fprintf('    With proper image and classifier info data.\n');
+            
+            [s,ci] = dataset.load('../test/good_image_classifier_info.mat');
+            
+            assert(check.same(s,cat(4,[1 0; 0 0],[0 1; 0 0],[0 0; 1 0],[0 0; 0 1])));
+            assert(check.same(ci.labels,{'1' '2'}));
+            assert(check.same(ci.labels_count,2));
+            assert(check.same(ci.labels_idx,[1 1 2 2]));
+            
+            clearvars -except test_figure;
+            
+            fprintf('    With proper image data.\n');
+            
+            s = dataset.load('../test/good_image.mat');
+            
+            assert(check.same(s,cat(4,[1 0; 0 0],[0 1; 0 0],[0 0; 1 0],[0 0; 0 1])));
+            
+            clearvars -except test_figure;
+            
+            fprintf('    With improper external inputs.\n');
+            
+            try
+                dataset.load('../test/bad_format.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+            end
+            
+            try
+                dataset.load('../test/bad_no_protocol_version.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_no_protocol_type.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_no_protocol_type_version.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_protocol_version.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Unknown protocol version!'));
+            end
+            
+            try
+                dataset.load('../test/bad_protocol_type.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Unknown protocol type!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_version.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Unknown "Record+ClassifierInfo" version!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_no_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Record+ClassifierInfo" format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_no_classifier_labels.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Record+ClassifierInfo" format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_no_classifier_idxs.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Record+ClassifierInfo" format!'));
+            end 
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid sample!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_classifier_labels.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid classifier labels!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_classifier_idxs.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid classifier indices!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_classifier_info_incompatible.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Classifier info not compatible with sample!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_no_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Record" format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_record_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid sample!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_version.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Unknown "Image+ClassifierInfo" version!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_no_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Image+ClassifierInfo" format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_no_classifier_labels.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Image+ClassifierInfo" format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_no_classifier_idxs.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Image+ClassifierInfo" format!'));
+            end 
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid sample!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_classifier_labels.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid classifier labels!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_classifier_idxs.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid classifier indices!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_classifier_info_incompatible.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Classifier info not compatible with sample!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_no_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid "Image" format!'));
+            end
+            
+            try
+                dataset.load('../test/bad_image_sample.mat');
+                assert(false);
+            catch e
+                assert(check.same(e.identifier,'master:NoLoad'));
+                assert(check.same(e.message,'Invalid sample!'));
+            end
             
             fprintf('  Function "count".\n');
             

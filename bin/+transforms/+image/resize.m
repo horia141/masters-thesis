@@ -53,7 +53,7 @@ classdef resize < transform
             
             fprintf('  Proper construction.\n');
             
-            s = utils.testing.scenes_small();
+            s = dataset.load('../test/scenes_small.mat');
             
             t = transforms.image.resize(s,20,20);
             
@@ -66,7 +66,7 @@ classdef resize < transform
             
             fprintf('  Function "code".\n');
             
-            s = utils.testing.scenes_small();
+            s = dataset.load('../test/scenes_small.mat');
             
             t = transforms.image.resize(s,100,100);
             s_p = t.code(s);
@@ -86,7 +86,7 @@ classdef resize < transform
             
             fprintf('    With sub-multiple size.\n');
             
-            s = utils.testing.scenes_small();
+            s = dataset.load('../test/scenes_small.mat');
             
             t = transforms.image.resize(s,96,128);
             s_p = t.code(s);

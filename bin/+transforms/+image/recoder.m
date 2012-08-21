@@ -234,7 +234,11 @@ classdef recoder < transform
             
             fprintf('  Proper construction.\n');
             
+            fprintf('    NOT YET TESTED.\n');
+            
             fprintf('  Function "code".\n');
+            
+            fprintf('    NOT YET TESTED.\n');
         end
     end
 end

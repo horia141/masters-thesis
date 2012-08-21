@@ -28,7 +28,7 @@ classdef instances < transforms.record.dictionary
             
             fprintf('  Proper construction.\n');
             
-            s = utils.testing.three_component_cloud();
+            s = dataset.load('../test/three_component_cloud.mat');
             
             t = transforms.record.dictionary.random.instances(s,3,'Corr',[],3,2);
             

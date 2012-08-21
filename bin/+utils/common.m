@@ -206,7 +206,7 @@ classdef common
             
             fprintf('    With small excursions below 0 and above 1.\n');
             
-            t = utils.testing.scenes_small() + 0.2;
+            t = dataset.load('../test/scenes_small.mat') + 0.2;
             tp = utils.common.clamp_images_to_unit(t);
             
             assert(dataset.geom_compatible(dataset.geometry(t),dataset.geometry(tp)));
@@ -229,7 +229,7 @@ classdef common
             
             fprintf('    With large excursions below 0 and above 1.\n');
             
-            t = 4 * utils.testing.scenes_small() - 2;
+            t = 4 * dataset.load('../test/scenes_small.mat') - 2;
             tp = utils.common.clamp_images_to_unit(t);
             
             assert(dataset.geom_compatible(dataset.geometry(t),dataset.geometry(tp)));
@@ -252,7 +252,7 @@ classdef common
 
             fprintf('  Function "remap_images_to_unit".\n');
             
-            t = 4 * utils.testing.scenes_small() - 2;
+            t = 4 * dataset.load('../test/scenes_small.mat') - 2;
             t(:,:,:,4:5) = 4 * t(:,:,:,4:5);
             tp = utils.common.remap_images_to_unit(t);
             

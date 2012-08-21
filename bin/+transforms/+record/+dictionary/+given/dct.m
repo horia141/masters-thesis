@@ -65,6 +65,8 @@ classdef dct < transforms.record.dictionary
             fprintf('Testing "transforms.record.dictionary.given.dct".\n');
             
             fprintf('  Proper constuction.\n');
+            
+            fprintf('    NOT YET TESTED.\n');
         end
     end
 end

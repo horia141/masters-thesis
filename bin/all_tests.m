@@ -15,9 +15,7 @@ end
 check.test(test_figure);
 utils.common.test(test_figure);
 utils.display.test(test_figure);
-%utils.load_dataset.test(test_figure);
 utils.params.test(test_figure);
-utils.testing.test(test_figure);
 logging.level.test(test_figure);
 logging.handlers.zero.test(test_figure);
 logging.handlers.stdout.test(test_figure);
@@ -41,7 +39,7 @@ transforms.record.standardize.test(test_figure);
 transforms.record.pca.test(test_figure);
 transforms.record.zca.test(test_figure);
 transforms.record.dictionary.test(test_figure);
-transforms.record.dictionary.given.dct(test_figures);
+transforms.record.dictionary.given.dct.test(test_figure);
 transforms.record.dictionary.random.filters.test(test_figure);
 transforms.record.dictionary.random.instances.test(test_figure);
 transforms.record.dictionary.learn.grad.test(test_figure);
