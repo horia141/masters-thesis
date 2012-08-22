@@ -168,10 +168,13 @@ code_image(
 	size_t                   patch_final_col;
 	size_t                   patch_skipped_initial_cols;
 	size_t                   curr_patch_offset;
+	double                   patch_sum_values;
+	double                   patch_mean;
 	size_t                   cc;
 	size_t                   rr;
 	size_t                   rr_1;
 	size_t                   cc_1;
+	size_t                   ii;
 
 	aftcoding_row_count = row_count - (row_count % reduce_spread);
 	aftcoding_col_count = col_count - (col_count % reduce_spread);
@@ -218,14 +221,25 @@ code_image(
 		patch_for_coding_ptr = patch_for_coding + patch_skipped_initial_cols * patch_row_count + patch_skipped_initial_rows;
 		curr_observation_col = observation + patch_init_col * row_count;
 
+		patch_sum_values = 0;
+
 		for (cc_1 = patch_init_col; cc_1 < patch_final_col; cc_1++) {
 		    for (rr_1 = patch_init_row; rr_1 < patch_final_row; rr_1++) {
 			*patch_for_coding_ptr = *(curr_observation_col + rr_1);
+			patch_sum_values += *(curr_observation_col + rr_1);
 			patch_for_coding_ptr++;
 		    }
 
 		    patch_for_coding_ptr += patch_skipped_initial_rows + patch_skipped_final_rows;
 		    curr_observation_col += row_count;
+		}
+
+		/* Substract mean from each patch element. */
+
+		patch_mean = patch_sum_values / (patch_row_count * patch_col_count);
+
+		for (ii = 0; ii < patch_row_count * patch_col_count; ii++) {
+		    patch_for_coding[ii] = patch_for_coding[ii] - patch_mean;
 		}
 
 		/* Perform actual coding. */
