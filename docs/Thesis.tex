@@ -61,6 +61,8 @@
 
 \unnumberedsection{Stream of thought writing}
 
+[[[Talk about typographic conventions]]]
+
 This work presents several contributions: a general architecture for feature extraction for computer vision classification or regression, with a neural-network like structure, but much more general, a novel way of computing nonlinearities in it which produces state-of-the-art results on two benchmark image recognition tasks, a description of a text detection system, and experimental results with it and the two image recongnition tasks.
 
 Text detection: we are given an input image, which contains several areas of text. The goal is to detect these areas and then perform OCR on them. The task however is harder than OCR as usually natural images are provided and text is written in a variety of fonts, on a variety of backgrounds, and filmed from a variety of positions, such that the classical OCR of top-down view does not hold. Ideally this should be solved in video and online.
@@ -127,7 +129,7 @@ For the case of $w \leq d$, ($\textbf{C}$ is a tall matrix), we have the classic
 \textbf{a}^{\star} = (\textbf{C}^T\textbf{C})^{-1}\textbf{C}^T\textbf{x}
 \end{equation}
 
-Alternatively, for computational considerations, a gradient descent can be employed to find the optimal solution. The problem is convex, therefore a single global minimum exists. The reconstructed signal, $\mathcal{R}[\textbf{C}](a) = Ca^{\star} = \textbf{C}(\textbf{C}^T\textbf{C})^{-1}\textbf{C}^T\textbf{x}$, is the orthogonal projection of $\textbf{x}$ onto the subspace spanned by the columns of $\textbf{C}$ (our features) and is the closest point in $\overline{\text{span}(\textbf{C})}$ to $\textbf{x}$, wrt the Euclidean norm. Notice that when employing ``classical'' bases such as DCT, with $w = d$, the feature matrix $\textbf{C}$ is orthogonal, therefore the reconstructed signal is $\mathcal{R}[\textbf{C}](\textbf{a}) = \textbf{C}^T\textbf{a}$.
+Alternatively, for computational considerations, a gradient descent can be employed to find the optimal solution. The problem is convex, therefore a single global minimum exists. The reconstructed signal, $\mathcal{R}[\textbf{C}](a) = \textbf{C}\textbf{a}^{\star} = \textbf{C}(\textbf{C}^T\textbf{C})^{-1}\textbf{C}^T\textbf{x}$, is the orthogonal projection of $\textbf{x}$ onto the subspace spanned by the columns of $\textbf{C}$ (our features) and is the closest point in $\overline{\text{span}(\textbf{C})}$ to $\textbf{x}$, wrt the Euclidean norm. Notice that when employing ``classical'' bases such as DCT, with $w = d$, the feature matrix $\textbf{C}$ is orthogonal, therefore the reconstructed signal is $\mathcal{R}[\textbf{C}](\textbf{a}) = \textbf{C}^T\textbf{a}$.
 
 For $w \ge d$, this formulation does not work however. In this case, $\textbf{C}$ is a wide matrix. Also, it does not admit a single inverse, and the interpretation of the reconstruction as the projection on the column space of $\textbf{C}$, does not hold, as, most likely, the column space is equal to the signal space $\hcsignalspace$.
 
@@ -139,6 +141,7 @@ The first approach ammends the cost function as:
 
 \begin{equation}
 \textbf{a}^{\star} = \arg\min_{\textbf{a}} \| \textbf{x} - \textbf{C}\textbf{a}\|_2^2 + \lambda \|a\|_0
+\label{eq:SparseProblem}
 \end{equation}
 
 The $\lambda$ term controls the trade-off between reconstruction power and sparseness. However, solving this problem is NP-Complete (cite who showed this) and gennerally cannot be attempted except combinatorially. However, it has been shown (cite Donovo again), that a different formulation produces the same result under mild conditions and is easier to solve. This is the LASSO formulation of regression and it has the form of :
@@ -151,31 +154,33 @@ That is, it replaces the $\mathcal{L}_0$ norm with the $\mathcal{L}_1$ norm.
 
 [[Discuss algorithms for solving the LASSO here]]
 
-Many other methods for sparse coding have been proposed \cite{undetermined-minimal-L1,sparse-coding-strategy-V1}. We will focus on a group of iterative methods for computing $\textbf{a}$, known as pursuits, which originate in the signal processing community. All assume $\textbf{C}$ and $\textbf{x}$ are given and run for a number of $k \leq d$ iterations. The general problem they try to solve is $\arg\min_a \|\textbf{x} - \textbf{C}\textbf{a}\|_2^2$ subject to $\|\textbf{a}\|_0 \leq k$. This an NP-complete problem. The pursuits are greedy approximations to it. Let the initial residual $\mathcal{R}^0\textbf{x} = \textbf{x}$. At iteration $t$, let $\textbf{C}^\omega$ be the most similar feature in $\textbf{C}$, relative to $\mathcal{R}^t\textbf{x}$. The updated code and residual, $\textbf{a}^{t+1}$ and $\mathcal{R}^{t+1}\textbf{x}$, are produced by decomposing $\mathcal{R}^t\textbf{x}$ in terms of $\textbf{C}^\omega$. After $k$ iterations, $\textbf{a}^k$ is returned as the code associated to $\textbf{x}$, and $\mathcal{R}^k\textbf{x}$ is returned as a measure of the ability of the algorithm to reconstruct the signal in terms of $\textbf{C}$. The difference between the several methods consists in how they find $\textbf{C}^\omega$ and how they update $\textbf{a}^{t+1}$. The general procedure is illustrated in \textbf{Algorithm \ref{algo:Pursuit}}. At the end of this algorithm we obtain $\textbf{x} = \textbf{C}\textbf{a}^k + \mathcal{R}^k\textbf{x}$. Also, the norm of the final residual $\mathcal{R}^k\textbf{x}$ tends to $0$ as $k \rightarrow +\infty$ for sensible choices of $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions. In the limit, the equality becomes $\textbf{x} = \textbf{C}\textbf{a}^{+\infty}$. 
+Many other methods for sparse coding have been proposed \cite{undetermined-minimal-L1,sparse-coding-strategy-V1}. We will focus on a group of iterative methods for computing $\textbf{a}$, known as pursuits, which originate in the signal processing community. All assume $\textbf{C}$ and $\textbf{x}$ are given and run for a number of $k \leq d$ iterations. The general problem they try to solve is:
+
+\begin{equation}
+\arg\min_\textbf{a} \|\textbf{x} - \textbf{C}\textbf{a}\|_2^2 \text{~~subject to~~} \|\textbf{a}\|_0 \leq k
+\end{equation}
+
+This an NP-complete problem (cite the work that says this). It can be seen as the Lagrange dual of the original sparse formulation of Equation \ref{eq:SparseProblem}. The problem is thus of selecting the subset of $k$ features which have the minimum reconstruction error. This is a classical combinatorial problem (each state has a certain cost, and we must select the one of smallest energy, constrained by some structure of the cost function).
+
+The pursuit methods are greedy approximations for this problem. They do not solve the exact problem, but provide a good enough solution. The code has a common form for all methods. Let the initial residual $\mathcal{R}^0\textbf{x} = \textbf{x}$. At iteration $t$, let $\textbf{C}^\omega$ be the most similar feature in $\textbf{C}$, relative to $\mathcal{R}^t\textbf{x}$. The updated code and residual, $\textbf{a}^{t+1}$ and $\mathcal{R}^{t+1}\textbf{x}$, are produced by decomposing $\mathcal{R}^t\textbf{x}$ in terms of $\textbf{C}^\omega$. After $k$ iterations, $\textbf{a}^k$ is returned as the code associated to $\textbf{x}$, and $\mathcal{R}^k\textbf{x}$ is returned as a measure of the ability of the algorithm to reconstruct the signal in terms of $\textbf{C}$. The difference between the several methods consists in how they find $\textbf{C}^\omega$ and how they update $\textbf{a}^{t+1}$. The general procedure is illustrated in \textbf{Algorithm \ref{algo:GeneralPursuitMethod}}. At the end of this algorithm we obtain $\textbf{x} = \textbf{C}\textbf{a}^k + \mathcal{R}^k\textbf{x}$. Also, the norm of the final residual $\mathcal{R}^k\textbf{x}$ tends to $0$ as $k \rightarrow +\infty$ for sensible choices of $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions. In the limit, the equality becomes $\textbf{x} = \textbf{C}\textbf{a}^{+\infty}$.
 
 \begin{algorithm}
 \caption{The General Pursuit Method}
-\label{algo:Pursuit}
+\label{algo:GeneralPursuitMethod}
 \begin{algorithmic}
 \Require $\textbf{C},\textbf{x},k$
 \Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
 \State $\Lambda^0 \gets \phi$
 \State $\textbf{a}^0 \gets \textbf{0}$
 \State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
-\State $t \gets 0$
-\While {$t < k \text{~or~} \|\mathcal{R}^t\textbf{x}\|_2 \geq \delta$}
-\State $\omega \gets \arg \max_{i \in \textbf{dom}} \text{\textbf{sim}}(R^t\textbf{x},\textbf{C},\Lambda^t,i)$
-\State $\Lambda^{t+1} \gets \Lambda^t \cup \omega$
-\State $\textbf{a}^{t+1} \gets \text{\textbf{next}}(\textbf{a}^t,R^t\textbf{x},\textbf{C},\Lambda^{t+1},\omega)$
-\State $\mathcal{R}^{t+1}\textbf{x} \gets \mathcal{R}^t\textbf{x} - \textbf{a}^{t+1}_\omega C^\omega$
-\State $t \gets t + 1$
-\EndWhile
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg \max_{i \in \textbf{dom}} \text{\textbf{sim}}(\mathcal{R}^{t-1}\textbf{x},\textbf{C},\Lambda^{t-1},i)$
+\State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
+\State $\textbf{a}^t \gets \text{\textbf{next}}(\textbf{a}^{t-1},\mathcal{R}^{t-1}\textbf{x},\textbf{C},\Lambda^t,\omega)$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} - a_\omega^t\textbf{C}^\omega$
+\EndFor
 \end{algorithmic}
 \end{algorithm}
-
-The simplest pursuit method, introduced in \cite{matchingpursuit1}, is Matching Pursuit (\textbf{MP}). \textbf{Table \ref{table:PursuitParametrization}} shows what form the $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions take in this case. An important property of this algorithm is that for every $t$, $\|\mathcal{R}^t\textbf{x}\|_2^2 \geq \|\mathcal{R}^{t+1}\textbf{x}\|_2^2$ and, furthermore, with a decay that is exponential. The two major drawbacks of this method are that the approximation at time $t$, $\textbf{C}\textbf{a}^t$, is not optimal with respect to the selection of features $\Lambda^t$; and that for the residual norm to actually reach small enough values, a $k > w$ could be necessary. However, these drawbacks are not critical for classification purposes, and, because of its simplicity and speed, we use it in our experiments.
-
-An improvement to \textbf{MP} is Orthogonal Matching Pursuit (\textbf{OMP}) \cite{matchingpursuit2,orthopursuit,pursuitdifferences}, which addresses the two issues discussed above. Again, \textbf{Table \ref{table:PursuitParametrization}} shows the forms the $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions take. Also, notice that at each iteration, only the features not considered before are processed. All the properties of \textbf{MP} hold here as well. At iteration $t$, the approximation computed is the closest point in $\overline{\text{span}(\textbf{C}^{\Lambda^t})}$ to $\textbf{x}$, according to the Euclidean norm. The version presented here is suboptimal from an algorithmic point of view. More sophisticated methods based on QR decomposition have been developed \cite{matchingpursuit2,pursuitdifferences}.
 
 \renewcommand{\arraystretch}{1.5}
 \begin{table}
@@ -184,13 +189,248 @@ An improvement to \textbf{MP} is Orthogonal Matching Pursuit (\textbf{OMP}) \cit
   \begin{tabularx}{\textwidth}{|l|>{\centering}X|>{\centering}X|c|}
        \hline
         Method & $\text{\textbf{sim}}$ function & $\text{\textbf{next}}$ function & $\text{\textbf{dom}}$ domain\\ \hline \hline
-        \textbf{MP} & $\left| \langle \mathcal{R}^t\textbf{x} , \textbf{C}^i \rangle \right|$ & $\textbf{a}^t + \langle \textbf{R}^\textbf{x} , \textbf{C}^\omega \rangle \delta_\omega$ & $\hcrange{1}{w}$ \\  \hline
-        \textbf{OMP} & $\left| \langle \mathcal{R}^t\textbf{x} , \textbf{C}^i \rangle \right|$ & $\arg\min_{a} {\| \textbf{x} - \textbf{C}^{\Lambda^{t+1}}\textbf{a} \|_2^2}$ & $\hcrange{1}{w} \setminus \Lambda^t$ \\ \hline
-        \textbf{OOMP} & $\left| \langle \mathcal{R}^t\textbf{x} , \textbf{C}^i \rangle \right|$ & $\arg\min_{a} {\| \textbf{x} - \textbf{C}^{\Lambda^{t+1}}\textbf{a} \|_2^2}$ & $\hcrange{1}{w} \setminus \Lambda^t$ \\
+        \textbf{MP} & $\left| \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^i \rangle \right|$ & $\textbf{a}^{t-1} + \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^\omega \rangle \delta_\omega$ & $\hcrange{1}{w}$ \\  \hline
+        \textbf{OMP} & $\left| \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^i \rangle \right|$ & $\arg\min_{\textbf{a}} {\| \textbf{x} - \textbf{C}^{\Lambda^t}\textbf{a} \|_2^2}$ & $\hcrange{1}{w} \setminus \Lambda^{t-1}$ \\ \hline
+        \textbf{OOMP} & $\min_{\textbf{a}} {\| \textbf{x} - \textbf{C}^{\Lambda^{t-1} \cup i}\textbf{a} \|_2^2}$ & $\arg\min_{\textbf{a}} {\| \textbf{x} - \textbf{C}^{\Lambda^t}\textbf{a} \|_2^2}$ & $\hcrange{1}{w} \setminus \Lambda^{t-1}$ \\
        \hline
     \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
+
+The simplest pursuit method, introduced in \cite{matchingpursuit1}, is Matching Pursuit (\textbf{MP}). \textbf{Table \ref{table:PursuitParametrization}} shows what form the $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions take in this case. An important property of this algorithm is that for every $t$, $\|\mathcal{R}^t\textbf{x}\|_2^2 \geq \|\mathcal{R}^{t+1}\textbf{x}\|_2^2$ and, furthermore, with a decay that is exponential. The two major drawbacks of this method are that the approximation at time $t$, $\textbf{C}\textbf{a}^t$, is not optimal with respect to the selection of features $\Lambda^t$; and that for the residual norm to actually reach small enough values, a $k > w$ could be necessary. However, these drawbacks are not critical for classification purposes, and, because of its simplicity and speed, we use it in our experiments. $\mathcal{R}^t$ is orthogonal with respect to $\textbf{C}^\omega$, but not necesarily every feature in $\textbf{C}^{\Lambda^t \setminus \omega}$.
+
+The specialization of the General Pursuit Method to Matching Pursuit can be seen in \textbf{Algorithm \ref{algo:MatchingPursuitMethodV1}}.
+
+\begin{algorithm}
+\caption{The Matching Pursuit Method (Version 1)}
+\label{algo:MatchingPursuitMethodV1}
+\begin{algorithmic}
+\Require $\textbf{C},\textbf{x},k$
+\Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
+\State $\Lambda^0 \gets \phi$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg \max_{i \in \hcrange{1}{w}} \left| \langle \mathcal{R}^{t-1}\textbf{x}, \textbf{C}^i \rangle \right|$
+\State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
+\State $\textbf{a}_\omega^t \gets \textbf{a}_\omega^{t-1} + \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^\omega \rangle$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} - a_\omega^t\textbf{C}^\omega$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The runtime of this variant is $T_1^{MP} = \Theta(kwd)$. This is somewhat suboptimal, as, in most cases, it will be quadratic in $d$ ($d$ and $w$ tend to have the same order magnitude), or even cubic in $d$ for cases where $k$ has the same order of magnitude with $d$. The source of this complexity is the small optimization problem we have to solve in the inner loop. This just requires a walk through all the features and computing of a ``similarity'' of cost $\Theta(d)$. The per iteration time is therefore $\Theta(dw)$. Notice, however the following decomposition of $\mathcal{R}^t\textbf{x}$:
+
+\begin{align*}
+\mathcal{R}^t\textbf{x} & \gets \mathcal{R}^{t-1}\textbf{x} - a_\omega^t\textbf{C}^\omega \\
+\mathcal{R}^t\textbf{x} & \gets \mathcal{R}^{t-1}\textbf{x} - \langle \mathcal{R}^{t-1}\textbf{x}, \mathcal{C}^\omega \rangle \textbf{C}^\omega
+\end{align*}
+
+Now, if we want to compute the inner product between $\mathcal{R}^t\textbf{x}$ and a $\textbf{C}^i$, we have:
+
+\begin{align*}
+\langle \mathcal{R}^t\textbf{x}, \textbf{C}^i \rangle & \gets \langle \mathcal{R}^{t-1}\textbf{x} - \langle \mathcal{R}^{t-1}\textbf{x}, \mathcal{C}^\omega \rangle \textbf{C}^\omega , \textbf{C}^i \rangle \\
+& \gets \langle \mathcal{R}^{t-1}, \textbf{C}^i \rangle - \langle \mathcal{R}^{t-1}\textbf{x}, \textbf{C}^\omega \rangle \langle \textbf{C}^\omega, \textbf{C}^i \rangle
+\end{align*}
+
+Thus, we have expressed the computation of the inner product between the current residual and a feature in terms of the inner product between the previous residual and the same feature and an ``adjustement term'', which is a product of the maximum inner product of the previous iteration and the inner product of the best previous feature and the current feature under consideration. The new algorithm can be seen in \textbf{Algorithm \ref{algo:MatchingPursuitMethodV2}}.
+
+\begin{algorithm}
+\caption{The Matching Pursuit Method (Version 2)}
+\label{algo:MatchingPursuitMethodV2}
+\begin{algorithmic}
+\Require $\textbf{C},\textbf{x},k$
+\Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{S}^f \gets [ \langle \textbf{C}^i, \textbf{C}^j \rangle ~ \mbox{\textbf{for} $(i,j) \in \hctimes{w}{w}$}]$
+\State $\mathcal{S}^s \gets [ \langle \textbf{x}, \textbf{C}^i \rangle ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg \max_{i \in \hcrange{1}{w}} \left| \mathcal{S}_i^s \right|$
+\State $\textbf{a}_\omega^t \gets \textbf{a}_\omega^{t-1} + \mathcal{S}_\omega^s$
+\State $\mathcal{S}^s \gets [ \mathcal{S}_i^s - \mathcal{S}_\omega^s \mathcal{S}_{\omega i}^f ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+As it is, the runtime of this algorithm is $T_2^{MP} = \Theta(wd + kw)$, which does not seem like much of an improvement. However, in the broad picture, many patches are coded with the same feature set. Therefore, we need to compute only once the dictionary, and then use it for all patches. The amortized cost of this computation tends to $0$ as the number of patches increases. Therefore, the actual time complexity is $T_2^{MP} = \Theta(kw)$, which is an order of magnitude lower than the original time $T_1^{MP}$.
+
+An improvement to \textbf{MP} is Orthogonal Matching Pursuit (\textbf{OMP}) \cite{matchingpursuit2,orthopursuit,pursuitdifferences}, which addresses the two issues discussed above. Again, \textbf{Table \ref{table:PursuitParametrization}} shows the forms the $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions take. Also, notice that at each iteration, only the features not considered before are processed. All the properties of \textbf{MP} hold here as well. At iteration $t$, the approximation computed is the closest point in $\overline{\text{span}(\textbf{C}^{\Lambda^t})}$ to $\textbf{x}$, according to the Euclidean norm. The algorithm is presented in \textbf{Algorithm \ref{algo:OrthogonalMatchingPursuitMethodV1}}.
+
+\begin{algorithm}
+\caption{Orthogonal Matching Pursuit (Version 1)}
+\label{algo:OrthogonalMatchingPursuitMethodV1}
+\begin{algorithmic}
+\Require $\textbf{C},\textbf{x},k$
+\Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
+\State $\Lambda^0 \gets \phi$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg \max_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \left| \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^i \rangle \right|$
+\State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
+\State $\textbf{a}^t \gets \arg\min_{\textbf{a}} {\| \textbf{x} - \textbf{C}^{\Lambda^t}\textbf{a} \|_2^2}$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} - a_\omega^t\textbf{C}^\omega$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+Therefore, at iteration $t$, we chose the feature $\textbf{C}^\omega$ of maximum ``similarity'' according to the inner product measure. We add this to the current feature set $\textbf{C}^{\Lambda^t}$. In order to compute $a^t$ we find the point $a$ in the column space of $\textbf{C}^{\Lambda^t}$ closest to $x$. This is, of course, a least squares problem. It seems counterintuitive to solve a problem we originally posed to move away from a simple least squares formulation, in terms of least squares. However, first, this problem is solvable in any case, as we have, by necessity $k \leq d$ (for $k = d$ the residual becomes $\textbf{0}$), therefore, except for some mild conditions, we always have a solution, given by the Normal Equation, usually (or gradient descent on the error surface, but that's a little too involved for our purposes here). Second, we use this as a guide in selecting a $k$-subset of the feature set. The previous formulation was needlessly inefficient from this point of view. The $a^k$ found was not optimal with respect to the final group of selected features.
+
+The major problem of the \textbf{OMP} algorithm, as it is, is the extra complexity introduced by the need to solve the least squares problem. We have $T_1^{OMP} = \Theta(k(wd + T^{LS}))$. Assuming the usage of the Normal Method and computation of the inverse via a LU decomposition, $T^{LS}$ becomes: $T^{LS} = O(t^2d + t^3)$, therefore $T_1^{OMP} = \Theta(kwd + k^4)$. This is somewhat prohibitive. However, an approach suggested by (cite guy here) combines a QR factorization with the ideas from the second version of the Matching Pursuit, from before. Suppose, at time step $t$ we compute the QR decomposition of $C^{\Lambda^t}$. Let $\Delta_t = C^{\Lambda^t}$. We have:
+
+\begin{equation}
+\Delta_t = \textbf{Q}_t\textbf{R}_t
+\end{equation}
+
+Where $\textbf{Q}_t$ is an orthogonal matrix and $\textbf{R}_t$ is an upper triangular matrix. We can then find $\textbf{a}^t$ as:
+
+\begin{align*}
+\textbf{a}^t & \gets (\Delta_t^T\Delta_t)^{-1}\Delta_t^T\textbf{x} \\
+             & \gets ((\textbf{Q}_t\textbf{R}_t)^T(\textbf{Q}_t\textbf{R}_t))^{-1}(\textbf{Q}_t\textbf{R}_t)^T\textbf{x} \\
+             & \gets (\textbf{R}_t^T\textbf{Q}_t^T\textbf{Q}_t\textbf{R}_t)^{-1}\textbf{R}_t^T\textbf{Q}_t^T\textbf{x} \\
+             & \gets (\textbf{R}_t^T\textbf{R}_t)^{-1}\textbf{R}_t^T\textbf{Q}_t^T\textbf{x} \\
+             & \gets \textbf{R}_t^{-1}{\textbf{R}_t^T}^{(-1)}\textbf{R}_t^T\textbf{Q}_t^T\textbf{x} \\
+             & \gets \textbf{R}_t^{-1}\textbf{Q}_t^T\textbf{x}
+\end{align*}
+
+Computing $\textbf{a}^t$ is then a $\Theta(t^2)$ operation. This is relatively expensive, but an order of magnitude lower than the original implementation cost. However, the bulk of the computing time is for the decomposition. The QR decomposition can be computed using the Gram-Schmidt process at a time complexity of $T^{QR} = \Theta(t^3)$. This process builts $\textbf{Q}_t$ one column at a time and $\textbf{R}_t$ one column at a time. Furthermore, the building of column $i \in \hcrange{1}{t}$ depends only on columns $\hcrange{1}{i}$ from $\Delta_t$ and columns $\hcrange{1}{i-1}$ from $Q_t$. Also, the matrices $\Delta_t$ and $\Delta_{t+1}$ are identical, except $\Delta_{t+1}$ has one extra column. Using our notation, this column, corresponding to position $\omega^{t+1} \in \hcrange{1}{w}$, is inserted ``between'' two other columns from $\Delta_t$. However, for our purposes, the order of the columns is irrelevant. Therefore we can consider $\Delta_{t+1} = \left[\Delta_t \left|\right. \textbf{C}^{\omega^{t+1}} \right]$. The two matrices have the same first $t$ columns, therefore, the first $t$ columns of the $Q$ matrices of the QR decomposition will be identical. The same goes for the first $t$ rows of the $R$ matrices. This naturally leads us to a version of the algorithm which accumulates the $\textbf{Q}_t$ and $\textbf{R}_t$ matrices, building them one column at at time.
+
+Another optimization follows. Consider how the residual is updated. An alternative form is $\mathcal{R}^t\textbf{x} \gets \textbf{x} - \textbf{C}^{\Lambda^t}\textbf{a}^t$. Replacing both $\textbf{C}^{\Lambda^t}$ and $\textbf{a}^t$ with the forms we computed at the current iteraton, we obtain:
+
+\begin{align*}
+\mathcal{R}^t\textbf{x} & \gets \textbf{x} - \textbf{C}^{\Lambda^t}\textbf{a}^t \\
+& \gets \textbf{x} - (\textbf{Q}_t\textbf{R}_t)(\textbf{R}_t^{-1}\textbf{Q}_t^T)\textbf{x} \\
+& \gets \textbf{x} - \textbf{Q}_t\textbf{Q}_t^T\textbf{x}
+\end{align*}
+
+The product $\textbf{Q}_t\textbf{Q}_t^T$ is not the identity matrix, except for $t = d$, because $\textbf{Q}_t$ is not yet an square matrix (a necessary condition for orthogonality). It is only partway there. Computing $\textbf{Q}_t^T\textbf{x}$ turns out to be easy as well. We have:
+
+\begin{align*}
+\textbf{Q}_t^T\textbf{x} & = [ \langle \textbf{Q}_t^1, \textbf{x} \rangle \cdots \langle \textbf{Q}_t^t, \textbf{x} \rangle ] \\
+\textbf{Q}_{t+1}^T\textbf{x} & = [ \langle \textbf{Q}_{t+1}^1, \textbf{x} \rangle \cdots \langle \textbf{Q}_{t+1}^t, \textbf{x} \rangle \langle \textbf{Q}_{t+1}^{t+1}, \textbf{x} \rangle ] \\
+& = [ \langle \textbf{Q}_t^1, \textbf{x} \rangle \cdots \langle \textbf{Q}_t^t, \textbf{x} \rangle \langle \textbf{Q}_{t+1}^{t+1}, \textbf{x} \rangle] \\
+\end{align*}
+
+Therefore, computing $\textbf{Q}_{t+1}^T\textbf{x}$ needs just the $\Theta(d)$ time needed for $\langle \textbf{Q}_{t+1}^{t+1}, \textbf{x} \rangle$. Then, we have that:
+
+\begin{align*}
+\textbf{Q}_t\textbf{Q}_t^T\textbf{x} & = \sum_{i=1}^t {\langle \textbf{Q}_t^i, \textbf{x} \rangle \textbf{Q}_t^i} \\
+\textbf{Q}_{t+1}\textbf{Q}_{t+1}^T\textbf{x} & = \sum_{i=1}^{t+1} {\langle \textbf{Q}_{t+1}^i, \textbf{x} \rangle \textbf{Q}_{t+1}^i} \\
+& = \textbf{Q}_t\textbf{Q}_t^T\textbf{x} + \langle \textbf{Q}_{t+1}^{t+1}, \textbf{x} \rangle \textbf{Q}_{t+1}^{t+1}
+\end{align*}
+
+Thus, we can come up with a new way of computing the residual:
+
+\begin{equation*}
+\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} - \langle \textbf{Q}_{t}^{\omega}, \textbf{x} \rangle \textbf{Q}_{t}^{\omega}
+\end{equation*}
+
+The algorithm is presented now in \textbf{Algorithm \ref{algo:OrthogonalMatchingPursuitMethodV2}}. Notice we don't need to compute $\textbf{a}^t$ at all during the inner-loop. Only at the end. We don't have a similar computation for the residual.
+
+\begin{algorithm}
+\caption{Orthogonal Matching Pursuit (Version 2)}
+\label{algo:OrthogonalMatchingPursuitMethodV2}
+\begin{algorithmic}
+\Require $\textbf{C},\textbf{x},k$
+\Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
+\State $\Lambda^0 \gets \phi$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
+\State $\textbf{Q} \gets \textbf{0}$
+\State $\textbf{R} \gets \textbf{0}$
+\State $(\textbf{Q}^T\textbf{x}) \gets \textbf{0}$
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg \max_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \left| \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^i \rangle \right|$
+\State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
+\State $\textbf{R}^t \gets [ \langle \textbf{C}^\omega, \textbf{Q}^i \rangle~\mbox{\textbf{for} $i \in \hcrange{1}{d}$ \textbf{if} $i < t$ \textbf{else} $0$} ]$ \Comment{Fill column $t$ of $\textbf{R}$}
+\State $\textbf{Q}^t \gets \textbf{C}^\omega - \sum_{i=1}^{t-1}\textbf{R}^t_i \textbf{Q}^i$ \Comment{Substract projection of $\textbf{C}^\omega$ on all $\textbf{Q}^i$ from $\textbf{C}^\omega$}
+\State $\textbf{Q}^t \gets \textbf{Q}^t / \| \textbf{Q}^t \|_2$ \Comment{Normalize column $t$ of $\textbf{Q}$}
+\State $(\textbf{Q}^T\textbf{x})_t \gets \langle \textbf{Q}^t, \textbf{x} \rangle$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} -  (\textbf{Q}^T\textbf{x})_t \textbf{Q}^t$
+\EndFor
+\State $\textbf{a}^k \gets \textbf{R}_k^{-1}(\textbf{Q}^T\textbf{x})$
+\end{algorithmic}
+\end{algorithm}
+
+The running time of this algorithm is $T_2^{OMP} = \Theta(k(wd + dk + dk + d + d + d) + k^23) = \Theta(kwd + dk^2)$, which is much better. A property of \textbf{OMP} is that $\mathcal{R}^t\textbf{x}$ is orthogonal to the span of $\textbf{Q}^1,\dots,\textbf{Q}^{t-1}$. Also, given the way it works, when $k = d$, then the residual $\mathcal{R}^d\textbf{x}$ becomes $\textbf{0}$, therefore the algorithm is guaranteed to stop. Notice however, that this does not imply an exact solving of our problem as seen in (reference posing of problem subject to hard constraint). If the algorithm is formulated with a $\delta$ instead of a fixed $k$, it will indeed stop when $t = d$, and the approximation will be perfect, barring any case of the features being linearly dependent, but this shouldn't be a problem in practice, but this does not guarantee that this is the smallest such set with $0$ recunstruction error. Or maybe there is a smaller set, but with bigger reconstruction error, which would be more useful in applications.
+
+A final pursuit method studied is Optimized Orthogonal Matching Pursuit (\textbf{OOMP}) also known as Orthogonal Least Squares (\textbf{OLS}). It is similar to \textbf{OMP}. The major difference is the way in which the decision for which $\textbf{C}^\omega$ to use is taken. We select the one which gives the smallest least squares difference between $\textbf{x}$ and its reconstruction. Once this decision has been made, however, the $\textbf{a}$ produced is such that the difference between signal and reconstruction is minimal. The algorithm is presented in \textbf{Algorithm \ref{algo:OptimizedOrthogonalMatchingPursuitMethodV1}}.
+
+\begin{algorithm}
+\caption{Optimized Orthogonal Matching Pursuit (Version 1)}
+\label{algo:OptimizedOrthogonalMatchingPursuitMethodV1}
+\begin{algorithmic}
+\Require $\textbf{C},\textbf{x},k$
+\Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
+\State $\Lambda^0 \gets \phi$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg \min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \min_{\textbf{a}} {\| \textbf{x} - \textbf{C}^{\Lambda^{t-1} \cup i}\textbf{a} \|_2^2}$
+\State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
+\State $\textbf{a}^t \gets \arg\min_{\textbf{a}} {\| \textbf{x} - \textbf{C}^{\Lambda^t}\textbf{a} \|_2^2}$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} - a_\omega^t\textbf{C}^\omega$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+All the nice properties of \textbf{OMP} carry over to this method as well. Again, the biggest problem for this method is the prohibitive running cost. We have to solve several least squares problems for each iteration of the algorithm. The running time is $T_1^{OOMP} = \Theta(k^2T^{LS})$. The ideas which led to the second version of \textbf{OMP} can be employed here as well. We again iteratively build the $\textbf{Q}$ and $\textbf{R}$ matrices. First, notice that whenever we are asked to compute $\arg\min_\textbf{a} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2$ we want to basically minimize the residual $\textbf{R}\textbf{x}$. If we have a partial QR decomposition of $\textbf{Q}$, then, we can replace in the hat matrix and we obtain:
+
+\begin{align*}
+\textbf{x} - \textbf{C}\textbf{a}^\star & = \textbf{x} - \textbf{C}(\textbf{C}^T\textbf{C})^{-1}\textbf{C}^T\textbf{x} \\
+& = \textbf{x} - \textbf{Q}\textbf{R}\textbf{R}^{-1}\textbf{Q}^T\textbf{x} \\
+& = \textbf{x} - \textbf{Q}\textbf{Q}^T\textbf{x}
+\end{align*}
+
+This is exactly the result we obtained a few paragraphs above and we should unify this. Note that if we actually built a orthogonal $\textbf{Q}$, that is with $k = d$ and all features linearly independent, then the residual would be $0$, since $\textbf{Q}\textbf{Q}^T = \textbf{Q}^T\textbf{Q} = \mathbb{I}_d$. For our purposes, it is enough to notice that for computing the actual residual, only $\textbf{Q}$ is needed. Combing this with our previous knowledge, we can reformulate the optimization problem as such:
+
+\begin{align*}
+\omega & \gets \arg\min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \arg\min_\textbf{a} \| \textbf{x} - \textbf{C}^{\Lambda^{t-1} \cup i}\textbf{a} \|_2^2 \\
+& \gets \arg\min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \| \textbf{x} - \textbf{Q}^{\Lambda^{t-1} \cup i}{\textbf{Q}^{\Lambda^{t-1} \cup i}}^T\textbf{x} \|_2^2 \\
+& \gets \arg\min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \| \mathcal{R}^{t-1}\textbf{x} - \langle \textbf{Q}^i, \textbf x \rangle \textbf{Q}^i \|_2^2
+\end{align*}
+
+Therefore we have reduced the complex $\Theta((w - t)T^{LS}) = \Theta((w - t)t^3)$ runtime of the first loop step to $\Theta((w - k)d)$, for a given $\textbf{Q}^i$. Quite an improvement! However, as it stands now, the $\textbf{Q}^i$ must be computed at each iteration for each one of the $w - t$ remaining features. We introduce the $\tilde{\textbf{C}}$ matrix of dimension equal to $\textbf{C}$. This is set initially as:
+
+\begin{equation*}
+\tilde{\textbf{C}} = \left[ \frac{\textbf{C}^1}{\|\textbf{C}^1\|_2} \left|\right. \dots \left|\right. \frac{\textbf{C}^w}{\|\textbf{C}^w\|_2} \right]
+\end{equation*}
+
+It contains the $\textbf{Q}^i$ at the first iteration. In general, at iteration $t$, after $\omega$ is found, each column of $\tilde{\textbf{C}}$ is updated as:
+
+\begin{align*}
+\tilde{\textbf{C}}^i & \gets \tilde{\textbf{C}}^i - \langle \tilde{\textbf{C}}^i, \tilde{\textbf{C}}^\omega \rangle \tilde{\textbf{C}}^\omega \\
+\tilde{\textbf{C}}^i & \gets \tilde{\textbf{C}}^i / \| \tilde{\textbf{C}}^i \|_2
+\end{align*}
+
+At the end of the $k$ iterations, $k$ columns will be zero. Furthermore, at the start of each iteration, $\tilde{\textbf{C}}$ contains the features in $\textbf{C}$, orthogonalized with respect to $\textbf{Q}^1, \dots, \textbf{Q}^{t-1}$ and normalized. \textbf{Algorithm \ref{algo:OptimizedOrthogonalMatchingPursuitV2}} shows this second form of the \textbf{OOMP} algorithm.
+
+\begin{algorithm}
+\caption{Optimized Orthogonal Matching Pursuit (Version 2)}
+\label{algo:OptimizedOrthogonalMatchingPursuitV2}
+\begin{algorithmic}
+\Require $\textbf{C},\textbf{x},k$
+\Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
+\State $\Lambda^0 \gets \phi$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
+\State $\textbf{R} \gets \textbf{0}$
+\State $(\textbf{Q}^T\textbf{x}) \gets \textbf{0}$
+\State $\tilde{\textbf{C}} \gets [ \textbf{C}^i / \|\textbf{C}^i\|_2 ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
+\For {$t = \hcrange{1}{k}$}
+\State $\omega \gets \arg\min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \| \mathcal{R}^{t-1}\textbf{x} - \langle \tilde{\textbf{C}}^i, \textbf x \rangle \tilde{\textbf{C}}^i \|_2^2$
+\State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
+\State $\textbf{R}^t \gets [ \langle \textbf{C}^\omega, \textbf{Q}^i \rangle~\mbox{\textbf{for} $i \in \hcrange{1}{d}$ \textbf{if} $i < t$ \textbf{else} $0$} ]$ \Comment{Fill column $t$ of $\textbf{R}$}
+\State $\tilde{\textbf{C}} \gets [ \tilde{\textbf{C}}^i - \langle \tilde{\textbf{C}}^i, \tilde{\textbf{C}}^\omega \rangle \tilde{\textbf{C}}^\omega ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
+\State $\tilde{\textbf{C}} \gets [ \tilde{\textbf{C}}^i / \| \tilde{\textbf{C}}^i \|_2 ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
+\State $(\textbf{Q}^T\textbf{x})_t \gets \langle \tilde{\textbf{C}}^\omega, \textbf{x} \rangle$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} -  (\textbf{Q}^T\textbf{x})_t \tilde{\textbf{C}}^t$
+\EndFor
+\State $\textbf{a}^k \gets \textbf{R}_k^{-1}(\textbf{Q}^T\textbf{x})$
+\end{algorithmic}
+\end{algorithm}
+
+The major implementation difference between the two algorithms is basically that \textbf{OOMP} holds the full orthogonalized feature set, while \textbf{OMP} keeps only the features it actually uses to encode a feature. The runtime of this algorithm is $T_2^{OOMP} = \Theta(wd + k((w-k)d + kd + wd + wd + d + d)) = \Theta(kwd + dk^2)$, which is asymptotically the same with the time for \textbf{OMP}, but in practice more.
 
 \chapter{Obtaining a Feature Set}
 
@@ -297,8 +537,8 @@ The Neural Gas algorithm is an iterative one. It begins by initializing $\textbf
 \State $\mu^t \gets \mu^0 (\mu^{T_max} / \mu^0)^{t / T_{max}}$ \Comment {Current learning rate}
 \State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$ \Comment {Current neighbourhood control}
 \State $\textbf{x} \gets \text{an observation from $\textbf{X}$}$
-\State $\textbf{a} \gets [ ~ \|\textbf{x} - \textbf{C}^i\|_2^2 ~ \mbox{for $i \in \hcrange{1}{w}$} ~ ]$
-\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\textbf{a}}(a_i) / \lambda^t} (\textbf{x} - \textbf{C}^i) ~ \mbox{for $i \in \hcrange{1}{w}$} ~ ]$
+\State $\textbf{a} \gets [ ~ \|\textbf{x} - \textbf{C}^i\|_2^2 ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ~ ]$
+\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\textbf{a}}(a_i) / \lambda^t} (\textbf{x} - \textbf{C}^i) ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ~ ]$
 \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -317,7 +557,7 @@ The Neural Gas algorithm works in the input space rather than feature set space.
 \State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$ \Comment {Current neighbourhood control}
 \State $\textbf{x} \gets \text{an observation from $\textbf{X}$}$
 \State $\textbf{a} \gets \mathcal{C}_{\textbf{C}}\{ \textbf{x} \}$
-\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\textbf{a}}(a_i) / \lambda^t} a_i (\textbf{x} - a_i \textbf{C}^i) ~ \mbox{for $i \in \hcrange{1}{w}$} ~ ]$
+\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\textbf{a}}(a_i) / \lambda^t} a_i (\textbf{x} - a_i \textbf{C}^i) ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ~ ]$
 \State $\textbf{C} \gets \mbox{normalize each feature in $\textbf{C}$}$
 \EndFor
 \end{algorithmic}
@@ -339,7 +579,7 @@ A further improvement is possible considering the fact that many coding methods 
 \State $S^0 \gets \text{initialize coding method specific state}$
 \For {$i = \hcrange{0}{k}$}
 \State $[\alpha^i~\Lambda^i~S^{i+1}] \gets \mathcal{C}_{\textbf{C}} \{S^i,\textbf{x}\}$ \Comment {$\alpha^i$ stores similarities for features in $\hcrange{1}{w} \setminus \Lambda^i$}
-\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\alpha^i}(\alpha_j^i) / \lambda^t} \alpha_j^i (\textbf{x} - \alpha_j^i \textbf{C}^j) ~ \mbox{for $j \in \hcrange{1}{w}\setminus\Lambda^i$} ~ ]$
+\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\alpha^i}(\alpha_j^i) / \lambda^t} \alpha_j^i (\textbf{x} - \alpha_j^i \textbf{C}^j) ~ \mbox{\textbf{for} $j \in \hcrange{1}{w}\setminus\Lambda^i$} ~ ]$
 \State $\textbf{C} \gets \mbox{normalize each feature in $\textbf{C}$}$
 \EndFor
 \EndFor
