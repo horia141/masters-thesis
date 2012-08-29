@@ -273,7 +273,13 @@ code_image(
 
 	for (ii = 0; ii < aftcoding_row_count * aftcoding_col_count; ii++) {
 	    for (jj = 0; jj < coeff_count; jj++) {
-		coded_patches_curr[jj] = (coded_patches_curr[jj] > 0) ? nonlinear_modulator[jj] : -nonlinear_modulator[jj];
+		if (coded_patches_curr[jj] > 0) {
+		    coded_patches_curr[jj] = nonlinear_modulator[jj];
+		} else if (coded_patches_curr[jj] < 0){
+		    coded_patches_curr[jj] = -nonlinear_modulator[jj];
+		} else {
+		    coded_patches_curr[jj] = 0;
+		}
 	    }
 
 	    coded_patches_curr += coeff_count;
