@@ -56,7 +56,7 @@ classdef grad < transforms.record.dictionary
 %                 if mod(iter - 1,1) == 0
 %                     sz = sqrt(size(dict,2));
 %                     utils.display.dictionary(dict,sz,sz);
-%                     pause(1);
+%                     pause(0.01);
 %                 end
             end
             

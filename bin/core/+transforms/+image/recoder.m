@@ -63,7 +63,7 @@ classdef recoder < transform
             assert(check.cell(dictionary_params));
             assert(check.scalar(dictionary_params{2}));
             assert(check.string(dictionary_params{2}));
-            assert(check.one_of(dictionary_params{2},'Corr','MP'));
+            assert(check.one_of(dictionary_params{2},'Corr','MP','OMP'));
             assert(check.scalar(dictionary_params{4}));
             assert(check.natural(dictionary_params{4}));
             assert(dictionary_params{4} >= 1);
@@ -115,6 +115,8 @@ classdef recoder < transform
                 coding_code_t = 0;
             elseif check.same(dictionary_params{2},'MP')
                 coding_code_t = 1;
+            elseif check.same(dictionary_params{2},'OMP')
+                coding_code_t = 2;
             else
                 assert(false);
             end

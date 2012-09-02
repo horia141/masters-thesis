@@ -60,9 +60,10 @@ classdef dictionary < transform
             o = true;
             o = o && check.scalar(coding_method);
             o = o && check.string(coding_method);
-            o = o && check.one_of(coding_method,'Corr','MP');
+            o = o && check.one_of(coding_method,'Corr','MP','OMP');
             o = o && ((check.same(coding_method,'Corr') && check.empty(coding_params)) || ...
-                      (check.same(coding_method,'MP') && (check.empty(coding_params))));
+                      (check.same(coding_method,'MP') && (check.empty(coding_params))) || ...
+                      (check.same(coding_method,'OMP') && (check.empty(coding_params))));
         end
 
         function [coding_fn,coding_params_cell] = coding_setup(coding_method)
@@ -71,6 +72,9 @@ classdef dictionary < transform
                 coding_params_cell = {[]};
             elseif check.same(coding_method,'MP')
                 coding_fn = @xtern.x_dictionary_matching_pursuit;
+                coding_params_cell = {[]};
+            elseif check.same(coding_method,'OMP')
+                coding_fn = @xtern.x_dictionary_orthogonal_matching_pursuit;
                 coding_params_cell = {[]};
             else
                 assert(false);
@@ -109,6 +113,20 @@ classdef dictionary < transform
                 coeffs(omega_similarity) = similarities(omega_similarity);
                 residual = observation - dict' * coeffs;
             end            
+        end
+        
+        function [coeffs] = reference_orthogonal_matching_pursuit(dict,coeff_count,observation)
+            residual = observation;
+            found_max_idxs = zeros(size(dict,1),1);
+
+            for k = 1:coeff_count
+                similarities = dict * residual;
+                [~,max_idx] = max(abs(similarities));
+                found_max_idxs(k) = max_idx;
+                coeffs = zeros(size(dict,1),1);
+                coeffs(found_max_idxs(1:k)) = dict(found_max_idxs(1:k),:)' \ observation;
+                residual = observation - dict' * coeffs;
+            end
         end
     end
     
@@ -152,6 +170,27 @@ classdef dictionary < transform
             assert(check.same(t.coding_fn,@xtern.x_dictionary_matching_pursuit));
             assert(check.same(t.coding_params_cell,{[]}));
             assert(check.same(t.coding_method,'MP'));
+            assert(check.same(t.coding_params,[]));
+            assert(t.coeff_count == 3);
+            assert(t.num_workers == 1);
+            assert(check.same(t.input_geometry,2));
+            assert(check.same(t.output_geometry,3));
+
+            clearvars -except test_figure;
+            
+            fprintf('    Orthogonal Matching Pursuit.\n');
+            
+            s = dataset.load('../../test/three_component_cloud.mat');
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'OMP',[],3,1);
+            
+            assert(check.same(t.dict,[1 0; 0 1; 0.7071 0.7071],1e-3));
+            assert(check.same(t.dict_transp,[1 0 0.7071; 0 1 0.7071],1e-3));
+            assert(check.same(t.dict_x_dict_transp,[1 0; 0 1; 0.7071 0.7071] * [1 0 0.7071; 0 1 0.7071],1e-3));
+            assert(t.word_count == 3);
+            assert(check.same(t.coding_fn,@xtern.x_dictionary_orthogonal_matching_pursuit));
+            assert(check.same(t.coding_params_cell,{[]}));
+            assert(check.same(t.coding_method,'OMP'));
             assert(check.same(t.coding_params,[]));
             assert(t.coeff_count == 3);
             assert(t.num_workers == 1);
@@ -505,6 +544,196 @@ classdef dictionary < transform
             assert(check.number(s_p));
             assert(check.same(sum(s_p ~= 0,1),2*ones(1,600)));
             assert(check.same(s_p,sparse(cell2mat(arrayfun(@(ii)transforms.record.dictionary.reference_matching_pursuit(dict_t,2,s(:,ii)),1:600,'UniformOutput',false))),1e-6));
+            assert(check.matrix(s_r));
+            assert(check.same(size(s_r),[2 600]));
+            assert(check.number(s_r))            
+            
+            if test_figure ~= -1
+                figure(test_figure);
+                clf(gcf());
+                subplot(1,3,1);
+                hold on;
+                scatter(s(1,:),s(2,:),'o','b');
+                line([0;t.dict(1,1)],[0;t.dict(1,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(2,1)],[0;t.dict(2,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(3,1)],[0;t.dict(3,2)],'Color','r','LineWidth',3);
+                hold off;
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Original samples.');
+                hold off;
+                subplot(1,3,2);
+                scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('Coded samples.');
+                subplot(1,3,3);
+                scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Restored samples.');
+                pause(5);
+            end
+            
+            clearvars -except test_figure;
+            
+            % The MATLAB implementation of least squares fitter either
+            % doesn't use the QR decomposition or uses a different
+            % implementation of it. We get slightly different results even
+            % though the reconstruction error is very low in both cases
+            % (~1e-15 small). For points which are "ambiguos" - very close
+            % to two features, one implementation produces one result,
+            % while the other produces another result. While the
+            % reconstructions are small, comparing them becomes very hard.
+            % Therefore we won't. Hope this won't bite us in the ass later.
+            
+            fprintf('    Orthogonal Matching Pursuit with one kept coefficient and single thread.\n');
+            
+            s = dataset.load('../../test/three_component_cloud.mat');
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'OMP',[],1,1);
+            s_p = t.code(s);
+            s_r = t.dict_transp * s_p;
+            
+            assert(check.matrix(s_p));
+            assert(check.same(size(s_p),[3 600]));
+            assert(check.number(s_p));
+            assert(check.same(sum(s_p ~= 0,1),ones(1,600)));
+            assert(check.matrix(s_r));
+            assert(check.same(size(s_r),[2 600]));
+            assert(check.number(s_r));
+            
+            if test_figure ~= -1
+                figure(test_figure);
+                clf(gcf());
+                subplot(1,3,1);
+                hold on;
+                scatter(s(1,:),s(2,:),'o','b');
+                line([0;t.dict(1,1)],[0;t.dict(1,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(2,1)],[0;t.dict(2,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(3,1)],[0;t.dict(3,2)],'Color','r','LineWidth',3);
+                hold off;
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Original samples.');
+                hold off;
+                subplot(1,3,2);
+                scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('Coded samples.');
+                subplot(1,3,3);
+                scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Restored samples.');
+                pause(5);
+            end
+            
+            clearvars -except test_figure;
+            
+            fprintf('    Orthogonal Matching Pursuit with one kept coefficient and multiple threads.\n');
+            
+            s = dataset.load('../../test/three_component_cloud.mat');
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'OMP',[],1,10);
+            s_p = t.code(s);
+            s_r = t.dict_transp * s_p;
+            
+            assert(check.matrix(s_p));
+            assert(check.same(size(s_p),[3 600]));
+            assert(check.number(s_p));
+            assert(check.same(sum(s_p ~= 0,1),ones(1,600)));
+            assert(check.matrix(s_r));
+            assert(check.same(size(s_r),[2 600]));
+            assert(check.number(s_r));
+            
+            if test_figure ~= -1
+                figure(test_figure);
+                clf(gcf());
+                subplot(1,3,1);
+                hold on;
+                scatter(s(1,:),s(2,:),'o','b');
+                line([0;t.dict(1,1)],[0;t.dict(1,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(2,1)],[0;t.dict(2,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(3,1)],[0;t.dict(3,2)],'Color','r','LineWidth',3);
+                hold off;
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Original samples.');
+                hold off;
+                subplot(1,3,2);
+                scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('Coded samples.');
+                subplot(1,3,3);
+                scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Restored samples.');
+                pause(5);
+            end
+            
+            clearvars -except test_figure;
+            
+            fprintf('    Orthogonal Matching Pursuit with two kept coefficients and single thread.\n');
+            
+            s = dataset.load('../../test/three_component_cloud.mat');
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'OMP',[],2,1);
+            s_p = t.code(s);
+            s_r = t.dict_transp * s_p;
+            
+            assert(check.matrix(s_p));
+            assert(check.same(size(s_p),[3 600]));
+            assert(check.number(s_p));
+            assert(check.same(sum(s_p ~= 0,1),2*ones(1,600)));
+            assert(check.matrix(s_r));
+            assert(check.same(size(s_r),[2 600]));
+            assert(check.number(s_r))            
+            
+            if test_figure ~= -1
+                figure(test_figure);
+                clf(gcf());
+                subplot(1,3,1);
+                hold on;
+                scatter(s(1,:),s(2,:),'o','b');
+                line([0;t.dict(1,1)],[0;t.dict(1,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(2,1)],[0;t.dict(2,2)],'Color','r','LineWidth',3);
+                line([0;t.dict(3,1)],[0;t.dict(3,2)],'Color','r','LineWidth',3);
+                hold off;
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Original samples.');
+                hold off;
+                subplot(1,3,2);
+                scatter3(s_p(1,:),s_p(2,:),s_p(3,:),'o','b');
+                axis([-7 7 -7 7 -7 7]);
+                axis('square');
+                title('Coded samples.');
+                subplot(1,3,3);
+                scatter(s_r(1,:),s_r(2,:),'o','b');
+                axis([-7 7 -7 7]);
+                axis('square');
+                title('Restored samples.');
+                pause(5);
+            end
+            
+            clearvars -except test_figure;
+            
+            fprintf('    Orthogonal Matching Pursuit with two kept coefficients and multiple threads.\n');
+            
+            s = dataset.load('../../test/three_component_cloud.mat');
+            
+            t = transforms.record.dictionary(s,[1 0; 0 1; 1 1],'OMP',[],2,10);
+            s_p = t.code(s);
+            s_r = t.dict_transp * s_p;
+            
+            assert(check.matrix(s_p));
+            assert(check.same(size(s_p),[3 600]));
+            assert(check.number(s_p));
+            assert(check.same(sum(s_p ~= 0,1),2*ones(1,600)));
             assert(check.matrix(s_r));
             assert(check.same(size(s_r),[2 600]));
             assert(check.number(s_r))            

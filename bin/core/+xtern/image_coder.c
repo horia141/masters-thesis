@@ -81,14 +81,14 @@ code_image_new_geometry(
 
 size_t
 code_image_coding_tmps_length(
-    size_t row_count,
-    size_t col_count,
-    size_t patch_row_count,
-    size_t patch_col_count,
-    enum coding_type coding_type,
-    size_t word_count,
-    size_t coeff_count,
-    size_t reduce_spread) {
+    size_t            row_count,
+    size_t            col_count,
+    size_t            patch_row_count,
+    size_t            patch_col_count,
+    enum coding_type  coding_type,
+    size_t            word_count,
+    size_t            coeff_count,
+    size_t            reduce_spread) {
     size_t  coding_tmps_length;
     size_t  aftcoding_row_count;
     size_t  aftcoding_col_count;
@@ -103,9 +103,11 @@ code_image_coding_tmps_length(
     coding_tmps_length += coeff_count * aftcoding_row_count * aftcoding_col_count * sizeof(size_t);
 
     if (coding_type == CORRELATION) {
-	coding_tmps_length += word_count * sizeof(double) + word_count * sizeof(size_t);
+	coding_tmps_length += correlation_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
     } else if (coding_type == MATCHING_PURSUIT) {
-	coding_tmps_length += word_count * sizeof(double);
+	coding_tmps_length += matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
+    } else if (coding_type == ORTHOGONAL_MATCHING_PURSUIT) {
+	coding_tmps_length += orthogonal_matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
     } else {
 	exit(EXIT_FAILURE);
     }
@@ -117,7 +119,7 @@ code_image_coding_tmps_length(
 
 void
 code_image(
-    size_t* restrict          o_coeffs_count,
+    size_t* restrict          o_coeff_count,
     double* restrict          o_coeffs,
     size_t* restrict          o_coeffs_idx,
     size_t                    geometry,
@@ -189,11 +191,15 @@ code_image(
 	if (coding_type == CORRELATION) {
 	    coding_method = correlation;
 	    coder_coding_tmps = curr_coding_tmps;
-	    curr_coding_tmps += word_count * sizeof(double) + word_count * sizeof(size_t);
+	    curr_coding_tmps += correlation_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
 	} else if (coding_type == MATCHING_PURSUIT) {
 	    coding_method = matching_pursuit;
 	    coder_coding_tmps = curr_coding_tmps;
-	    curr_coding_tmps += word_count * sizeof(double);
+	    curr_coding_tmps += matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
+	} else if (coding_type == ORTHOGONAL_MATCHING_PURSUIT) {
+	    coding_method = orthogonal_matching_pursuit;
+	    coder_coding_tmps = curr_coding_tmps;
+	    curr_coding_tmps += orthogonal_matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
 	} else {
 	    exit(EXIT_FAILURE);
 	}
@@ -380,7 +386,7 @@ code_image(
 	    }
 
 	    sort_by_idxs(o_coeffs,o_coeffs_idx,coeffs_count);
-	    *o_coeffs_count = coeffs_count;
+	    *o_coeff_count = coeffs_count;
 	} else if (reduce_type == MAX_NO_SIGN || reduce_type == MAX_KEEP_SIGN || reduce_type == SUM_ABS || reduce_type == SUM_SQR) {
 	    if (reduce_type == MAX_NO_SIGN) {
 		reduce_function = _max_no_sign;
@@ -419,7 +425,7 @@ code_image(
 	    }
 
 	    sort_by_idxs(o_coeffs,o_coeffs_idx,coeffs_count);
-	    *o_coeffs_count = coeffs_count;
+	    *o_coeff_count = coeffs_count;
 	} else {
 	    exit(EXIT_FAILURE);
 	}

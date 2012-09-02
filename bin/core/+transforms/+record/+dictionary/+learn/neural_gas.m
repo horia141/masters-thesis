@@ -70,11 +70,7 @@ classdef neural_gas < transforms.record.dictionary
                     saved_mse_t(iter) = norm(target_observation - dict_transp * similarities);
                     
 %                     if mod(iter-1,1000) == 0
-%                         clf(gcf());
-%                         subplot(2,1,1);
-%                         utils.display.dictionary(dict,9,9);
-%                         subplot(2,1,2);
-%                         plot(saved_mse_t);
+%                         utils.display.dictionary(dict,ceil(sqrt(size(dict,2))),sqrt(size(dict,2)));
 %                         pause(0.1);
 %                     end
                 end

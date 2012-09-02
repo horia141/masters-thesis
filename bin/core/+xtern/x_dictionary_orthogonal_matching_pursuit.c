@@ -47,13 +47,13 @@ do_task(
     char*    coding_tmps;
     size_t   ii;
 
-    coding_tmps = (char*)malloc(matching_pursuit_coding_tmps_length(global_info->geometry,global_info->word_count,global_info->coeff_count));
+    coding_tmps = (char*)malloc(orthogonal_matching_pursuit_coding_tmps_length(global_info->geometry,global_info->word_count,global_info->coeff_count));
 
     for (ii = 0; ii < task_info_count; ii++) {
-        matching_pursuit(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,
-			 global_info->geometry,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,
-			 global_info->coeff_count,NULL,task_info[ii].observation,coding_tmps);
-	sort_by_idxs(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,global_info->coeff_count);
+        orthogonal_matching_pursuit(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,
+                                    global_info->geometry,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,
+                                    global_info->coeff_count,NULL,task_info[ii].observation,coding_tmps);
+        sort_by_idxs(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,global_info->coeff_count);
     }
 
     free(coding_tmps);

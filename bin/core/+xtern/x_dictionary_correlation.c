@@ -47,7 +47,7 @@ do_task(
     char*   coding_tmps;
     size_t  ii;
 
-    coding_tmps = (char*)malloc(global_info->word_count * sizeof(double) + global_info->word_count * sizeof(size_t));
+    coding_tmps = (char*)malloc(correlation_coding_tmps_length(global_info->geometry,global_info->word_count,global_info->coeff_count));
 
     for (ii = 0; ii < task_info_count; ii++) {
         correlation(task_info[ii].o_coeffs_pr,task_info[ii].o_coeffs_ir,
