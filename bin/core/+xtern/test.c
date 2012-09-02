@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
@@ -219,6 +220,15 @@ main(
 	assert(orthogonal_matching_pursuit_coding_tmps_length(2,5,2) == 5 * sizeof(double) + 2 * sizeof(double) + 2 * 2 * sizeof(double) + 2 * 2 * sizeof(double));
     }
 
+    printf("  Function \"optimized_orthogonal_matching_pursuit_coding_tmps_length\".\n");
+
+    {
+	assert(optimized_orthogonal_matching_pursuit_coding_tmps_length(2,3,2) == 3 * sizeof(bool) + 2 * sizeof(double) + 2 * 3 * sizeof(double) + 2 * 2 * sizeof(double) + 2 * 2 * sizeof(double) + 3 * sizeof(double) + 2 * sizeof(double));
+	assert(optimized_orthogonal_matching_pursuit_coding_tmps_length(1,3,2) == 3 * sizeof(bool) + 1 * sizeof(double) + 1 * 3 * sizeof(double) + 1 * 2 * sizeof(double) + 2 * 2 * sizeof(double) + 3 * sizeof(double) + 1 * sizeof(double));
+	assert(optimized_orthogonal_matching_pursuit_coding_tmps_length(2,3,3) == 3 * sizeof(bool) + 2 * sizeof(double) + 2 * 3 * sizeof(double) + 2 * 3 * sizeof(double) + 3 * 3 * sizeof(double) + 3 * sizeof(double) + 2 * sizeof(double));
+	assert(optimized_orthogonal_matching_pursuit_coding_tmps_length(2,5,2) == 5 * sizeof(bool) + 2 * sizeof(double) + 2 * 5 * sizeof(double) + 2 * 2 * sizeof(double) + 2 * 2 * sizeof(double) + 5 * sizeof(double) + 2 * sizeof(double));
+    }
+
     printf("  Function \"correlation\".\n");
 
     {
@@ -356,7 +366,7 @@ main(
 	tmp_similarities = (double*)coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 
-        matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,tmp_similarities);
+        matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
 
         assert(fabs(o_coeffs[0] - 4) < 1e-4);
         assert(fabs(o_coeffs[1] - 3) < 1e-4);
@@ -388,7 +398,7 @@ main(
 	tmp_similarities = (double*)coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 
-        matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,tmp_similarities);
+        matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
 
         assert(fabs(o_coeffs[0] - 4.9497) < 1e-4);
         assert(fabs(o_coeffs[1] - 0.5000) < 1e-4);
@@ -420,7 +430,7 @@ main(
 	tmp_similarities = (double*)coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 
-        matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,tmp_similarities);
+        matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
 
         assert(fabs(o_coeffs[0] - (-4)) < 1e-4);
         assert(fabs(o_coeffs[1] - (-3)) < 1e-4);
@@ -463,7 +473,7 @@ main(
 	coeff_inversion_matrix = (double*)curr_coding_tmps;
 	curr_coding_tmps += coeff_count * coeff_count * sizeof(double);
 
-        orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,tmp_similarities);
+        orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
 
         assert(fabs(o_coeffs[0] - 4) < 1e-4);
         assert(fabs(o_coeffs[1] - 3) < 1e-4);
@@ -513,7 +523,7 @@ main(
 	coeff_inversion_matrix = (double*)curr_coding_tmps;
 	curr_coding_tmps += coeff_count * coeff_count * sizeof(double);
 
-        orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,tmp_similarities);
+        orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
 
         assert(fabs(o_coeffs[0] - 4.2427) < 1e-4);
         assert(fabs(o_coeffs[1] - 1) < 1e-4);
@@ -563,7 +573,7 @@ main(
 	coeff_inversion_matrix = (double*)curr_coding_tmps;
 	curr_coding_tmps += coeff_count * coeff_count * sizeof(double);
 
-        orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,tmp_similarities);
+        orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
 
         assert(fabs(o_coeffs[0] - (-4)) < 1e-4);
         assert(fabs(o_coeffs[1] - (-3)) < 1e-4);
@@ -574,6 +584,185 @@ main(
         assert(fabs(tmp_similarities[2] - 2.1213) < 1e-4);
 	assert(fabs(residual[0] - 0) < 1e-4);
 	assert(fabs(residual[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[0] - 1) < 1e-4);
+	assert(fabs(dict_transp_normalized[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[2] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[3] - (-1)) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[0] - 1) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[2] - 0) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[3] - 1) < 1e-4);
+
+	free(coding_tmps);
+    }
+
+    printf("  Function \"optimized_orthogonal_matching_pursuit\".\n");
+
+    {
+        double   o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t   o_coeffs_idx[] = {1000,1000};
+        size_t   geometry = 2;
+        size_t   word_count = 3;
+        double   dict[] = {1,0,0.7071,0,-1,0.7071};
+        double   dict_transp[] = {1,0,0,-1,0.7071,0.7071};
+        double   dict_x_dict_transp[] = {1,0,0.7071,0,1,-0.7071,0.7071,-0.7071,1};
+        size_t   coeff_count = 2;
+        double   observation[] = {4,-3};
+    	char*    coding_tmps;
+    	char*    curr_coding_tmps;
+	bool*    used_column_mask;
+	double*  residual;
+	double*  dict_transp_tilde;
+	double*  dict_transp_normalized;
+	double*  coeff_inversion_matrix;
+
+    	coding_tmps = malloc(optimized_orthogonal_matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
+	curr_coding_tmps = coding_tmps;
+	used_column_mask =  (bool*)curr_coding_tmps;
+	curr_coding_tmps += word_count * sizeof(bool);
+	residual = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * sizeof(double);
+	dict_transp_tilde = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * word_count * sizeof(double);
+	dict_transp_normalized = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * coeff_count * sizeof(double);
+	coeff_inversion_matrix = (double*)curr_coding_tmps;
+	curr_coding_tmps += coeff_count * coeff_count * sizeof(double);
+
+        optimized_orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
+
+        assert(fabs(o_coeffs[0] - 4) < 1e-4);
+        assert(fabs(o_coeffs[1] - 3) < 1e-4);
+        assert(o_coeffs_idx[0] == 0);
+        assert(o_coeffs_idx[1] == 1);
+	assert(used_column_mask[0] == true);
+	assert(used_column_mask[1] == true);
+	assert(used_column_mask[2] == false);
+	assert(fabs(residual[0] - 0) < 1e-4);
+	assert(fabs(residual[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[0] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[2] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[3] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[4] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[5] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[0] - 1) < 1e-4);
+	assert(fabs(dict_transp_normalized[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[2] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[3] - (-1)) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[0] - 1) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[2] - 0) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[3] - 1) < 1e-4);
+
+	free(coding_tmps);
+    }
+
+    {
+        double   o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t   o_coeffs_idx[] = {1000,1000};
+        size_t   geometry = 2;
+        size_t   word_count = 3;
+        double   dict[] = {1,0,0.7071,0,-1,0.7071};
+        double   dict_transp[] = {1,0,0,-1,0.7071,0.7071};
+        double   dict_x_dict_transp[] = {1,0,0.7071,0,1,-0.7071,0.7071,-0.7071,1};
+        size_t   coeff_count = 2;
+        double   observation[] = {4,3};
+    	char*    coding_tmps;
+    	char*    curr_coding_tmps;
+	bool*    used_column_mask;
+	double*  residual;
+	double*  dict_transp_tilde;
+	double*  dict_transp_normalized;
+	double*  coeff_inversion_matrix;
+
+    	coding_tmps = malloc(optimized_orthogonal_matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
+	curr_coding_tmps = coding_tmps;
+	used_column_mask =  (bool*)curr_coding_tmps;
+	curr_coding_tmps += word_count * sizeof(bool);
+	residual = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * sizeof(double);
+	dict_transp_tilde = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * word_count * sizeof(double);
+	dict_transp_normalized = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * coeff_count * sizeof(double);
+	coeff_inversion_matrix = (double*)curr_coding_tmps;
+	curr_coding_tmps += coeff_count * coeff_count * sizeof(double);
+
+        optimized_orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
+
+        assert(fabs(o_coeffs[0] - 4.2427) < 1e-4);
+        assert(fabs(o_coeffs[1] - 1) < 1e-4);
+        assert(o_coeffs_idx[0] == 2);
+        assert(o_coeffs_idx[1] == 0);
+	assert(used_column_mask[0] == true);
+	assert(used_column_mask[1] == false);
+	assert(used_column_mask[2] == true);
+	assert(fabs(residual[0] - 0) < 1e-4);
+	assert(fabs(residual[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[0] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[2] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[3] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[4] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[5] - 0) < 1e-4);
+	assert(fabs(dict_transp_normalized[0] - 0.7071) < 1e-4);
+	assert(fabs(dict_transp_normalized[1] - 0.7071) < 1e-4);
+	assert(fabs(dict_transp_normalized[2] - 0.7071) < 1e-4);
+	assert(fabs(dict_transp_normalized[3] - (-0.7071)) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[0] - 1) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[2] - 0.7071) < 1e-4);
+	assert(fabs(coeff_inversion_matrix[3] - 0.7071) < 1e-4);
+
+	free(coding_tmps);
+    }
+
+    {
+        double   o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t   o_coeffs_idx[] = {1000,1000};
+        size_t   geometry = 2;
+        size_t   word_count = 3;
+        double   dict[] = {1,0,0.7071,0,-1,0.7071};
+        double   dict_transp[] = {1,0,0,-1,0.7071,0.7071};
+        double   dict_x_dict_transp[] = {1,0,0.7071,0,1,-0.7071,0.7071,-0.7071,1};
+        size_t   coeff_count = 2;
+        double   observation[] = {-4,3};
+    	char*    coding_tmps;
+    	char*    curr_coding_tmps;
+	bool*    used_column_mask;
+	double*  residual;
+	double*  dict_transp_tilde;
+	double*  dict_transp_normalized;
+	double*  coeff_inversion_matrix;
+
+    	coding_tmps = malloc(optimized_orthogonal_matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
+	curr_coding_tmps = coding_tmps;
+	used_column_mask = (bool*)curr_coding_tmps;
+	curr_coding_tmps += word_count * sizeof(bool);
+	residual = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * sizeof(double);
+	dict_transp_tilde = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * word_count * sizeof(double);
+	dict_transp_normalized = (double*)curr_coding_tmps;
+	curr_coding_tmps += geometry * coeff_count * sizeof(double);
+	coeff_inversion_matrix = (double*)curr_coding_tmps;
+	curr_coding_tmps += coeff_count * coeff_count * sizeof(double);
+
+        optimized_orthogonal_matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
+
+        assert(fabs(o_coeffs[0] - (-4)) < 1e-4);
+        assert(fabs(o_coeffs[1] - (-3)) < 1e-4);
+        assert(o_coeffs_idx[0] == 0);
+        assert(o_coeffs_idx[1] == 1);
+	assert(used_column_mask[0] == true);
+	assert(used_column_mask[1] == true);
+	assert(used_column_mask[2] == false);
+	assert(fabs(residual[0] - 0) < 1e-4);
+	assert(fabs(residual[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[0] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[1] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[2] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[3] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[4] - 0) < 1e-4);
+	assert(fabs(dict_transp_tilde[5] - 0) < 1e-4);
 	assert(fabs(dict_transp_normalized[0] - 1) < 1e-4);
 	assert(fabs(dict_transp_normalized[1] - 0) < 1e-4);
 	assert(fabs(dict_transp_normalized[2] - 0) < 1e-4);
@@ -694,6 +883,12 @@ main(
 	assert(code_image_coding_tmps_length(28,28,9,9,ORTHOGONAL_MATCHING_PURSUIT,100,10,9) == 9*9*sizeof(double) + 27*27*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 9*9*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 9*9*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,ORTHOGONAL_MATCHING_PURSUIT,100,10,14) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 9*9*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 14*14*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,ORTHOGONAL_MATCHING_PURSUIT,100,10,28) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 9*9*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 28*28*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,1) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 1*1*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,2) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 2*2*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,3) == 9*9*sizeof(double) + 27*27*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 3*3*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,9) == 9*9*sizeof(double) + 27*27*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 9*9*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,14) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 14*14*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,28) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 28*28*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,CORRELATION,100,20,1) == 9*9*sizeof(double) + 28*28*20*(sizeof(double) + sizeof(size_t)) + 100*(sizeof(double) + sizeof(size_t)) + 1*1*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,CORRELATION,100,20,2) == 9*9*sizeof(double) + 28*28*20*(sizeof(double) + sizeof(size_t)) + 100*(sizeof(double) + sizeof(size_t)) + 2*2*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,CORRELATION,100,20,3) == 9*9*sizeof(double) + 27*27*20*(sizeof(double) + sizeof(size_t)) + 100*(sizeof(double) + sizeof(size_t)) + 3*3*sizeof(size_t));

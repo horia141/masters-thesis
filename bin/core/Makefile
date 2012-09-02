@@ -15,7 +15,7 @@ XTERN_BASE_C = +xtern/latools.c +xtern/coding_methods.c +xtern/image_coder.c +xt
 XTERN_H = +xtern/x_mex_interface.h $(XTERN_BASE_H)
 XTERN_C = +xtern/x_mex_interface.c $(XTERN_BASE_C)
 
-all: +xtern/test +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblinear/blas/blas.a +xtern/x_classifiers_liblinear_classify.mexa64 +xtern/x_classifiers_liblinear_train_one_vs_all.mexa64 +xtern/x_classifiers_liblinear_train_one_vs_one.mexa64 +xtern/x_dictionary_correlation.mexa64 +xtern/x_dictionary_matching_pursuit.mexa64 +xtern/x_dictionary_orthogonal_matching_pursuit.mexa64 +xtern/x_image_recoder_code.mexa64
+all: +xtern/test +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblinear/blas/blas.a +xtern/x_classifiers_liblinear_classify.mexa64 +xtern/x_classifiers_liblinear_train_one_vs_all.mexa64 +xtern/x_classifiers_liblinear_train_one_vs_one.mexa64 +xtern/x_dictionary_correlation.mexa64 +xtern/x_dictionary_matching_pursuit.mexa64 +xtern/x_dictionary_orthogonal_matching_pursuit.mexa64 +xtern/x_dictionary_optimized_orthogonal_matching_pursuit.mexa64 +xtern/x_image_recoder_code.mexa64
 
 +xtern/test: +xtern/test.c $(XTERN_BASE_C) $(XTERN_BASE_H)
 	gcc $(CFLAGS) -o +xtern/test -I+xtern +xtern/test.c $(XTERN_BASE_C) -lpthread -lm $(ACML_LIBS)
@@ -46,6 +46,9 @@ all: +xtern/test +xtern/liblinear/tron.o +xtern/liblinear/linear.o +xtern/liblin
 
 +xtern/x_dictionary_orthogonal_matching_pursuit.mexa64: +xtern/x_dictionary_orthogonal_matching_pursuit.c $(XTERN_H) $(XTERN_C)
 	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_dictionary_orthogonal_matching_pursuit.c $(XTERN_C) -L$(ACML_LIB_PATH) -I$(ACML_INCLUDE_PATH) $(ACML_LIBS)
+
++xtern/x_dictionary_optimized_orthogonal_matching_pursuit.mexa64: +xtern/x_dictionary_optimized_orthogonal_matching_pursuit.c $(XTERN_H) $(XTERN_C)
+	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_dictionary_optimized_orthogonal_matching_pursuit.c $(XTERN_C) -L$(ACML_LIB_PATH) -I$(ACML_INCLUDE_PATH) $(ACML_LIBS)
 
 +xtern/x_image_recoder_code.mexa64: +xtern/x_image_recoder_code.c $(XTERN_H) $(XTERN_C)
 	$(MEX) $(MEXFLAGS) -outdir +xtern -I+xtern +xtern/x_image_recoder_code.c $(XTERN_C) -L$(ACML_LIB_PATH) -I$(ACML_INCLUDE_PATH) $(ACML_LIBS)
