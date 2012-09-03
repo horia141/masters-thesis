@@ -110,6 +110,8 @@ code_image_coding_tmps_length(
 	coding_tmps_length += orthogonal_matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
     } else if (coding_type == OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT) {
 	coding_tmps_length += optimized_orthogonal_matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
+    } else if (coding_type == SPARSE_NET) {
+	coding_tmps_length += sparse_net_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
     } else {
 	exit(EXIT_FAILURE);
     }
@@ -206,6 +208,10 @@ code_image(
 	    coding_method = optimized_orthogonal_matching_pursuit;
 	    coder_coding_tmps = curr_coding_tmps;
 	    curr_coding_tmps += optimized_orthogonal_matching_pursuit_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
+	} else if (coding_type == SPARSE_NET) {
+	    coding_method = sparse_net;
+	    coder_coding_tmps = curr_coding_tmps;
+	    curr_coding_tmps += sparse_net_coding_tmps_length(patch_row_count * patch_col_count,word_count,coeff_count);
 	} else {
 	    exit(EXIT_FAILURE);
 	}

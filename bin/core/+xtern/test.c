@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#include "gsl/gsl_rng.h"
+
 #include "base_defines.h"
 #include "latools.h"
 #include "coding_methods.h"
@@ -229,6 +231,15 @@ main(
 	assert(optimized_orthogonal_matching_pursuit_coding_tmps_length(2,5,2) == 5 * sizeof(bool) + 2 * sizeof(double) + 2 * 5 * sizeof(double) + 2 * 2 * sizeof(double) + 2 * 2 * sizeof(double) + 5 * sizeof(double) + 2 * sizeof(double));
     }
 
+    printf("  Function \"sparse_net_coding_tmps_length\".\n");
+
+    {
+	assert(sparse_net_coding_tmps_length(2,3,2) == 3 * sizeof(double) + 3 * sizeof(size_t) + 2 * sizeof(double));
+	assert(sparse_net_coding_tmps_length(1,3,2) == 3 * sizeof(double) + 3 * sizeof(size_t) + 1 * sizeof(double));
+	assert(sparse_net_coding_tmps_length(2,3,3) == 3 * sizeof(double) + 3 * sizeof(size_t) + 2 * sizeof(double));
+	assert(sparse_net_coding_tmps_length(2,5,2) == 5 * sizeof(double) + 5 * sizeof(size_t) + 2 * sizeof(double));
+    }
+
     printf("  Function \"correlation\".\n");
 
     {
@@ -243,14 +254,14 @@ main(
         double   observation[] = {4,-3};
         char*    coding_tmps;
 	char*    curr_coding_tmps;
-        double*  tmp_similarities;
-        size_t*  tmp_similarities_idx;
+        double*  similarities;
+        size_t*  similarities_idx;
 
         coding_tmps = malloc(correlation_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-        tmp_similarities = (double*)curr_coding_tmps;
+        similarities = (double*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
-        tmp_similarities_idx = (size_t*)curr_coding_tmps;
+        similarities_idx = (size_t*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(size_t);
 
         correlation(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
@@ -259,12 +270,12 @@ main(
         assert(o_coeffs[1] == 3);
         assert(o_coeffs_idx[0] == 0);
         assert(o_coeffs_idx[1] == 1);
-        assert(tmp_similarities[0] == 4);
-        assert(tmp_similarities[1] == 3);
-        assert(tmp_similarities[2] == 1);
-        assert(tmp_similarities_idx[0] == 0);
-        assert(tmp_similarities_idx[1] == 1);
-        assert(tmp_similarities_idx[2] == 2);
+        assert(similarities[0] == 4);
+        assert(similarities[1] == 3);
+        assert(similarities[2] == 1);
+        assert(similarities_idx[0] == 0);
+        assert(similarities_idx[1] == 1);
+        assert(similarities_idx[2] == 2);
 
         free(coding_tmps);
     }
@@ -281,14 +292,14 @@ main(
         double   observation[] = {4,3};
         char*    coding_tmps;
 	char*    curr_coding_tmps;
-        double*  tmp_similarities;
-        size_t*  tmp_similarities_idx;
+        double*  similarities;
+        size_t*  similarities_idx;
 
         coding_tmps = malloc(correlation_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-        tmp_similarities = (double*)curr_coding_tmps;
+        similarities = (double*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
-        tmp_similarities_idx = (size_t*)curr_coding_tmps;
+        similarities_idx = (size_t*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(size_t);
 
         correlation(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
@@ -297,12 +308,12 @@ main(
         assert(o_coeffs[1] == 4);
         assert(o_coeffs_idx[0] == 2);
         assert(o_coeffs_idx[1] == 0);
-        assert(tmp_similarities[0] == 7);
-        assert(tmp_similarities[1] == 4);
-        assert(tmp_similarities[2] == -3);
-        assert(tmp_similarities_idx[0] == 2);
-        assert(tmp_similarities_idx[1] == 0);
-        assert(tmp_similarities_idx[2] == 1);
+        assert(similarities[0] == 7);
+        assert(similarities[1] == 4);
+        assert(similarities[2] == -3);
+        assert(similarities_idx[0] == 2);
+        assert(similarities_idx[1] == 0);
+        assert(similarities_idx[2] == 1);
 
         free(coding_tmps);
     }
@@ -319,14 +330,14 @@ main(
         double   observation[] = {-4,3};
         char*    coding_tmps;
 	char*    curr_coding_tmps;
-        double*  tmp_similarities;
-        size_t*  tmp_similarities_idx;
+        double*  similarities;
+        size_t*  similarities_idx;
 
         coding_tmps = malloc(correlation_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-        tmp_similarities = (double*)curr_coding_tmps;
+        similarities = (double*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
-        tmp_similarities_idx = (size_t*)curr_coding_tmps;
+        similarities_idx = (size_t*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(size_t);
 
         correlation(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
@@ -335,12 +346,12 @@ main(
         assert(o_coeffs[1] == -3);
         assert(o_coeffs_idx[0] == 0);
         assert(o_coeffs_idx[1] == 1);
-        assert(tmp_similarities[0] == -4);
-        assert(tmp_similarities[1] == -3);
-        assert(tmp_similarities[2] == -1);
-        assert(tmp_similarities_idx[0] == 0);
-        assert(tmp_similarities_idx[1] == 1);
-        assert(tmp_similarities_idx[2] == 2);
+        assert(similarities[0] == -4);
+        assert(similarities[1] == -3);
+        assert(similarities[2] == -1);
+        assert(similarities_idx[0] == 0);
+        assert(similarities_idx[1] == 1);
+        assert(similarities_idx[2] == 2);
 
         free(coding_tmps);
     }
@@ -359,11 +370,11 @@ main(
         double   observation[] = {4,-3};
 	char*    coding_tmps;
 	char*    curr_coding_tmps;
-        double*  tmp_similarities;
+        double*  similarities;
 
 	coding_tmps = malloc(matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-	tmp_similarities = (double*)coding_tmps;
+	similarities = (double*)coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 
         matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
@@ -372,9 +383,9 @@ main(
         assert(fabs(o_coeffs[1] - 3) < 1e-4);
         assert(o_coeffs_idx[0] == 0);
         assert(o_coeffs_idx[1] == 1);
-        assert(fabs(tmp_similarities[0] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[1] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[2] - 0) < 1e-4);
+        assert(fabs(similarities[0] - 0) < 1e-4);
+        assert(fabs(similarities[1] - 0) < 1e-4);
+        assert(fabs(similarities[2] - 0) < 1e-4);
 
 	free(coding_tmps);
     }
@@ -391,11 +402,11 @@ main(
         double   observation[] = {4,3};
 	char*    coding_tmps;
 	char*    curr_coding_tmps;
-        double*  tmp_similarities;
+        double*  similarities;
 
 	coding_tmps = malloc(matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-	tmp_similarities = (double*)coding_tmps;
+	similarities = (double*)coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 
         matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
@@ -404,9 +415,9 @@ main(
         assert(fabs(o_coeffs[1] - 0.5000) < 1e-4);
         assert(o_coeffs_idx[0] == 2);
         assert(o_coeffs_idx[1] == 0);
-        assert(fabs(tmp_similarities[0] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[1] - 0.4999) < 1e-4);
-        assert(fabs(tmp_similarities[2] - (-0.3535)) < 1e-4);
+        assert(fabs(similarities[0] - 0) < 1e-4);
+        assert(fabs(similarities[1] - 0.4999) < 1e-4);
+        assert(fabs(similarities[2] - (-0.3535)) < 1e-4);
 
 	free(coding_tmps);
     }
@@ -423,11 +434,11 @@ main(
         double   observation[] = {-4,3};
 	char*    coding_tmps;
 	char*    curr_coding_tmps;
-        double*  tmp_similarities;
+        double*  similarities;
 
 	coding_tmps = malloc(matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-	tmp_similarities = (double*)coding_tmps;
+	similarities = (double*)coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 
         matching_pursuit(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,NULL,observation,coding_tmps);
@@ -436,9 +447,9 @@ main(
         assert(fabs(o_coeffs[1] - (-3)) < 1e-4);
         assert(o_coeffs_idx[0] == 0);
         assert(o_coeffs_idx[1] == 1);
-        assert(fabs(tmp_similarities[0] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[1] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[2] - 0) < 1e-4);
+        assert(fabs(similarities[0] - 0) < 1e-4);
+        assert(fabs(similarities[1] - 0) < 1e-4);
+        assert(fabs(similarities[2] - 0) < 1e-4);
 
 	free(coding_tmps);
     }
@@ -457,14 +468,14 @@ main(
         double   observation[] = {4,-3};
     	char*    coding_tmps;
     	char*    curr_coding_tmps;
-    	double*  tmp_similarities;
+    	double*  similarities;
     	double*  residual;
     	double*  dict_transp_normalized;
     	double*  coeff_inversion_matrix;
 
     	coding_tmps = malloc(orthogonal_matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-	tmp_similarities = (double*)curr_coding_tmps;
+	similarities = (double*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 	residual = (double*)curr_coding_tmps;
 	curr_coding_tmps += geometry * sizeof(double);
@@ -479,9 +490,9 @@ main(
         assert(fabs(o_coeffs[1] - 3) < 1e-4);
         assert(o_coeffs_idx[0] == 0);
         assert(o_coeffs_idx[1] == 1);
-        assert(fabs(tmp_similarities[0] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[1] - 3) < 1e-4);
-        assert(fabs(tmp_similarities[2] - (-2.1213)) < 1e-4);
+        assert(fabs(similarities[0] - 0) < 1e-4);
+        assert(fabs(similarities[1] - 3) < 1e-4);
+        assert(fabs(similarities[2] - (-2.1213)) < 1e-4);
 	assert(fabs(residual[0] - 0) < 1e-4);
 	assert(fabs(residual[1] - 0) < 1e-4);
 	assert(fabs(dict_transp_normalized[0] - 1) < 1e-4);
@@ -507,14 +518,14 @@ main(
         double   observation[] = {4,3};
     	char*    coding_tmps;
     	char*    curr_coding_tmps;
-    	double*  tmp_similarities;
+    	double*  similarities;
     	double*  residual;
     	double*  dict_transp_normalized;
     	double*  coeff_inversion_matrix;
 
     	coding_tmps = malloc(orthogonal_matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-	tmp_similarities = (double*)curr_coding_tmps;
+	similarities = (double*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 	residual = (double*)curr_coding_tmps;
 	curr_coding_tmps += geometry * sizeof(double);
@@ -529,9 +540,9 @@ main(
         assert(fabs(o_coeffs[1] - 1) < 1e-4);
         assert(o_coeffs_idx[0] == 2);
         assert(o_coeffs_idx[1] == 0);
-        assert(fabs(tmp_similarities[0] - 0.5001) < 1e-4);
-        assert(fabs(tmp_similarities[1] - 0.4999) < 1e-4);
-        assert(fabs(tmp_similarities[2] - 0.0001) < 1e-4);
+        assert(fabs(similarities[0] - 0.5001) < 1e-4);
+        assert(fabs(similarities[1] - 0.4999) < 1e-4);
+        assert(fabs(similarities[2] - 0.0001) < 1e-4);
 	assert(fabs(residual[0] - 0) < 1e-4);
 	assert(fabs(residual[1] - 0) < 1e-4);
 	assert(fabs(dict_transp_normalized[0] - 0.7071) < 1e-4);
@@ -557,14 +568,14 @@ main(
         double   observation[] = {-4,3};
     	char*    coding_tmps;
     	char*    curr_coding_tmps;
-    	double*  tmp_similarities;
+    	double*  similarities;
     	double*  residual;
     	double*  dict_transp_normalized;
     	double*  coeff_inversion_matrix;
 
     	coding_tmps = malloc(orthogonal_matching_pursuit_coding_tmps_length(geometry,word_count,coeff_count));
 	curr_coding_tmps = coding_tmps;
-	tmp_similarities = (double*)curr_coding_tmps;
+	similarities = (double*)curr_coding_tmps;
 	curr_coding_tmps += word_count * sizeof(double);
 	residual = (double*)curr_coding_tmps;
 	curr_coding_tmps += geometry * sizeof(double);
@@ -579,9 +590,9 @@ main(
         assert(fabs(o_coeffs[1] - (-3)) < 1e-4);
         assert(o_coeffs_idx[0] == 0);
         assert(o_coeffs_idx[1] == 1);
-        assert(fabs(tmp_similarities[0] - 0) < 1e-4);
-        assert(fabs(tmp_similarities[1] - (-3)) < 1e-4);
-        assert(fabs(tmp_similarities[2] - 2.1213) < 1e-4);
+        assert(fabs(similarities[0] - 0) < 1e-4);
+        assert(fabs(similarities[1] - (-3)) < 1e-4);
+        assert(fabs(similarities[2] - 2.1213) < 1e-4);
 	assert(fabs(residual[0] - 0) < 1e-4);
 	assert(fabs(residual[1] - 0) < 1e-4);
 	assert(fabs(dict_transp_normalized[0] - 1) < 1e-4);
@@ -774,6 +785,116 @@ main(
 	free(coding_tmps);
     }
 
+    printf("  Function \"sparse_net\".\n");
+
+    {
+        double    o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t    o_coeffs_idx[] = {1000,1000};
+        size_t    geometry = 2;
+        size_t    word_count = 1;
+        double    dict[] = {1,0};
+        double    dict_transp[] = {1,0};
+        double    dict_x_dict_transp[] = {1};
+        size_t    coeff_count = 1;
+	double    lambda_sigma_ratio = 0.1;
+	gsl_rng*  rnd_generator;
+	void*     param_table[2];
+        double    observation[] = {4,-3};
+        char*     coding_tmps;
+
+        coding_tmps = malloc(sparse_net_coding_tmps_length(geometry,word_count,coeff_count));
+
+	rnd_generator = gsl_rng_alloc(gsl_rng_mt19937);
+	param_table[0] = &lambda_sigma_ratio;
+	param_table[1] = rnd_generator;
+
+        sparse_net(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,&param_table,observation,coding_tmps);
+
+	gsl_rng_free(rnd_generator);
+        free(coding_tmps);
+    }
+
+    {
+        double    o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t    o_coeffs_idx[] = {1000,1000};
+        size_t    geometry = 2;
+        size_t    word_count = 3;
+        double    dict[] = {1,0,1,0,-1,1};
+        double    dict_transp[] = {1,0,0,-1,1,1};
+        double    dict_x_dict_transp[] = {1,0,1,0,1,1,1,1,2};
+        size_t    coeff_count = 2;
+	double    lambda_sigma_ratio = 0.1;
+	gsl_rng*  rnd_generator;
+	void*     param_table[2];
+        double    observation[] = {4,-3};
+        char*     coding_tmps;
+
+        coding_tmps = malloc(sparse_net_coding_tmps_length(geometry,word_count,coeff_count));
+
+	rnd_generator = gsl_rng_alloc(gsl_rng_mt19937);
+	param_table[0] = &lambda_sigma_ratio;
+	param_table[1] = rnd_generator;
+
+        sparse_net(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,&param_table,observation,coding_tmps);
+
+	gsl_rng_free(rnd_generator);
+        free(coding_tmps);
+    }
+
+    {
+        double    o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t    o_coeffs_idx[] = {1000,1000};
+        size_t    geometry = 2;
+        size_t    word_count = 3;
+        double    dict[] = {1,0,1,0,-1,1};
+        double    dict_transp[] = {1,0,0,-1,1,1};
+        double    dict_x_dict_transp[] = {1,0,1,0,1,1,1,1,2};
+        size_t    coeff_count = 2;
+	double    lambda_sigma_ratio = 0.1;
+	gsl_rng*  rnd_generator;
+	void*     param_table[2];
+        double    observation[] = {4,3};
+        char*     coding_tmps;
+
+        coding_tmps = malloc(sparse_net_coding_tmps_length(geometry,word_count,coeff_count));
+
+	rnd_generator = gsl_rng_alloc(gsl_rng_mt19937);
+	param_table[0] = &lambda_sigma_ratio;
+	param_table[1] = rnd_generator;
+
+        sparse_net(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,&param_table,observation,coding_tmps);
+
+	gsl_rng_free(rnd_generator);
+        free(coding_tmps);
+    }
+
+    {
+        double    o_coeffs[] = {HUGE_VAL,HUGE_VAL};
+        size_t    o_coeffs_idx[] = {1000,1000};
+        size_t    geometry = 2;
+        size_t    word_count = 3;
+        double    dict[] = {1,0,1,0,-1,1};
+        double    dict_transp[] = {1,0,0,-1,1,1};
+        double    dict_x_dict_transp[] = {1,0,1,0,1,1,1,1,2};
+        size_t    coeff_count = 2;
+	double    lambda_sigma_ratio = 0.1;
+	gsl_rng*  rnd_generator;
+	void*     param_table[2];
+        double    observation[] = {-4,3};
+        char*     coding_tmps;
+
+        coding_tmps = malloc(sparse_net_coding_tmps_length(geometry,word_count,coeff_count));
+
+	rnd_generator = gsl_rng_alloc(gsl_rng_mt19937);
+	param_table[0] = &lambda_sigma_ratio;
+	param_table[1] = rnd_generator;
+
+        sparse_net(o_coeffs,o_coeffs_idx,geometry,word_count,dict,dict_transp,dict_x_dict_transp,coeff_count,&param_table,observation,coding_tmps);
+
+	gsl_rng_free(rnd_generator);
+        free(coding_tmps);
+    }
+
     printf("Testing \"image_coder\".\n");
 
     printf("  Function \"code_image_new_geometry\".\n");
@@ -889,6 +1010,12 @@ main(
 	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,9) == 9*9*sizeof(double) + 27*27*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 9*9*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,14) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 14*14*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,OPTIMIZED_ORTHOGONAL_MATCHING_PURSUIT,100,10,28) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(bool) + 9*9*sizeof(double) + 9*9*100*sizeof(double) + 9*9*10*sizeof(double) + 10*10*sizeof(double) + 100*sizeof(double) + 9*9*sizeof(double) + 28*28*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,SPARSE_NET,100,10,1) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 100*sizeof(size_t) + 9*9*sizeof(double) + 1*1*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,SPARSE_NET,100,10,2) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 100*sizeof(size_t) + 9*9*sizeof(double) + 2*2*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,SPARSE_NET,100,10,3) == 9*9*sizeof(double) + 27*27*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 100*sizeof(size_t) + 9*9*sizeof(double) + 3*3*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,SPARSE_NET,100,10,9) == 9*9*sizeof(double) + 27*27*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 100*sizeof(size_t) + 9*9*sizeof(double) + 9*9*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,SPARSE_NET,100,10,14) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 100*sizeof(size_t) + 9*9*sizeof(double) + 14*14*sizeof(size_t));
+	assert(code_image_coding_tmps_length(28,28,9,9,SPARSE_NET,100,10,28) == 9*9*sizeof(double) + 28*28*10*(sizeof(double) + sizeof(size_t)) + 100*sizeof(double) + 100*sizeof(size_t) + 9*9*sizeof(double) + 28*28*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,CORRELATION,100,20,1) == 9*9*sizeof(double) + 28*28*20*(sizeof(double) + sizeof(size_t)) + 100*(sizeof(double) + sizeof(size_t)) + 1*1*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,CORRELATION,100,20,2) == 9*9*sizeof(double) + 28*28*20*(sizeof(double) + sizeof(size_t)) + 100*(sizeof(double) + sizeof(size_t)) + 2*2*sizeof(size_t));
 	assert(code_image_coding_tmps_length(28,28,9,9,CORRELATION,100,20,3) == 9*9*sizeof(double) + 27*27*20*(sizeof(double) + sizeof(size_t)) + 100*(sizeof(double) + sizeof(size_t)) + 3*3*sizeof(size_t));

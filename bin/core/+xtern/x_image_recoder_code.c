@@ -5,6 +5,8 @@
 
 #include "mex.h"
 
+#include "gsl/gsl_rng.h"
+
 #include "x_mex_interface.h"
 #include "base_defines.h"
 #include "task_control.h"
@@ -86,6 +88,7 @@ do_task(
     char*    coding_tmps;
     size_t   initial_sample_coded_count;
     size_t   initial_sample_coded_length;
+    void*    param_table[2] = {NULL,NULL};
     size_t   ii;
 
     o_coeffs = (double*)malloc(global_info->new_geometry * sizeof(double));
@@ -93,11 +96,25 @@ do_task(
     coding_tmps = (char*)malloc(code_image_coding_tmps_length(global_info->row_count,global_info->col_count,global_info->patch_row_count,global_info->patch_col_count,
 							      global_info->coding_type,global_info->word_count,global_info->coeff_count,global_info->reduce_spread));
 
+    if (global_info->coding_type == SPARSE_NET) {
+	double*   local_lambda_sigma_ratio;
+	gsl_rng*  rnd_generator;
+
+	local_lambda_sigma_ratio = (double*)malloc(sizeof(double));
+	*local_lambda_sigma_ratio = ((double*)global_info->coding_params)[0];
+
+	rnd_generator = gsl_rng_alloc(gsl_rng_mt19937);
+	gsl_rng_set(rnd_generator,id);
+
+	param_table[0] = local_lambda_sigma_ratio;
+	param_table[1] = rnd_generator;
+    }
+
     for (ii = 0; ii < task_info_count; ii++) {
 	code_image(&o_coeffs_count,o_coeffs,o_coeffs_idx,
 		   global_info->geometry,global_info->row_count,global_info->col_count,
 		   global_info->patch_row_count,global_info->patch_col_count,
-		   global_info->coding_type,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,global_info->coeff_count,global_info->coding_params,
+		   global_info->coding_type,global_info->word_count,global_info->dict,global_info->dict_transp,global_info->dict_x_dict_transp,global_info->coeff_count,&param_table,
 		   global_info->nonlinear_type,global_info->nonlinear_modulator,global_info->polarity_split_type,global_info->reduce_type,global_info->reduce_spread,
 		   task_info[ii].observation,coding_tmps);
 
@@ -112,6 +129,11 @@ do_task(
 	memcpy(global_vars->o_sample_coded_ir + initial_sample_coded_length,o_coeffs_idx,o_coeffs_count * sizeof(size_t));
 	global_vars->o_sample_coded_jc[initial_sample_coded_count] = initial_sample_coded_length;
 	global_vars->o_observations_perm[initial_sample_coded_count] = task_info[ii].observation_id;
+    }
+
+    if (global_info->coding_type == SPARSE_NET) {
+	gsl_rng_free((gsl_rng*)param_table[1]);
+	free((double*)param_table[1]);
     }
 
     free(coding_tmps);
