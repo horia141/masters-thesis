@@ -18,6 +18,7 @@
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{subfigure}
+\usepackage{multirow}
 
 \floatstyle{boxed}
 \restylefloat{figure}
@@ -55,11 +56,21 @@
 \listoftables
 \abbreviations {
   CNN = Convolutional Neural Network\\
+  MP = Matching Pursuit\\
+  OMP = Orthogonal Matching Pursuit\\
+  OOMP = Optimized Orhtogonal Matching Pursuit\\
+  PCA = Principal Component Analysis\\
+  ZCA = Zero Component Analysis\\
+  SVM = Support Vector Machine
 }
 %\preface{}
 \afterpreface
 
 \unnumberedsection{Stream of thought writing}
+
+We focus more on coding methods. According to (cite Ng and guys here), this is the most important part in such a system. Dictionaries could well be random.
+
+Some conventions: Vectors are written in boldface with lower case letters, like this $\textbf{v}$. Addressing elment $i$ is done with a subscript, like this: $\textbf{v}_i$. Accessing a set of element $\Lambda$ is done with a subscript, but using the whole set, like this: $\textbf{v}_\Lambda$. It is understood that the elements are produced in increasing index order. Matrices are written in boldface with capital letters, like this $\textbf{A}$. Accessing a certain column $i$ is done with a superscript, like this: $\textbf{A}^i$. Accessing a certain element $j$ in column $i$ is done with both a superscript and a subscript, like this: $\textbf{A}^i_j$. Accessing a certain subset of columns $\Lambda$ is done with a superscript, but using the whole set, like this: $\textbf{A}^\Lambda$. It is understood that the columns are produced in increasing index order. Accessing a certain subset of indices $\Lambda$ of column $i$ is done with both a superscript and a subscript, like this: $\textbf{A}^i_\Lambda$. It is understood that the elements are produced in increasing column order. Accessing a certain subset of indices $\Theta$ of a certain subset of columns $\Lambda$ is done using both a superscript and a subscript, like this: $\textbf{A}^\Lambda_\Theta$. It is understood that the columns are produced in increasing index order and the elements from each column are produced in increasing index order as well.am dar 
 
 [[[Talk about typographic conventions]]]
 
@@ -107,7 +118,12 @@ The extractor can be modelled as a more general neural network, with specialized
 
 Fine-tuning wasn't the approach I took however. Just the simple extractor with one layer proved sufficient for the needs of the studied applications. 
 
+[[[Maybe talk about HoG and SWIFT here as well.]]]
+
 \chapter{Coding and Different Coding Methods}
+
+[[[Talk about how when using $k=1$ all the pursuits and \textbf{Corr} are the same]]]
+[[[Talk about the sparseness coefficient (define it better here) and about the distribution requirements for sparseness]]]
 
 This section describes in more detail how to do the coding. For simplicity, we will assume we work with $d$-dimensional signals. Thus, the $\hctimes{p}{p}$ patches previously discussed must be linearized such that $d = p^2$. Assume also that we are given a set of features $\textbf{C}$, like in the previous section, and a signal $\textbf{x} \in \hcsignalspace$. The goal of coding is to find the signal $\textbf{a}$, which is the representation or ``code'' of $\textbf{x}$ in terms of $\textbf{C}$, such that the reconstruction $\mathcal{R}[\textbf{C}](\textbf{a})$ is optimal with regard to a reconstruction error.
 
@@ -242,7 +258,7 @@ Thus, we have expressed the computation of the inner product between the current
 \Require $\textbf{C},\textbf{x},k$
 \Ensure $\textbf{a}^k,\mathcal{R}^k\textbf{x}$
 \State $\textbf{a}^0 \gets \textbf{0}$
-\State $\mathcal{S}^f \gets [ \langle \textbf{C}^i, \textbf{C}^j \rangle ~ \mbox{\textbf{for} $(i,j) \in \hctimes{w}{w}$}]$
+\State $\mathcal{S}^f \gets [ \langle \textbf{C}^i, \textbf{C}^j \rangle ~ \mbox{\textbf{for} $(i,j) \in \hctimes{\hcrange{1}{w}}{\hcrange{1}{w}}$}]$
 \State $\mathcal{S}^s \gets [ \langle \textbf{x}, \textbf{C}^i \rangle ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
 \For {$t = \hcrange{1}{k}$}
 \State $\omega \gets \arg \max_{i \in \hcrange{1}{w}} \left| \mathcal{S}_i^s \right|$
@@ -325,7 +341,7 @@ Thus, we can come up with a new way of computing the residual:
 \mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} - \langle \textbf{Q}_{t}^{\omega}, \textbf{x} \rangle \textbf{Q}_{t}^{\omega}
 \end{equation*}
 
-The algorithm is presented now in \textbf{Algorithm \ref{algo:OrthogonalMatchingPursuitMethodV2}}. Notice we don't need to compute $\textbf{a}^t$ at all during the inner-loop. Only at the end. We don't have a similar computation for the residual.
+The algorithm is presented now in \textbf{Algorithm \ref{algo:OrthogonalMatchingPursuitMethodV2}}. Notice we don't need to compute $\textbf{a}^t$ at all during the inner-loop. Only at the end. We don't have a similar computation for the residual. In any case, having such an optimization wouldn't modify the order of the algorithm, but it would just do a speedup in practice.
 
 \begin{algorithm}
 \caption{Orthogonal Matching Pursuit (Version 2)}
@@ -343,16 +359,19 @@ The algorithm is presented now in \textbf{Algorithm \ref{algo:OrthogonalMatching
 \State $\omega \gets \arg \max_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \left| \langle \mathcal{R}^{t-1}\textbf{x} , \textbf{C}^i \rangle \right|$
 \State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
 \State $\textbf{R}^t \gets [ \langle \textbf{C}^\omega, \textbf{Q}^i \rangle~\mbox{\textbf{for} $i \in \hcrange{1}{d}$ \textbf{if} $i < t$ \textbf{else} $0$} ]$ \Comment{Fill column $t$ of $\textbf{R}$}
-\State $\textbf{Q}^t \gets \textbf{C}^\omega - \sum_{i=1}^{t-1}\textbf{R}^t_i \textbf{Q}^i$ \Comment{Substract projection of $\textbf{C}^\omega$ on all $\textbf{Q}^i$ from $\textbf{C}^\omega$}
+\State $\textbf{Q}^t \gets \textbf{C}^\omega - \textbf{Q}^{\hcrange{1}{t-1}}\textbf{R}^t_{\hcrange{1}{t-1}}$ \Comment{Substract projection of $\textbf{C}^\omega$ on all $\textbf{Q}^i$ from $\textbf{C}^\omega$}
 \State $\textbf{Q}^t \gets \textbf{Q}^t / \| \textbf{Q}^t \|_2$ \Comment{Normalize column $t$ of $\textbf{Q}$}
-\State $(\textbf{Q}^T\textbf{x})_t \gets \langle \textbf{Q}^t, \textbf{x} \rangle$
+\State $\textbf{R}^t_t \gets \langle \textbf{C}^\omega, \textbf{Q}^t \rangle$
+\State $(\textbf{Q}^T\textbf{x})_t \gets \langle \textbf{x}, \textbf{Q}^t \rangle$
 \State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} -  (\textbf{Q}^T\textbf{x})_t \textbf{Q}^t$
 \EndFor
-\State $\textbf{a}^k \gets \textbf{R}_k^{-1}(\textbf{Q}^T\textbf{x})$
+\State $\textbf{a}^k \gets \textbf{R}^{-1}(\textbf{Q}^T\textbf{x})$
 \end{algorithmic}
 \end{algorithm}
 
 The running time of this algorithm is $T_2^{OMP} = \Theta(k(wd + dk + dk + d + d + d) + k^23) = \Theta(kwd + dk^2)$, which is much better. A property of \textbf{OMP} is that $\mathcal{R}^t\textbf{x}$ is orthogonal to the span of $\textbf{Q}^1,\dots,\textbf{Q}^{t-1}$. Also, given the way it works, when $k = d$, then the residual $\mathcal{R}^d\textbf{x}$ becomes $\textbf{0}$, therefore the algorithm is guaranteed to stop. Notice however, that this does not imply an exact solving of our problem as seen in (reference posing of problem subject to hard constraint). If the algorithm is formulated with a $\delta$ instead of a fixed $k$, it will indeed stop when $t = d$, and the approximation will be perfect, barring any case of the features being linearly dependent, but this shouldn't be a problem in practice, but this does not guarantee that this is the smallest such set with $0$ recunstruction error. Or maybe there is a smaller set, but with bigger reconstruction error, which would be more useful in applications.
+
+[[[Recompute running times, being 1.more careful and 2.taking into account that $\textbf{R}$ is just of size $\hctimes{k}{k}$]]]
 
 A final pursuit method studied is Optimized Orthogonal Matching Pursuit (\textbf{OOMP}) also known as Orthogonal Least Squares (\textbf{OLS}). It is similar to \textbf{OMP}. The major difference is the way in which the decision for which $\textbf{C}^\omega$ to use is taken. We select the one which gives the smallest least squares difference between $\textbf{x}$ and its reconstruction. Once this decision has been made, however, the $\textbf{a}$ produced is such that the difference between signal and reconstruction is minimal. The algorithm is presented in \textbf{Algorithm \ref{algo:OptimizedOrthogonalMatchingPursuitMethodV1}}.
 
@@ -418,15 +437,17 @@ At the end of the $k$ iterations, $k$ columns will be zero. Furthermore, at the 
 \State $(\textbf{Q}^T\textbf{x}) \gets \textbf{0}$
 \State $\tilde{\textbf{C}} \gets [ \textbf{C}^i / \|\textbf{C}^i\|_2 ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
 \For {$t = \hcrange{1}{k}$}
-\State $\omega \gets \arg\min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \| \mathcal{R}^{t-1}\textbf{x} - \langle \tilde{\textbf{C}}^i, \textbf x \rangle \tilde{\textbf{C}}^i \|_2^2$
+\State $\omega \gets \arg\min_{i \in \hcrange{1}{w} \setminus \Lambda^{t-1}} \| \mathcal{R}^{t-1}\textbf{x} - \langle \textbf{x}, \tilde{\textbf{C}}^i \rangle \tilde{\textbf{C}}^i \|_2^2$  \Comment{Choose $i$ such that residual is minimized}
 \State $\Lambda^t \gets \Lambda^{t-1} \cup \omega$
 \State $\textbf{R}^t \gets [ \langle \textbf{C}^\omega, \textbf{Q}^i \rangle~\mbox{\textbf{for} $i \in \hcrange{1}{d}$ \textbf{if} $i < t$ \textbf{else} $0$} ]$ \Comment{Fill column $t$ of $\textbf{R}$}
-\State $\tilde{\textbf{C}} \gets [ \tilde{\textbf{C}}^i - \langle \tilde{\textbf{C}}^i, \tilde{\textbf{C}}^\omega \rangle \tilde{\textbf{C}}^\omega ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
+\State $\textbf{Q}^t \gets \tilde{\textbf{C}}^\omega$
+\State $\textbf{R}^t_t \gets \langle \textbf{C}^\omega, \textbf{Q}^t \rangle$
+\State $(\textbf{Q}^T\textbf{x})_t \gets \langle \textbf{x}, \textbf{Q}^t \rangle$
+\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} -  (\textbf{Q}^T\textbf{x})_t \textbf{Q}^t$
+\State $\tilde{\textbf{C}} \gets [ \tilde{\textbf{C}}^i - \langle \tilde{\textbf{C}}^i, \textbf{Q}^t \rangle \textbf{Q}^t ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
 \State $\tilde{\textbf{C}} \gets [ \tilde{\textbf{C}}^i / \| \tilde{\textbf{C}}^i \|_2 ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ]$
-\State $(\textbf{Q}^T\textbf{x})_t \gets \langle \tilde{\textbf{C}}^\omega, \textbf{x} \rangle$
-\State $\mathcal{R}^t\textbf{x} \gets \mathcal{R}^{t-1}\textbf{x} -  (\textbf{Q}^T\textbf{x})_t \tilde{\textbf{C}}^t$
 \EndFor
-\State $\textbf{a}^k \gets \textbf{R}_k^{-1}(\textbf{Q}^T\textbf{x})$
+\State $\textbf{a}^k \gets \textbf{R}^{-1}(\textbf{Q}^T\textbf{x})$
 \end{algorithmic}
 \end{algorithm}
 
@@ -438,70 +459,15 @@ We now turn to the problem of learning the feature set $\textbf{C}$, given a cod
 
 The simplest solution is to use a set of randomly generated features. Each element from $\textbf{C}^i$ is generated independently. The only constraint is that the distribution allow positive and negative values and be unimodal. Other shape constraints do not influence performance (cite Ng and co. here). Although un-intuitive, random features work surprisingly well (cite Ng and co. here), hinting that the performance of this approach comes more from the architecture described in a previous section than the particular choice of features. Nevertheless, for best performance, a more structured feature set seems to be required. A correlation between feature extractor performance (as measured in classification tasks) with fixed architecture and, in turn, random features and trained features exists, and it can be employed for faster architecture selection.
 
-Figure \ref{fig:RandomAndHandmadeFeatures}\subref{fig:RandomFeatures} shows an example of 16 randomly chosen features. We have for a particular feature $i$ that $C^i_{\alpha\beta} \leftarrow U[-1,1]$. A normalization also occurs. As expected, the filters do not show specific structure. However, they can be seen as selecting for sinusoids components of the inputs corresponding to the highest amplitude spectral component of the filter (cite Ng again here).
-
-\begin{figure}
-\centering
-\subfigure[Random features.]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/RandomFeatures.png}
-  \label{fig:RandomFeatures}
-}
-~~~~~~
-\subfigure[Handmade features.]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/HandmadeFeatures.png}
-  \label{fig:HandmadeFeatures}
-}
-\caption{Examples of simple features. Features are arranged in a $\hctimes{4}{4}$ array and scaled for presentation such that the highest intensity component corresponds to $1$ while the lowest intensity component corresponds to $0$.}
-\label{fig:RandomAndHandmadeFeatures}
-\end{figure}
-
+Figure \ref{fig:RandomAndHandmadeFeatures}shows an example of 16 randomly chosen features. We have for a particular feature $i$ that $C^i_{\alpha\beta} \leftarrow U[-1,1]$. A normalization also occurs. As expected, the filters do not show specific structure. However, they can be seen as selecting for sinusoids components of the inputs corresponding to the highest amplitude spectral component of the filter (cite Ng again here).
 
 A feature set can be, of course, crafted by hand. Figure \ref{fig:RandomAndHandmadeFeatures}\subref{fig:HandmadeFeatures} shows an example of 10 designed features, similar to Haar Wavelets. Needless to say, this is not a scalable strategy for the common case of thousands of features currently employed in state of the art methods. A well known set can be emplyed then. Figure \ref{fig:DCTFeatures} shows several DCT features, while (figure here) shows several Gabor Wavelet features. The former are more computationally easy to work with while the latter allow overcomplete representations, thanks to their parametrization.
-
-\begin{figure}
-\includegraphics[width=0.35\textwidth]{ThesisData/DCTFeatures.png}
-\caption{DCT Features.}
-\label{fig:DCTFeatures}
-\end{figure}
 
 The focus of this chapter is, however, on learned feature sets. We select as a training set for this purpose a set of $100000$ patches of size $d = \hctimes{11}{11}$ randomly extracted from the MNIST and SmallNORB datasets, respectively. A sample of these can be seen in image (cite here). Two pre-processing steps are applied. First, from each image the DC component is subtracted. Second, the mean of all the patches is extracted from each patch, such that $E[final_patch] = \textbf{O}_{\hctimes{11}{11}}$. The final training set can be seen in figure (fig here). See the experiments section for how the patches were extracted. Another dataset will be employed as well, for didactic purposes. It can be seen in Figure \ref{fig:ThreeComponentPointCloud}. It consists of three slightly overlapping subsets generated from a different gaussian each. The set has a relatively complicated topology and is useful for illustrating the differences in learning algorithms.
 
 \begin{figure}
 \centering
-\subfigure[Original MNIST patches]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/MNISTPatches.png}
-  \label{fig:MNISTPatches}
-}
-~~~~~~
-\subfigure[Original SmallNORB patches]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/NORBSmallPatches.png}
-  \label{fig:NORBSmallPatches}
-}
-\subfigure[MNIST patches with no DC component and mean substracted]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/MNISTPatchesDcMean.png}
-  \label{fig:MNISTPatchesDcMean}
-}
-~~~~~~
-\subfigure[SmallNORB patches with no DC component and mean substracted]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/NORBSmallPatchesDcMean.png}
-  \label{fig:NORBSmallPatchesDCMean}
-}
-\subfigure[MNIST patches with no DC component and ZCA applied]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/MNISTPatchesDcMeanZCA.png}
-  \label{fig:MNISTPatchesDcMeanZCA}
-}
-~~~~~~
-\subfigure[SmallNORB patches with no DC component and ZCA applied]{
-  \includegraphics[width=0.35\textwidth]{ThesisData/NORBSmallPatchesDcMeanZCA.png}
-  \label{fig:NORBSmallPatchesDcMeanZCA}
-}
-\caption{Patches from the MNIST and SmallNORB datasets, in different stages of pre-processing.}
-\label{fig:Patches}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=0.8\textwidth]{ThesisData/ThreeComponentPointCloud.png}
+\includegraphics[width=0.8\textwidth]{thesis_data/three_component_point_cloud.png}
 \caption{The three component dataset.}
 \label{fig:ThreeComponentPointColud}
 \end{figure}
@@ -588,21 +554,180 @@ A further improvement is possible considering the fact that many coding methods 
 
 \chapter{Experiments}
 
-Talk about how to extract patches here. Minimum required variance and all.
+The following suite of experiments are meant to illustrate the strengths and weaknesses of the different coding methods, feature learning algorithms and recoding architectures. We will make reference to two datasets in this section. The first one is the MNIST handwritten digit dataset, which is available from (cite website) and is described in more detail in (cite). Briefly, it consists of $60000$ training and $10000$ test images of size $\hctimes{28}{28}$. Each image represents a single arabic digit, placed such that the center of mass of the non-zero pixels corresponds to the center of the image. A small sample of these images can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:MNISTExample}}. The second one is the NORB object recognition dataset, or, more specifically, the SmallNORB variant. This set is available from (cite website) and is described in more detail in (cite). Briefly, it consists of $23400$ training and $23400$ test stereo images of size $\hctimes{32}{32}$. Each image represents one shot of a plastic toy, using a certain camera rotation and elevation. There are five categories of toys: human, animal, plane, truck, car. A small sample of these images can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:NORBSmallExample}}. We discard the right channel and use only the left one.
 
-\section{Coding and Sparseness}
+Most of the experiments will use patches extracted from one or the other of the two datasets. For MNIST, these patches will have size $\hctimes{9}{9}$, while for SmallNORB, they will have size $\hctimes{13}{13}$. To extract one patch, we choose one image at random from the training dataset. Then, we choose one pixel from this image, again, at random, but far enough from the borders. Finally, if the patch centered at this pixel has a variance greater then a treshhold, $\sigma^2_\tau$, we keep it, otherwise we repeat the whole procedure. For our experiments, we used a threshold of $\sigma^2_\tau = 0.01$. The reason for variance filtering is to exclude the constant or almost-constant patches which provide no useful information for the feature learning algorithms (cite here), but which take up computational resources. Naturally, to extract $N$ patches, the procedure is repeated $N$ times. A small sample of MNIST patches can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:MNISTPatches}}. A similar sample of SmallNORB patches can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:NORBSmallPatches}}.
+
+All patches also have their DC component substracted. It is common practice in the literature (cite guys here) to perform this pre-processing step, mainly because it leads to improved results in classification. Intuitively, the reason for doing this is that, when coding, resources are not spent, to a certain extent, trying to match the actual ``magnitude'' of a signal, but rather just the ``features'' in it.
+
+We further transform only those patches which will be used as training data for the feature learning algorithms by applying the Zero Component Analysis (\textbf{ZCA}) transform (cite), which is a close relative of \textbf{PCA} and which follows the projection of a point into the principal component space with a standardization. The covariance matrix in the new space is therefore $\mathbb{I}_d$. The effect is that of removing linear dependencies between the pixels of a patch. Using this transform speeds up convergence for the feature learning methods. It is not always needed, however, as features for simpler datasets, like MNIST, can be learned without it, although at a slower pace than when using it. A sample of MNIST \textbf{ZCA} transformed patches can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:MNISTPatchesZCA}}, while a similar sample from SmallNORB can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:NORBSmallPatchesZCA}}.
+
+\begin{figure}
+\centering
+\subfigure[A subsample from the MNIST dataset]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/mnist_example.png}
+  \label{fig:MNISTExample}
+}
+\subfigure[A subsample from the SmallNORB dataset]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/norbsmall_example.png}
+  \label{fig:NORBSmallExample}
+}
+\subfigure[MNIST patches]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/mnist_patches.png}
+  \label{fig:MNISTPatches}
+}
+\subfigure[SmallNORB patches]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/norbsmall_patches.png}
+  \label{fig:NORBSmallPatches}
+}
+\subfigure[MNIST patches with ZCA applied]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/mnist_patches_zca.png}
+  \label{fig:MNISTPatchesZCA}
+}
+\subfigure[SmallNORB patches widt ZCA applied]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/norbsmall_patches_zca.png}
+  \label{fig:NORBSmallPatchesZCA}
+}
+\caption{Subsamples and patches from MNIST and SmallNORB. The \textbf{ZCA} transformed patches in row three correspond to the original patches in row two.}
+\label{fig:ViewsOfMNISTAndNORBSmall}
+\end{figure}
+
+\clearpage
+
+\section{Coding, Reconstruction and Sparseness}
+
+In this section we will talk again about coding methods, and compare their reconstructive and sparseness inducing powers. A set of $1000$ patches from the SmallNORB dataset will be used for evaluating the different methods. We will work with five feature sets, which we assume are given: a set of $w=169$ random features, a set of $w=169$ \textbf{PCA} features, a set of $w=169$ sparse features, anoter set of $w=512$ random features and another set of $w=512$ sparse features. The first three sets are critically-complete while the last two are roughly three times overcomplete. No overcomplete \textbf{PCA} feature set could, of course, be built. The \textbf{PCA} and sparse $w=169$ sets can be seen in \textbf{Figure \ref{fig:RecSparseFeatureSets}}. The larger sparse feature set is similar to the one shown. The coding methods we are interested in are inner product (\textbf{Corr}), \textbf{MP}, \textbf{OMP}, \textbf{OOMP} and SparseNet with $S(x) = \log(1 + x^2)$.
+
+\begin{figure}
+\centering
+\subfigure[PCA feature set with $w=169$.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/recsparse/features_pca.png}
+  \label{fig:RecSparseFeaturesPCA}
+}
+\subfigure[Sparse feature set with $w=169$.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/recsparse/features_sparse.png}
+  \label{fig:RecSparseFeaturesSparse}
+}
+\caption{Two of the three non-random feature sets employed in this section's experiments.}
+\label{fig:RecSparseFeatureSets}
+\end{figure}
+
+In order to test the reconstruction power of the five coding methods we will measure the average squared sum of differences between an original patch $\textbf{x}$ and a reconstructed patch $\textbf{C}\textbf{a}$. That is, the average Euclidean norm of the error patch $\textbf{x} - \textbf{C}\textbf{a}$. We use the conventions estabilished in the chapter about coding methods. More precisely, $\textbf{C}$ is one of the five feature sets while $\textbf{a}$ is the code word obtained by applying one of the five coding methods we're testing to $\textbf{x}$ and $\textbf{C}$.
+
+For this experiment we will constrain the reconstructive powers of the methods by imposing at most $k$ non-null coefficients. For \textbf{Corr} and SparseNet, the method will be allowed to run as usual, then the $k$ greatest coefficients in absolute value will be selected. \textbf{MP}, \textbf{OMP} and \textbf{OOMP} have $k$ builtin, therefore they suffer no modification. We will have five different values for $k$, namely, $1$, $3$, $16$, $64$ and $w$. When $k=1$ we will have a very strict coding setup. Basically, for a given $\textbf{x}$, $\textbf{a}$ will be zero everywhere except at the index $\omega$ corresponding to the most similar feature from $\textbf{C}$ to $\textbf{x}$. The similarity will be measured by inner-product / projection size of $\textbf{x}$ onto $\textbf{C}^\omega$. We expect \textbf{Corr}, \textbf{MP}, \textbf{OMP} and \textbf{OOMP} to produce the same results, as, for $k=1$, algorithmically speaking, there are no differences between the methods - even the least squares problems \textbf{OMP} and \textbf{OOMP} solve are reduced to inner product comparisons in such a limit case. When $k=3$ we will again have a very strict coding setup, though not as harsh as for $k=1$. We expect large errors in these two situations. For $k=16$ and $k=64$, differences between the methods will start to become apparent and we expect small errors. For $k=w$ we should see in a lot of methods and under a lot of feature sets the error reduced to $0$. For \textbf{OMP} and \textbf{OOMP}, in this case we'll have $k=169$, because, by their very construction, these methods guarantee a $0$ norm residual after $k=d$ steps, therefore every coefficient of $a$ for $t \ge d$ will necessarily be $0$. There is no point in wasting computational resources computing them.
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Average reconstruction error for different coding methods and different feature sets.}
+  \label{table:RecSparseErrors}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|R|R|c|c|c|c|c|}
+    \hline
+    Features & Method & $k=1$ & $k=3$ & $k=16$ & $k=64$ & $k=w$ \tabularnewline \hline\hline
+    \multirow{5}{*}{Random $w=169$} & \textbf{Corr} & $1.95$  & $1.88$ & $1.72$ & $1.81$ & $1.93$ \tabularnewline
+    & \textbf{MP} & $1.95$ & $1.87$ & $1.57$ & $1.14$ & $0.87$ \tabularnewline
+    & \textbf{OMP} & $1.95$ & $1.87$ & $1.55$ & $0.93$ & $0.00$ \tabularnewline
+    & \textbf{OOMP} & $1.95$ & $1.87$ & $1.55$ & $0.93$ & $0.00$ \tabularnewline
+    & SparseNet & $1.97$ & $1.93$ & $1.79$ & $1.58$ & $1.50$ \tabularnewline \hline
+    \multirow{5}{*}{\textbf{PCA} $w=169$} & \textbf{Corr} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
+    & \textbf{MP} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
+    & \textbf{OMP} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
+    & \textbf{OOMP} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
+    & SparseNet & $1.58$ & $1.30$ & $1.01$ & $0.91$ & $0.90$ \tabularnewline \hline
+    \multirow{5}{*}{Sparse $w=169$} & \textbf{Corr} & $1.76$ & $1.62$ & $1.25$ & $1.03$ & $1.04$ \tabularnewline
+    & \textbf{MP} & $1.76$ & $1.61$ & $1.17$ & $0.57$ & $0.16$ \tabularnewline
+    & \textbf{OMP} & $1.76$ & $1.61$ & $1.16$ & $0.50$ & $0.00$ \tabularnewline
+    & \textbf{OOMP} & $1.76$ & $1.61$ & $1.16$ & $0.50$ & $0.00$ \tabularnewline
+    & SparseNet & $1.83$ & $1.74$ & $1.51$ & $1.29$ & $1.24$ \tabularnewline \hline
+    \multirow{5}{*}{Random $w=512$} & \textbf{Corr} & $1.93$ & $1.84$ & $1.71$ & $2.59$ & $5.20$ \tabularnewline
+    & \textbf{MP} & $1.93$ & $1.83$ & $1.40$ & $0.68$ & $0.01$ \tabularnewline
+    & \textbf{OMP} & $1.93$ & $1.83$ & $1.37$ & $0.44$ & $0.00$ \tabularnewline
+    & \textbf{OOMP} & $1.93$ & $1.83$ & $1.37$ & $0.43$ & $0.00$ \tabularnewline
+    & SparseNet & $1.96$ & $1.93$ & $1.78$ & $1.47$ & $0.89$ \tabularnewline \hline
+    \multirow{5}{*}{Sparse $w=512$} & \textbf{Corr} & $1.75$ & $1.62$ & $1.98$ & $3.84$ & $7.02$ \tabularnewline
+    & \textbf{MP} & $1.76$ & $1.53$ & $0.99$ & $0.40$ & $0.00$ \tabularnewline
+    & \textbf{OMP} & $1.76$ & $1.53$ & $0.95$ & $0.26$ & $0.00$ \tabularnewline
+    & \textbf{OOMP} & $1.76$ & $1.53$ & $0.95$ & $0.25$ & $0.00$ \tabularnewline
+    & SparseNet & $1.88$ & $1.78$ & $1.56$ & $1.23$ & $0.80$ \tabularnewline \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+\clearpage
+
+A summary  of the results can be seen in \textbf{Table \ref{table:RecSparseErrors}}. Only the means are presented, however. The variances tended to be the same across methods and feature sets, and were roughly $0.40$ for $k=1$, $k=3$ and $k=16$, $0.10$ for $k=64$ and $0$ for $k=w$, except for SparseNet, which had a $0.10$ variance for this case as well. Several observations need to be made. First, regardless of feature set, reconstruction error goes down from \textbf{Corr} to \textbf{MP} to \textbf{OMP} to \textbf{OOMP}. Furthermore, for \textbf{Corr}, the error increases when  using random features. This breakdown is explained by the nature of the feature set - there is no simple structure to exploit - and the nature of the method - it cannot find ``hidden'' structure. When employing the sparse feature set with $w=169$, which does have some structure to it, the error drops to about half for $k=w$. For the overcomplete sparse set, however, the error radically increases. This is a sign of the severe limitations of the method - even with some structure it cannot produce a suitable approximation when there are more features than dimensions in the signal space. The \textbf{PCA} feature set presents itself in a form which \textbf{Corr} can handle. Therefore, for $k=w$ we have a zero error. More importantly, all methods which are somehow based on inner-products have the same behaviour for this feature set. With regards to inner-product based methods, \textbf{MP} handles itself well. For smaller $k$s it is roughly equivalent to the more complex methods. Better results are obtained in the overcomplete feature sets (both random and sparse) than the critically-complete one. For the overcomplete ones, at $k=512$ a zero error is actually reached. This means the bigger feature set allowed the method a way to find the certain features which allow a perfect reconstruction. The other two methods, \textbf{OMP} and \textbf{OOMP} behave roughly the same. \textbf{OOMP} seems to be a little bit better (by $0.01$ in some cases), but such a small difference would not recommend the method, from a purely approximation power point of view, given its increased compuational demands. As expected, when $k=169$ (the maximum useful for these methods, regardless of the actual $w$), the reconstruction is perfect, regardless of the feature set used. SparseNet does not produce very good approximations. Visual inspection of the result usually hints that there is a scale problem, rather than a shape problem. Also, the overcomplete sparse feature sete is the one which induces best results for this method, although the \textbf{PCA} set is not that far off.
+
+\textbf{Figure \ref{fig:RecSparsePictures}} gives an ideea of the quality of a reconstructed patch, relative to the original. Notice that the patches corresponding to the random bases are more noisy than the other ones and that the patches corresponding to \textbf{PCA} are very similar to the original, regardeless of coding method. Also, the features of the SparseNet patches are barely percievable, even though a closer inspection will reveal the same general shape. This is caused by the previously mentioned amplitude problems.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.95\textwidth,height=0.8\textheight]{thesis_data/recsparse/rec_pictures.png}
+\caption{Reconstructions of the patch in the top-left corner using different coding methods and feature sets, but with fixed $k=64$. Each column handles one coding method. They are in order: \textbf{Corr}, \textbf{MP}, \textbf{OMP}, \textbf{OOMP} and SparseNet. Each row, after the first one,  handles one feature set. They are in order: random features with $w=169$, \textbf{PCA} features with $w=169$, sparse features with $w=169$, random features with $w=512$ and sparse features with $w=512$.}
+\label{fig:RecSparsePictures}
+\end{figure}
+
+Reconstruction power is just one measure of the quality of a coding method, however. Another, arguably more important (cite here), measure is sparseness. One way to define spareness is to count how many zeros the code word $a$ has and express it relative to $w$. In practice, we care that a coefficient is ``large enough'', say, grater in absolute value than a small positive real $\delta$, rather than simply different from $0$. In our experiments, we set $\delta$ to $0.01$. More formally, we have:
+
+\begin{equation*}
+\rho(a) = \frac{\left| \{ a_i \left|\right. i \in \hcrange{1}{w} \wedge \left|a_i\right| > \delta \} \right|}{w} \in [0,1]
+\end{equation*}
+
+As in the last experiment, where we were interested in the average reconstruction error, we are now interested in the average sparseness. We continue with the same experimental setup as before. However, we will not impose a small $k$, but rather use $k=w$ or $k=d$, depending on the particular method. Imposing a $k \ll w$ would have artificially restricted the spareness and we would have gotten useful results only for larger values of $k$, for which the methods would be able to induce their own spareness. 
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Average sparseness for different coding methods and different feature sets.}
+  \label{table:RecSparseSparseness}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|R|c|c|c|c|c|}
+    \hline
+    Features & \textbf{Corr} & \textbf{MP} & \textbf{OMP} & \textbf{OOMP} & SparseNet \tabularnewline \hline\hline
+    Random $w=169$ & $0.48$ & $0.50$ & $0.50$ & $0.50$ & $0.41$ \tabularnewline \hline
+    \textbf{PCA} $w=169$ & $0.36$ & $0.36$ & $0.36$ & $0.36$ & $0.38$ \tabularnewline \hline
+    Sparse $w=169$ & $0.46$ & $0.50$ & $0.45$ & $0.45$ & $0.42$ \tabularnewline \hline
+    Random $w=512$ & $0.47$ & $0.28$ & $0.13$ & $0.13$ & $0.37$ \tabularnewline \hline
+    Sparse $w=512$ & $0.47$ & $0.19$ & $0.12$ & $0.12$ & $0.35$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+A summary of the results can be seen in \textbf{Table \ref{table:RecSparseSparseness}}. For the critically-complete random feature set every inner-product bases method performs roughly the same. SparseNet is significantly better, though, in general, all methods perform rather poorly, requiring about half of the coefficients to be greater than $\delta$. With \textbf{PCA} features, we again see the identical behaviour for all inner-product based methods. All methods have roughly the same behaviour, which is visibly better than with the random features, but not that great in general. Similarly, with the critically-complete sparse feature set, about half of the code word coefficients are active, regardless of method. However, \textbf{MP} is a little bit worse than \textbf{Corr} and the other pursuits. It probably can't find good matches in this limited feature set. SparseNet again leads the pack with performance similar to the random feature set case. When we move to the larger feature sets, however, the situation changes drastically. \textbf{Corr} remains at roughly the same level as with the $w=169$ feature sets, and SparseNet is slighly better, but the pursuits come into their own and produce very sparse results. Again, \textbf{OMP} and \textbf{OOMP} produce ``identical'' results, furthering our belief that the second has no practical advantage over the first. \textbf{MP} is roughly half as good as \textbf{OMP} and \textbf{OOMP}, especially in the random feature set, but is much better than simple correlation. Notice that, in absolute terms, in the best cases, roughly $60$ coefficients are needed for a good reconstruction, as $\hctimes{0.50}{128} \approx \hctimes{0.12}{512} \approx 60$. This is useful information for later experiments. Using a $k > 60$ with a $d$ similar to the ones we used in these experiments, will, most likely, not produce better results.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.95\textwidth,height=0.8\textheight]{thesis_data/recsparse/rec_hists.png}
+\caption{Histograms of the code words for the patch in the top-left corner of \textbf{Figure \ref{fig:RecSparsePictures}} produced using different coding methods and feature sets. Each column handles one coding method. They are in order: \textbf{Corr}, \textbf{MP}, \textbf{OMP}, \textbf{OOMP} and SparseNet. Each row handles one feature set. They are in order: random features with $w=169$, \textbf{PCA} features with $w=169$, sparse features with $w=169$, random features with $w=512$ and sparse features with $w=512$. All horizontal axes are between $[-1.5,1.5]$ and all vertical ones are between $[0,250]$.}
+\label{fig:RecSparseHists}
+\end{figure}
+
+\textbf{Figure \ref{fig:RecSparseHists}} gives an ideea of the distribution of the patches in the different cases. We used $61$ bins spread evenly in the interval $[-1.5,1.5]$. Notice how spiked the distributions for the pursuits are, expecially for \textbf{OMP} and \textbf{OOMP}. Again, these two produce almost identical results. The distribution for \textbf{Corr} is however very flat. \textbf{MP} is situated somewhat between these two extremes, but with a clear peak around $0$. Similarly, SparseNet has a peak around $0$, but the distribution has a skwed form, resulting from the regularization term we used. The effect is good, although the sparsity is clearly more strinking in the \textbf{OMP} and \textbf{OOMP} methods. The \textbf{PCA} features do not produce very ``sparse'' looking histograms, regardless of the methods employed, despite good reconstruction performance and acceptable average sparseness. Real sparseness is to be found in the way the values are distributed - there must be just a few code word coefficients with large values, besides being a lot of them equal to or near $0$.
 
 \section{Learning Feature Sets}
 
-\section{MNIST}
+Here we should talk about how we learn the feature sets for the different algorithms, and how they differ. Several feature sets should be showed as well as the parmeters used for learning them. Talk about how the interaction with each coding method works.
+
+As we've seen, the difference between coding with dictionaries produced by different methods is not that great, if the dictionaries are of sufficient quality, and stems mostly from variations in the dictionaries produced and not in some intrinsic properties of the feature sets produced by one method versus the ones produced by another method. Where it is useful to compare methods is first in the ability to learn very over-complete feature sets for large $d$s and with not that many patches and execution speed.
+
+\section{Coder Architecture Evaluation}
 
 The MNIST database (cite source here) is used for handwritten digit recognition. It consists of $\hctimes{28}{28}$ grayscale images of the digits from $0$ to $9$. Examples for each class can be seen in Figure (figure). There are $60000$ training images and $10000$ test images. It is frequently used as a benchmark for classifier systems, although, as the score reference in (cite site with scores) will attest, the practical limits have been reached. Nevertheless, the system we built, especially using the Global Order nonlinearity, were able to break the record on this database, for the case of a non-modified dataset.
 
-Here is an overview of what we did.
+We did several experiments. The goal was to get a classification score as high as possible. A summary of the best methods so far, as gathered from mnist site and ciresan site can be seen in table.
 
-\section{NORB and SmallNORB}
+First, to get a good reference we employed a one-vs-one trained linear svm in primal mode with L2 loss and L2 regularization as implemented by LIBSVM and trained it on the raw data. We also did a version with standardized and normalized data, with slightly better results. The results can be seen in table (table here). There is just one tunable parameter, $C$ and its value is determined by crossvalidation. The experiment was carried out as such: first, $C$ was determined by cross-validation. To this end, $20$\% of the training dataset was selected. Then, $5$ splits into training and validation datasets were made, keeping $75$\% of this for training and the other $25$\% for validation. Thus, we did five-fold cross-validation. These splits were kept constant and each value of $C$, which was logarithmically spread between $10^{-2}$ and $1$ with $20$ points to test, was trained on the $5$ training subsamples and evaluated on the $5$ validation subsamples. Once this was done, the average of the validation scores was used to select the best $C$ (the one with the highest score). The graph in figure ... shows the score plot for different $C$ and the associated standard deviations. After a best $C$ was found, another SVM was trained on the full training set (and with the associated $C$) and the final score was produced on the test set. The table presents both final scores and crossvalidation average score for best $C$ as well as best $C$. This general model of classification will be used for all other experiments, except where otherwise noted.
 
-\section{Text Detection Application}
+Another experiment we ran showed the power of the Global Order nonlinearity. More precisely, after a few experiments, we determined a configuration for the coder which produced state of the art results for the MNIST dataset, in the case of not employing any modifications to the dataset (elastic distorsions etc. which would increase the size of the machine) and u sing just one classifier. The general architecture uses $2048$ randomly built bases and coding with correlation limited to $k=100$ coefficients. The patch size is $p=9$. The nonlinearity was global order, with the smallest value set to $0.01$. No polarity splitting was done. The reduce method was $SumSqr$ and the reduce spread was $4$. The score we got was $99.53$, which is greater than the biggest got so far. If we use more than one classifiers, for example if we use $7$ of them in parallel, and take the class with the most votes (the mode of the distribution), then we can push the results up to .... This is because of using random bases. Just like with boosting or Random Trees (cite random trees article here), introducing randomness and then taking the results of many many random units produces better results. The results are summarised in table ...
+
+Decide if to talk about bigger datasets here or not.
+
+To get a feel for which setups are good and which are bad, more exhaustive experiments are needed. This is what we'll do in this next section.
+
+Testing every combination of architecture we can imagine for the systems is prohibitive at best. Therefore an full factorial experiment is out of the question. We split the experiments into three parts, which, by intuition and experience seem to be roughly independent. First the overal coding strategy used. We will test {random bases|dct bases|gabor bases|grad bases|neural gas} x {corr|mp|omp|oomp} x {linear|logistic|global order}. All other parameters will be kept constant at seemengly OK levels. After the best coding setup for this experiment is done, we will investigate how the number of features as well as the controllable sparseness ($k/w$) affects performance. Either the best or several of the best methods in the last experiment will be used (especially if the differences are small). Finally, the properties of the coding geometry and reduce type and reduce geometry will be studied. Also, questions about polarity splitting will be used as well and how they behave.
+
+We are not always interested in best absolute performance. Consider the text detection application we'll talk about later. If we want real-time performance, we have to impose tight constraingts on the compuational budget. We want an architecture which performs well under these constraints. We therefore face a multi-objective optimization problem, of sorts. We prefere, for example, for computational reasons, smaller patch sizes. If we employ a size of, say, $p=3$ or $p=5$, then a correlation with such a filter can be hard-coded instead of written as a loop and could also fit in the vectorization units of moder processors. However, such a small patch size is unlikely to capture much information from an image, so, in general, and as the tables, show, just using small patches will yield poor performance. However, if certain other architectural decisions, like using the Global Order nonlinearity or using a MaxKeepSign and KeepSign polarities, help us reach good or almost-good performance, we should use them. Not all applications have these constraints however, so for a medical diagnosis problem, accuracy would be primary.
+
+\chapter{Text Detection Application}
 
 \chapter{Conclusions}
 
