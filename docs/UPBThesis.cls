@@ -473,12 +473,13 @@ Department \@catedra} \par\nobreak % DN
 
 
 \newcommand\copyrightp{%
-         \null\vfil
+         \null%\vfil
          \typeout{Copyright}
-         {\centering\bfseries
-                 \large\copyright\ \@year\\
-                 \@author\\
-                 \large ALL RIGHTS RESERVED\par}
+         {\large\\
+           Copyright \copyright\ \@year ~ \@author\\
+           ALL RIGHTS RESERVED\\
+           \\ \\ \\
+           The author hereby grants to UPB permission to reproduce and to distribute publicly paper and electronic copies of this thesis document in whole or in part.}
          \vfil\newpage}
 
 
@@ -518,10 +519,33 @@ Bucharest,  {\@month} {\@year}
         \pagenumbering{roman}
         \pagestyle{empty}
         \titlep
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
+        \newpage
         % \inscrierep
         \declaratiep
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
+        \ifcopyright\copyrightp\fi 
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
+        \ifacknowledgements%
+                \unnumberedsection{Acknowledgements}
+                \@acknowledgements 
+        \fi
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
         \tableofcontents
-        \ifcopyright\copyrightp\fi  
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
         \c@page2 % set page counter so that next is 2
         \pagestyle{plain}
         \ifabstract{%
@@ -563,33 +587,41 @@ Bucharest,  {\@month} {\@year}
         \ifpreface{\unnumberedsection{Preface}
                 \@preface}
         \fi   
-        \ifacknowledgements%
-                \unnumberedsection{Acknowledgements}
-                \@acknowledgements 
-        \fi
         \ifdedication%
                 \unnumberedsection{Dedication}
                 \@dedication
         \fi 
 
 %        \tableofcontents
-        \iftables%
-                \addvspace{10bp}
-                \let\saveaddvspace=\addvspace
-                \def\addvspace##1{}
-                \listoftables
-                \let\addvspace=\saveaddvspace
-        \fi
         \iffigures%
                 \addvspace{10bp}
                 \let\saveaddvspace=\addvspace
                 \def\addvspace##1{}
                 \listoffigures
                 \let\addvspace=\saveaddvspace
+                \newpage
+                \thispagestyle{empty}
+                \mbox{}
+                \newpage
+        \fi
+        \iftables%
+                \addvspace{10bp}
+                \let\saveaddvspace=\addvspace
+                \def\addvspace##1{}
+                \listoftables
+                \let\addvspace=\saveaddvspace
+                \newpage
+                \thispagestyle{empty}
+                \mbox{}
+                \newpage
         \fi
         \ifabbreviationspage{\def\baselinestretch{1}\@normalsize
                 \unnumberedsection{List of Abbreviations}
-                \@abbreviations}
+                \@abbreviations
+                \newpage
+                \thispagestyle{empty}
+                \mbox{}
+                \newpage}
         \fi
         \newpage
         \afterprefacetrue
