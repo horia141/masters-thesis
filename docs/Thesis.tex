@@ -37,9 +37,9 @@
 
 \begin{document}
 
-\author{Horia COMAN}
+\author{Horia-Mihai COMAN}
 
-\title{Deep Learning with Applications to Computer Vision}
+\title{Deep Learning and Applications to Computer Vision}
 
 \facultatea{Faculty of Electronics, Telecommunications and Information Technology}
 \tiplucrare{Dissertation}
@@ -60,54 +60,42 @@
 
 
 \abbreviations {
+  ANN = Artificial Neural Network\\
   CNN = Convolutional Neural Network\\
+  MLP = Multilayer Perceptron\\
+  RBM = Restricted Boltzmann Machine\\
+  LASSO = Least Absolute Shrinkage and Selection Operator\\
   MP = Matching Pursuit\\
   OMP = Orthogonal Matching Pursuit\\
   OOMP = Optimized Orhtogonal Matching Pursuit\\
+  OLS = Orthogonal Least Squares\\
   PCA = Principal Component Analysis\\
   ZCA = Zero Component Analysis\\
   SVM = Support Vector Machine\\
   OLS = Ordinary Least Squares\\
-  LASSO = What\\
 }
 %\preface{}
 \afterpreface
 
-\unnumberedsection{Stream of thought writing}
+\unnumberedsection{Introduction}
 
-We focus more on coding methods. According to (cite Ng and guys here), this is the most important part in such a system. Dictionaries could well be random.
+This thesis will study the application of new principles in Machine Learning, collectively known under the umbrella term of Deep Learning, to the task of image recognition. The task can be formulated as a classification problem, which has been extensively studied by the Statistics and Machine Learning communities. My own contribution to this field is proposing a general architecture for classification and regression systems inspired from Deep Learning, introducing a particular form for this architecture, which, despite its simplicity, produces remarkable results on a number of benchmark problems and the usage of said architecture in a Computer Vision text detection and recognition problem.
 
-Some conventions: Vectors are written in boldface with lower case letters, like this $\textbf{v}$. Addressing elment $i$ is done with a subscript, like this: $\textbf{v}_i$. Accessing a set of element $\Lambda$ is done with a subscript, but using the whole set, like this: $\textbf{v}_\Lambda$. It is understood that the elements are produced in increasing index order. Matrices are written in boldface with capital letters, like this $\textbf{A}$. Accessing a certain column $i$ is done with a superscript, like this: $\textbf{A}^i$. Accessing a certain element $j$ in column $i$ is done with both a superscript and a subscript, like this: $\textbf{A}^i_j$. Accessing a certain subset of columns $\Lambda$ is done with a superscript, but using the whole set, like this: $\textbf{A}^\Lambda$. It is understood that the columns are produced in increasing index order. Accessing a certain subset of indices $\Lambda$ of column $i$ is done with both a superscript and a subscript, like this: $\textbf{A}^i_\Lambda$. It is understood that the elements are produced in increasing column order. Accessing a certain subset of indices $\Theta$ of a certain subset of columns $\Lambda$ is done using both a superscript and a subscript, like this: $\textbf{A}^\Lambda_\Theta$. It is understood that the columns are produced in increasing index order and the elements from each column are produced in increasing index order as well.
+The classification problem has received tremendous interest from the scientific community. As such, there exist efficient algorithms with a solid theoretical base such as Support Vector Machines and Classification Trees, as well as techniques for combining and boosting such methods. Each has its strengths and weaknesses, however, and when it comes to visual information processing these techniques show their limitations. Problems arise because of the very-high dimensionality of the data, because of the non-standard probability distribution which generated the data and because of non-linear dependencies between features.
 
-In all our experiments, images were represented by matrices stored in column-major order. Linearization respects this convention. Therefore, the first $p$ coefficients of a linearized patch correspond to the first column, the next $p$ correspond to the second column and so on. This convention will be used wherever we do a linearization, regardeless of dimension. Talk about tensor linearization here.
+There is, however, a known implementation with superb results - the human brain. For the vast majority of problems, this is the gold-standard which has yet to be beaten. It therefore seems natural to seek out ideas from studies of the brain, particularly of those regions responsible for the processing of aural and visual sensory data. While we do not have a full understanding of the brain, and not even of the first stage of visual processing, dubbed the V1 area \cite{understanding-V1,what-85percent-V1-doing}, the little we have gleamed so far has allowed us to build better systems for supervised \cite{gradient-based-learning,convolutional-networks-vision,best-practices-cnn,text-detection-character-recognition-unsupervised-feature-learning,multi-column-neural-networks,cnn-commitees-handwritten-character} and unsupervised learning \cite{high-level-features-unsupervised-feature-learning,tiny-images,reducing-dimensionality-neural-networks} of sensory data.
 
-This work presents several contributions: a general architecture for feature extraction for computer vision classification or regression, with a neural-network like structure, but much more general, a novel way of computing nonlinearities in it which produces state-of-the-art results on two benchmark image recognition tasks, a description of a text detection system, and experimental results with it and the two image recongnition tasks.
+The form these systems take is, at its core, that of a neural network. It seem surprising that techniques which were thought surpassed by the advent of tools with a better theoretical background such as Support Vector Machines or with simpler training procedures such as Boosted Trees or Random Forests have now come back in fashion \cite{comparing-svm-cnn,mnist-website,best-architecture-object-recognition}. The truth is, of course, somewhere in between. The new neural networks are very different from the old ones. More precisely, they are truer to the real neural networks found in the brain. It has long been known that the early visual pathways had great depth, of between $10$ and $20$ layers, and the new neural networks can be, if the problem requires it, very deep, with five or six layers \cite{multi-column-neural-networks,gradient-based-learning}. For reference, the classical Multilayer Perceptron has only two. However, it is not for lack of trying that the older implementations were shallow. Rather, the training techniques known at the time did not allow bigger networks to be built. The major problem was that of ``vanishing gradients'' in the backpropagation algorithm. More precisely, as gradients were propagates from the top of the network to the bottom, they became close to zero. So much so, that lower layers would contain mostly random weights, while upper layers could not be trained properly from the mess the lower layers provided. The new techniques do not replace the backpropagation algorithm, but rather manage the inherent complexity of the problem.
 
-Text detection: we are given an input image, which contains several areas of text. The goal is to detect these areas and then perform OCR on them. The task however is harder than OCR as usually natural images are provided and text is written in a variety of fonts, on a variety of backgrounds, and filmed from a variety of positions, such that the classical OCR of top-down view does not hold. Ideally this should be solved in video and online.
+The first way to do this is to restrict the allowed weights between layers. MPLs connect every neuron to to every other neuron from two consecutive layers. This means that, as with other statistical methods such as SVMs or CARTs, the input could be systematically scrambled (permuted, rotated, swapped etc.) and the methods could still produce the same results. This flies somewhat in the face of common sense. The approach taken by Convolutional Neural Networks \cite{gradient-based-learning} and variants is of maintaing the spatial or temporal structure of the inputs by linking neurons from a layer to a select group of neurons from a previous layer, usually clustered in a certain region. Thus, the number of weights is drastically reduced and the learning takes place with ``knowledge'' of the signal structure.
 
-The problem has been studied by other authors (cite them here) and in the context of deep learning (cite them here).
+The second way to manage complexity is to use a different starting point for the optimization procedure. Traditionally, initial weights for the network are randomly chosen from a tightly peaked symmetric distribution around $0$. The concept of Unsupervised Pretraining replaces this with using initial weights learned from applying various unsupervised learning methods on the data, or on an unlabeled dataset similar to it. Depending on the degree of similarity, there is Semi-Supervised \cite{text-classification-semi-supervised}, Transfer \cite{text-classification-semi-supervised} or Self-Taught \cite{self-taught-learning} Learning. In any case, with such an initial setup, the learning proceeds much better, and the actual learning through back-propagation only fine-tunes the network to the particular labeled dataset.
 
-We assume throught the usage of the lating alphabet and left-to-right, top-to-bottom writing conventions.
+For a general overview of the field as well as insights into why such systems work the way they do \cite{learning-deep-architectures-AI} is a good reference. Recent results have shown that, by far, the most important aspect of such a network is its structure and the particular ways in which it transforms the input. The weights might as well be random \cite{random-weights-feature-learning,beyond-simple-features}. To quantify this claim, for best results, the weights have to be pre-trained, but for architecture selection, or when insufficient data is available, random weights perform remarkably well. This thesis continues this line of research by proposing an architecture with superios performance using random weights. More generally, the task of classification is split into two parts, namely feature extraction and label decision. The feature extractor is modeled as a neural network whose task is that of mapping inputs into a high-dimensional space of such a nature that a simple classifier can work. The classifier can be a Perceptron, making the whole system a neural network, or can be a Linear SVM, a Kernelized SVM or even a Decision Tree. The major contribution is in the architecture description and the specific architecture which achieves good results.
 
-This work shows how I built a system for text detection, using, as the title suggests, Deep Neural Networks.
+The structure of the rest of this thesis is as follows. \textbf{Chapter \ref{chap:OverviewFeatureExtraction}} presents the high-level structure of a Deep Learning inspired feature extractor and presents the major choices available to a designer. \textbf{Chapter \ref{chap:CodingAndCodingMethods}} focuses on a major component of a feature extractor, namely the feature coding. \textbf{Chapter \ref{chap:ObtainingFeatureSet}} focuses on the another major component of a feture extractor, namely the learning of features. \textbf{Chapter \ref{chap:Experiments}} presents a number of experiments which highlight the different strengths and weaknesses of the feature coding and learning methods, as well as an example of architecture selection for two benchmark image classification problems. The strenghts of our own method and its superior results are highlighted.
 
-First we'll consider the problem on a single image. The problem can be broken down into several steps: first, find the regions of the image where text is, then for each image, corresponding to a word, segment it into characters. Then, recognize each character. Finally, build a word from each image, considering the letters as well as spellcheck-type data which is a must.
-
-The first subproblem is arguably the hardest. Suppose we have a general procedure which detects for a small image of size $\hctimes{p}{p}$ if that is a letter or a nonletter. Given such a procedure we run it over all patches found by centering each pixel. A new ``binary'' image is obtained which contains $1$ if the pixel $i,j$ is the center of a letter patch and $0$ otherwise. Several such images are built for varying values of $p$. This image gives a general indication of where the text is. Still, segmentation must be done, and, possibly oriented text segments must be generated from each image. In cases where a rectangle in one image overlaps with a rectangle in another, a method for specifying which has priority should be employed. This is a mostly hand-crafting engineering problem, and as such is solved in an heuristic way.
-
-After segemntation, a series of images are produced from the original image, which contain the words. They still must be processed and understood.
-
-The next step is thus the breaking of words into letters. The images we obtain will generally have a rectangular form, more wide than tall. We consider that a single row of letters is present, therefore segmentation only has to worry about the horizontal axis. If the image is of size $\hctimes{m}{n}$ then we have at most $n$ letters in it, in a very degenerate case, and at least one. This puts an upper bound on what we're about to do. We must also have a classifier here which knows how to separate into letters and the several punctuation marks common in words. This is a tougher classifier though and a probabilistic output would be nice for a Dynamic Programming approach to this.
-
-Much of the actual work for this project has gone into building the classifier for letter/nonletter and then specific letters.
-
-The classifier is based on a Convolutional Neural Network (CNN) (cite CNN here). However, it suffers some generalizations. Finally, we obtain a general coding system, neural network inspired, but not necesarily a classical network.
-
-For the moment assume we are given the image $I$ of size $\hctimes{m}{n}$. This can be a patch from the original image we wish to classify as letter / nonletter or a segment of an extracted image for which we wish to find the actual letter. In any case, the task at hand is image recognition. It is a complex task. The naive approach of simply training a classifier on the raw image data will usually yield poor performance, except in the most simple of cases. Image classification systems therefore consist of two parts: a feature extraction phase and a proper classification phase. The goal of the first is to transform in an input image so as to be more easily handled by the latter phase. As the name suggest, it does so by ``extracting'' certain properties of an image, generically called ``features''. For example, a feature can be the amount of blue in the top of an image, or the variance in a small patch from the image, or the response to a oriented bandpass filter around a certain position etc. Extraction might mean a simple check for the presence or absence of the property, or might be a gradual percentace of presence of the feature in the image, or it might be computed in a whole other way. All the features amployed by a feature extraction layer form the ``feature set''. In general, the extraction process might not consider all features as independent, that is, a high presence of a feature in the set migth trigger a lower resulting presence of another feature. The input of the feature extraction phase is the image, $I$, and the output is a description of the feature set, usually called the ``feature vector'', and denoted by $F$, which contains one element for each feature in the feature set, and which thus codes the extraction result. For the latter stage, only $F$ is used.
-
-Feature engineering, that is, the human-guided process of feature construction, is a big part of most machine learning applications. Usually, for best performance, deep knowledge of the problem domain must be coupled with an understanding of the Statistics and Machine Learning.
-
-In the last decade, however, automatic feature construction, known as unsupervised feature learning (cite people here), has received much attention, producing systems with state of the art performance, and, in the field of Neural Networks, allowing the construction of so called Deep Neural Networks, which were thought impossible to build by standard methods (cite google and microsoft recent results with such networks). The whole field of Deep Learning deals with automatic feature extraction in one way or another.
+We end with a description of the style conventions in use throught this thesis. Vectors are written in boldface with lower case letters - $\textbf{v}$. Addressing elment $i$ from $\textbf{v}$ is done with a subscript - $\textbf{v}_i$. Accessing a set of elements $\Lambda$ from $\textbf{v}$ is done using the set as a subscript - $\textbf{v}_\Lambda$. Matrices are written in boldface with capital letters - $\textbf{A}$. Accessing a certain column $i$ from $\textbf{A}$ is done with a superscript - $\textbf{A}^i$. Accessing a certain element $j$ in column $i$ from $\textbf{A}$ is done with both a superscript and a subscript - $\textbf{A}^i_j$. Accessing a certain set of columns $\Lambda$ from $\textbf{A}$ is done using the set as a superscript - $\textbf{A}^\Lambda$. Accessing a certain set of indices $\Lambda$ of column $i$ from $\textbf{A}$ is done using a superscript and the set as a subscript - $\textbf{A}^i_\Lambda$. Accessing a certain subset of indices $\Theta$ of a certain subset of columns $\Lambda$ from $\textbf{A}$ is done using the column set as a superscript and the element set as a subscript - $\textbf{A}^\Lambda_\Theta$. Every time a set is used for indexing, the resulting elements or columns are in increasing order of indices.
 
 \chapter{Overview of Feature Extraction}
 \label{chap:OverviewFeatureExtraction}
@@ -829,12 +817,12 @@ Returning to our experiment, we can see in \textbf{Table \ref{table:RecoderEvAll
   \caption{Initial ``good'' configurations.}
   \label{table:RecoderEvInitialConfigs}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|c|c|c|c|c|c|c|c|c|c|c|}
+  \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
     \hline
      & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^0$ & $11$ & $363$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.80 & 0.34 \tabularnewline\hline
-    $\Theta_2^0$ & $11$ & $363$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 99.06 & 0.41 \tabularnewline\hline
-    $\Theta_3^0$ & $11$ & $363$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & 99.01 & 0.23 \tabularnewline
+    $\Theta_1^0$ & $11$ & $363$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & $\textbf{99.06}$ & $0.26$ \tabularnewline
+    $\Theta_2^0$ & $11$ & $363$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & $\textbf{99.28}$ & $0.31$ \tabularnewline
+    $\Theta_3^0$ & $11$ & $363$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & $\textbf{99.13}$ & $0.20$ \tabularnewline
     \hline
   \end{tabularx}
 \end{table}
