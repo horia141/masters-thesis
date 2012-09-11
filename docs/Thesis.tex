@@ -20,7 +20,8 @@
 \usepackage{subfigure}
 \usepackage{multirow}
 \usepackage{wrapfig}
-\usepackage{afterpage}
+\usepackage{tikz}
+\usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri}
 
 \floatstyle{boxed}
 \restylefloat{figure}
@@ -79,7 +80,7 @@
 
 \unnumberedsection{Introduction}
 
-This thesis will study the application of new principles in Machine Learning, collectively known under the umbrella term of Deep Learning, to the task of image recognition. The task can be formulated as a classification problem, which has been extensively studied by the Statistics and Machine Learning communities. My own contribution to this field is proposing a general architecture for classification and regression systems inspired from Deep Learning, introducing a particular form for this architecture, which, despite its simplicity, produces remarkable results on a number of benchmark problems and the usage of said architecture in a Computer Vision text detection and recognition problem.
+This thesis will study the application of new principles in Machine Learning, known under the umbrella term of Deep Learning, to the task of image recognition. The task can be formulated as a classification problem, which has been extensively studied by the Statistics and Machine Learning communities. My own contribution to this field is proposing a general architecture for classification and regression systems inspired from Deep Learning, introducing a particular form for this architecture, which, despite its simplicity, produces remarkable results on a number of benchmark problems and the usage of said architecture in a Computer Vision text detection and recognition problem.
 
 The classification problem has received tremendous interest from the scientific community. As such, there exist efficient algorithms with a solid theoretical base such as Support Vector Machines and Classification Trees, as well as techniques for combining and boosting such methods. Each has its strengths and weaknesses, however, and when it comes to visual information processing these techniques show their limitations. Problems arise because of the very-high dimensionality of the data, because of the non-standard probability distribution which generated the data and because of non-linear dependencies between features.
 
@@ -95,26 +96,136 @@ For a general overview of the field as well as insights into why such systems wo
 
 The structure of the rest of this thesis is as follows. \textbf{Chapter \ref{chap:OverviewFeatureExtraction}} presents the high-level structure of a Deep Learning inspired feature extractor and presents the major choices available to a designer. \textbf{Chapter \ref{chap:CodingAndCodingMethods}} focuses on a major component of a feature extractor, namely the feature coding. \textbf{Chapter \ref{chap:ObtainingFeatureSet}} focuses on the another major component of a feture extractor, namely the learning of features. \textbf{Chapter \ref{chap:Experiments}} presents a number of experiments which highlight the different strengths and weaknesses of the feature coding and learning methods, as well as an example of architecture selection for two benchmark image classification problems. The strenghts of our own method and its superior results are highlighted.
 
-We end with a description of the style conventions in use throught this thesis. Vectors are written in boldface with lower case letters - $\textbf{v}$. Addressing elment $i$ from $\textbf{v}$ is done with a subscript - $\textbf{v}_i$. Accessing a set of elements $\Lambda$ from $\textbf{v}$ is done using the set as a subscript - $\textbf{v}_\Lambda$. Matrices are written in boldface with capital letters - $\textbf{A}$. Accessing a certain column $i$ from $\textbf{A}$ is done with a superscript - $\textbf{A}^i$. Accessing a certain element $j$ in column $i$ from $\textbf{A}$ is done with both a superscript and a subscript - $\textbf{A}^i_j$. Accessing a certain set of columns $\Lambda$ from $\textbf{A}$ is done using the set as a superscript - $\textbf{A}^\Lambda$. Accessing a certain set of indices $\Lambda$ of column $i$ from $\textbf{A}$ is done using a superscript and the set as a subscript - $\textbf{A}^i_\Lambda$. Accessing a certain subset of indices $\Theta$ of a certain subset of columns $\Lambda$ from $\textbf{A}$ is done using the column set as a superscript and the element set as a subscript - $\textbf{A}^\Lambda_\Theta$. Every time a set is used for indexing, the resulting elements or columns are in increasing order of indices.
+We end with a description of the style conventions in use throught this thesis. Vectors are written in boldface with lower case letters - $\textbf{v}$. Addressing elment $i$ from $\textbf{v}$ is done with a subscript - $\textbf{v}_i$. Accessing a set of elements $\Lambda$ from $\textbf{v}$ is done using the set as a subscript - $\textbf{v}_\Lambda$. Matrices are written in boldface with capital letters - $\textbf{A}$. Accessing a certain column $i$ from $\textbf{A}$ is done with a superscript - $\textbf{A}^i$. Accessing a certain element $j$ in column $i$ from $\textbf{A}$ is done with both a superscript and a subscript - $\textbf{A}^i_j$. Accessing a certain set of columns $\Lambda$ from $\textbf{A}$ is done using the set as a superscript - $\textbf{A}^\Lambda$. Accessing a certain set of indices $\Lambda$ of column $i$ from $\textbf{A}$ is done using a superscript and the set as a subscript - $\textbf{A}^i_\Lambda$. Accessing a certain subset of indices $\Theta$ of a certain subset of columns $\Lambda$ from $\textbf{A}$ is done using the column set as a superscript and the element set as a subscript - $\textbf{A}^\Lambda_\Theta$. Every time a set is used for indexing, the resulting elements or columns are in increasing order of indices. [[[Talk about signal representation and linearization]]] [[[Talk about index access]]]
 
 \chapter{Overview of Feature Extraction}
 \label{chap:OverviewFeatureExtraction}
 
-In our framework, a feature is a small image patch - a filter - of some sort. The full feature set consists of $w$ normalized square images of size $d = \hctimes{p}{p}$ with $p < \min(m,n)$. We denote it by $\textbf{C} = \left[ \textbf{C}^1 \left|\right. \textbf{C}^2 \left|\right. \dots \left|\right. \textbf{C}^w \right] \in \mathbb{R}^{\hctimes{d}{w}}$. Normalization implies $\|\mathbf{C}^i\| = 1$ for all $i \in \hcrange{1}{w}$. For now we consider the feature set as given. Speaking broadly, though, feature sets can be generated randomly \cite{random-weights-feature-learning,beyond-simple-featureshow}, or taken to be a well-known set, such as DCT bases or Gabor Wavelet bases \cite{simple-method-sparse-coding}, or, even learned from a sample of patches extracted from the training set of the classification system \cite{emergence-sparse-coding,sparse-coding-strategy-V1,tiny-images}. More details about feature set construction will be given in the appropriate section.
+This chapter will describe the Deep Learning inspired feature extractor architecture. This kind of splitting of concerns in a classifier between feature extraction and actual decision is very old, and was one way of overcoming the inherent hardness of the problem. Humans would design certain features, that is, certain properties of an image, which are thought relevant to the application at hand. Then, these features are ``extracted'' from the the image, that is, the amount in which the image contains each feature is computed, producing the feature response vector. Finally, the actual statistical classifier is fed just the list of responses in order to obtain an predicted label. Two major tasks become apparent, namely, the design of features and the process of computing responses. \textbf{Chapter \ref{chap:CodingAndCodingMethods}} deals with the later problem while \textbf{Chapter \ref{chap:ObtainingFeatureSet}} deals with the former.
 
-A feature extractor is composed of a number of recoding modules, linked in a serial manner. The input image is propagated through these modules and transformed by them. The first such module starts with the image $\textbf{I}$ and produces a set of images $\{\textbf{I}_i^1\}_{i=1}^{l_1}$. The next module accepts as input $\{\textbf{I}_i^1\}_{i=1}^{l_1}$ and produces $\{\textbf{I}_i^2\}_{i=1}^{l_2}$. The last module outputs $\{\textbf{I}_i^k\}_{i=1}^{l_k}$, which is linearized to produce the feature vector $\mathbf{F}$. The stacking of these module produces a deep forward path for the input image. As we will see, this transformation can be modelled as a neural network. Hence the name Deep Neural Network. 
+In our framework, a feature is a small image patch - a filter - of some sort. A feature set consists of $w$ normalized square images of size $d = \hctimes{p}{p}$ with $p < \min(m,n)$. We denote it by $\textbf{C} = \left[ \textbf{C}^1 \left|\right. \textbf{C}^2 \left|\right. \dots \left|\right. \textbf{C}^w \right] \in \mathbb{R}^{\hctimes{d}{w}}$ with $\|\mathbf{C}^i\| = 1$ for all $i \in \hcrange{1}{w}$. For now we consider the feature set as given. Speaking broadly, though, feature sets can be generated randomly \cite{random-weights-feature-learning,beyond-simple-features}, or taken to be a well-known set, such as DCT bases or Gabor Wavelet bases \cite{simple-method-sparse-coding}, or, even learned from a sample of patches extracted from the training set of the classification system \cite{emergence-sparse-coding,sparse-coding-strategy-V1,tiny-images}. More details about feature set construction will be given in \textbf{Chapter \ref{chap:ObtainingFeatureSet}}.
 
-A module consists of several standard steps, called \emph{coding}, \emph{nonlinear}, \emph{polarity split} and \emph{reduce}. The coding step depends on an module associated feature set $\textbf{C}^m$. It produces a set of $w_m$ images of the same size as the input ones. In the simplest case, each image is obtained by convoluting the original image with the feature ${\textbf{C}^m}^i$. This is the setup of Convolutional Neural Networks \cite{gradient-based-learning}. More general, the set of $w_m$ pixels at positions $(\alpha,\beta)$ from all the images are not independent. The next section will describe coding methods, and how all the pixels at the same position can be obtained at once. In any case, using convolution, the local computation is evident. Pixel $I^m_i(\alpha,\beta)$ depends on a patch of pixels, centered at $(\alpha,\beta)$ from the input images. At the limit, all stage output images depend on all the input images (they consider the mean of the input images, for example). However, for better performance \cite{gradient-based-learning}, each output image depends only on a small subset of the input images. After coding, comes the nonlinear phase. Here, inputs can passed unaffected (the degenerate case), or they can be passed through a sigmoid like nonlinearity (logistic or hyperbolic tangent). Besides the general architecture, our own contribution is the introduction of a global nonlinearity. The experiments section will reveal the advantages of this method. Whereas the identity and sigmoid maps acted on each pixel independently, this method considers the whole set of $w_k$ pixels corresponding to input $(\alpha,\beta)$ and transforms the largest of these into $1$, and the rest in an exponentially decreasing manner from $1$ in a fashion dependent on the rank of that value in the decreasingly sorted list of pixel values. The signs of the pixels is kept, only the magnitude is important. The polarity split step is optional. If it is enabled, it effectivly doubles the number of output images (therefore $l_m = 2w_m$ in this case). One set of images keeps only the pixels with greater than zero values and makes the others zero. The other set keeps only the pixels with lesser than zero values and makes the others zero. The sign can be kept or not, depending on the situation. In any case, this computation is stricly feedforward and pixel-local. This step has been shown to improve classifier performance \cite{importance-encoding-sparse-coding-vq}, mostly because of a cheap increase in output dimensionality. Finally, the reduce step performs a subsampling of the output of the polarity split layer. This also works on each image independently. Each image is split into non-overlapping patches, as best as possible (several rows and columns at the end might be removed this way). From each patch a single value is computed. Several methods exist for this as well: a single fixed value can be used each time (a subsampling), the maximum absolute value can be used, the maximum with sign kept can be used, the sum of absolute values can be used and the sum of squares can be used. In any case, this is a patch-local feedforward computation as well.
+A feature extractor is composed of a number of $L$ recoding modules, linked in a serial manner. Each one has an associated set of features $\textbf{C}_l$ with $l \in \hcrange{1}{L}$. The input image is propagated through these modules and transformed by them. The first such module starts with the image $\textbf{I}$ and produces a set of images $\{\textbf{I}_i^1\}_{i=1}^{l_1}$. The next module accepts as input $\{\textbf{I}_i^1\}_{i=1}^{l_1}$ and produces $\{\textbf{I}_i^2\}_{i=1}^{l_2}$. The last module outputs $\{\textbf{I}_i^L\}_{i=1}^{l_L}$, which is linearized to produce the feature vector $\mathbf{F}$. The stacking of these module produces a deep forward path for the input image. As we will see, this transformation can be described as a neural network with many layers. \textbf{Figure \ref{fig:OverviewExHighLevelExtractor}} presents this high level view of the feature extractor.
 
-Several options for building feature extractors thus become apparent. The best for a certain dataset should be determined by cross-validation as well as computational concerns - for example the global order nonlinearity produces very good results, but it requires many sorts, whereas the sigmoid nonlinearity produces slightly worse results, but is simpler. In any case, the experiments section presents guidelines for all these methods.
+\begin{figure}
+\centering
+\begin{tikzpicture}
+  [data/.style={rectangle,draw=red!50,thick,fill=red!30,minimum size=10mm},
+   recoder/.style={circle,draw=blue!50,thick,fill=blue!20,minimum size=10mm}]
+  \useasboundingbox (0,0) rectangle (\textwidth,5.2);
+  \node[data] (input) at (0.95,2.3) {$\textbf{I}$};
+  \node[recoder] (recoder1) [right=of input] {$1$};
+  \node[data] (o_recoder1) [right=of recoder1] {$\{\textbf{I}_i^1\}_{i=1}^{l_1}$};
+  \node[recoder] (recoder2) [right=of o_recoder1] {$2$};
+  \node (dotsdots) [right=of recoder2] {$\dots$};
+  \node[recoder] (recoderL) [right=of dotsdots] {$L$};
+  \node[data] (o_recoderL) [right=of recoderL] {$\{\textbf{I}_i^L\}_{i=1}^{l_L}$};
+  \node[data] (output) [right=of o_recoderL] {$\textbf{F}$};
+  \draw [->] (input.east) -- (recoder1.west);
+  \draw [->] (recoder1.east) -- (o_recoder1.west);
+  \draw [->] (o_recoder1.east) -- (recoder2.west);
+  \draw [->] (recoder2.east) -- (dotsdots.west);
+  \draw [->] (dotsdots.east) -- (recoderL.west);
+  \draw [->] (recoderL.east) -- (o_recoderL.west);
+  \draw [->] (o_recoderL.east) -- (output.west);
+\end{tikzpicture}
+\caption{High level view of the feature extractor. Red nodes correspond to the different forms the input image $\textbf{I}$ passes through before the feature response $\textbf{F}$ are obtained. Blue nodes represent the different recoder modules.}
+\label{fig:OverviewExHighLevelExtractor}
+\end{figure}
 
-The feature extractor is therefore a mostly feed-forward and patch-local or pixel-local affair. The only parameters it requires are the feature sets for each recoder module. These are determined in an unsupervised fashion externally from the recoder and just plugged in at run time. This is unsupervised pre-training. The whole stack is built in a greedy fashion. The first set of features is obtained from the original images. Then these are coded with the first recoder. From the new set, features for the second layer are learned. The process continues as you would expect. 
+A recoder consists of several standard steps, called \emph{coding}, \emph{nonlinear}, \emph{polarity split} and \emph{reduce}. Suppose we are working with recoder $l \in \hcrange{1}{L}$. For the sake of simpler notation, we will ommit the subscript for the parameters, stage inputs and stage outputs that will follow. 
 
-The extractor can be modelled as a more general neural network, with specialized nodes and more complex activation functions (functions which depend on the results of other units). For extractors with a classical feedforward structure or at least one for which gradients can be computed for all parameters, an extra step can be done after unsupervised pre-training. The network can be ``fine-tuned''. That is, back-propagation is applied to the network and parameters are once-more adapted to the classification task at hand as with shallow networks. The initial weights are given by the values of the learned feature sets. Extra parameters can be added to the network in this case. Weights for the reduce layer and bias terms for the code and reduce layers. A very sharp logistic or hyperbolic tangent can be used to implement a polarity split layer in this case as well.
+The coding step is the only step that works directly with the input images and the feature set $\textbf{C}$. It produces a set of $w$ images $\{\textbf{I}_i^c\}_{i=1}^{w}$ of the same size as the ones in the input set. In the simplest case, where $l=1$ and the input image is actually $\textbf{I}$, each pixel $(\alpha,\beta)$ of image $q \in \hcrange{1}{w}$ represents the response of the patch of size $\hctimes{p}{p}$ centered around position $(\alpha,\beta)$ from $\textbf{I}$, to feature $\textbf{C}^q$. When $l > 1$, each pixel $(\alpha,\beta)$ of image $q \in \hcrange{1}{w}$ represents the combined response of patches of size $\hctimes{p}{p}$ centered around position $(\alpha,\beta)$ from a subset of the input images, to feature $\textbf{C}^q$. How the subsets are selected and how the patches are combined is up to the application, but usually stride patterns and patch means as seen in \cite{gradient-based-learning} are used. In the simplest case, ${\textbf{I}_q^c}(\alpha,\beta)$ depends only on the input patches and $\textbf{C}^q$. More generally, the dependence could be on the whole of $\textbf{C}$. Notice however, that no other dependencies on the input images exist. Therefore, all the input image information necessary for coding comes from the patches selected. The parameters that describe the coding step are the size of the patch $p$, the number of features $w$, the feature set $\textbf{C}$ and the coding method employed $\mathcal{C}_{\textbf{C}}$. More details about coding methods will be given in \textbf{Chapter \ref{chap:CodingAndCodingMethods}}.
 
-Fine-tuning wasn't the approach I took however. Just the simple extractor with one layer proved sufficient for the needs of the studied applications. 
+The nonlinear step follows the coding step. It accepts as input the set of $w$ images produced by the coding step and outputs another set of $w$ images $\{\textbf{I}_i^n\}_{i=1}^w$ of the same size as the ones in the input set. The simplest kind of nonlinearity is using none at all. Using this \emph{Linear} nonlinearity just copies the input to this step to the output. The classical nonlinearity is the logistic one. Using this \emph{Logistic} nonlinearity, each pixel from each input image is passed independently through the sigmoid function $1 / (1 + e^{-x}) - 0.5$. Notice that this function is odd, and will nonlinearly map inputs of the same magnitude but different signs to outputs of the same magnitude and corresponding signs. \textbf{Figure \ref{fig:OverviewExNonlinearities}\subref{fig:OverviewExLogistic}} shows the form this function takes for inputs in $[-10,10]$.
 
-[[[Maybe talk about HoG and SWIFT here as well.]]]
+One of our contributions deals with this stage. We introduce a nonlinearity based on the relative ranking between the responses to the different features. Using this \emph{Global} nonlinearity, each pixel from each output image $\textbf{I}_i^n(\alpha,\beta)$ depends on the order of $\textbf{I}_i^c(\alpha,\beta)$ in the set $Q(\alpha,\beta) = \{\textbf{I}_j^c(\alpha,\beta)\}_{j=1}^w$ of responses for position $(\alpha,\beta)$, through an exponentially decaying function of the form seen in $\textbf{Figure \ref{fig:OverviewExNonlinearities}\subref{fig:OverviewExExponentialDecay}}$. Simply put, the response for the feature with highest magnitude is mapped to $1$, the response for the feature with second highest magnitude is mapped to $0.5$ etc. The actual mapping might differ, depending on the decay function setup, but the spirit is the same. Therefore, for this type of nonlinearity, responses do not pass independently through the stage. Rather, pixels from all input images at a certain positions $(\alpha,\beta)$ are considered together when computing the output. It is a radical departure from the previous models of nonlinearity, and, one reason for the methods effectiveness, as will be shown in \textbf{Chapter \ref{chap:Experiments}}.
+
+\begin{figure}
+\centering
+\subfigure[Logistic function.]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/overviewex/logistic.png}
+  \label{fig:OverviewExLogistic}
+}
+\subfigure[Exponential decay function.]{
+  \includegraphics[width=0.40\textwidth]{thesis_data/overviewex/exponential_decay.png}
+  \label{fig:OverviewExExponentialDecay}
+} 
+\caption{The logistic function used in the Logistic nonlinearity and the exponential decay function used as part of the Global nonlinearity. Notice that in the latter, the input is the rank of a certain response in a list of responses.}
+\label{fig:OverviewExNonlinearities}
+\end{figure}
+
+The three different types of nonlinear stages are summarized in \textbf{Table \ref{table:OverviewExComputation}}. The parameter that describes the nonlinear step is the type of nonlinearity to employ $\mathcal{N}$.
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{The computation performed by the different stage types.}
+  \label{table:OverviewExComputation}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|c|R|}
+    \hline
+    Stage & Type & Computation \tabularnewline\hline\hline
+    \multirow{3}{*}{Nonlinear} & Linear & $\textbf{I}_i^n(\alpha,\beta) = \textbf{I}_i^c(\alpha,\beta)$ \tabularnewline
+    & Logistic & $\textbf{I}_i^n(\alpha,\beta) = {\left( 1 - \exp { \left( -\textbf{I}_i^c(\alpha,\beta) \right) } \right)}^{-1} - 0.5$ \tabularnewline
+    & Global & $\textbf{I}_i^n(\alpha,\beta) = \exp \left({\frac{\mbox{rank}[Q(\alpha,\beta)](\textbf{I}_i^c(\alpha,\beta))}{w}} \right)$ \tabularnewline\hline\hline
+    \multirow{5}{*}{Polarity Split} & None & $\textbf{I}_i^p(\alpha,\beta) = \textbf{I}_i^n(\alpha,\beta)$ \tabularnewline
+    & \multirow{2}{*}{NoSign} & $\textbf{I}_i^p(\alpha,\beta) = \max(0,\textbf{I}_i^n(\alpha,\beta)) \mbox{~if $p \leq w$}$ \tabularnewline
+    & & $\textbf{I}_i^p(\alpha,\beta) = \max(0,-\textbf{I}_i^n(\alpha,\beta)) \mbox{~if $p > w$}$ \tabularnewline
+    & \multirow{2}{*}{KeepSign} & $\textbf{I}_i^p(\alpha,\beta) = \max(0,\textbf{I}_i^n(\alpha,\beta)) \mbox{~if $p \leq w$}$ \tabularnewline
+    & & $\textbf{I}_i^p(\alpha,\beta) = \min(0,\textbf{I}_i^n(\alpha,\beta)) \mbox{~if $p > w$}$ \tabularnewline\hline\hline
+    \multirow{5}{*}{Reduce} & Subsample & $\textbf{I}_i^r(\alpha,\beta) = \textbf{I}_i^p(\alpha,\beta)$ \tabularnewline
+    & MaxNoSign & $\textbf{I}_i^r(\alpha,\beta) = \max(\left| \textbf{I}_i^p(\hcrange{\alpha}{\alpha+r},\hcrange{\beta}{\beta+r}) \right|)$ \tabularnewline
+    & MaxKeepSign & $\textbf{I}_i^r(\alpha,\beta) = \max_s(\left| \textbf{I}_i^p(\hcrange{\alpha}{\alpha+r},\hcrange{\beta}{\beta+r}) \right|)$ \tabularnewline
+    & SumAbs & $\textbf{I}_i^r(\alpha,\beta) = \sum_{i=0}^{r-1}{\sum_{j=0}^{r-1}{\left| \textbf{I}_i^p(\alpha+i,\beta+j) \right|}}$ \tabularnewline
+    & SumSqr & $\textbf{I}_i^r(\alpha,\beta) = \sum_{i=0}^{r-1}{\sum_{j=0}^{r-1}{\textbf{I}_i^p(\alpha+i,\beta+j)^2}}$ \tabularnewline\hline
+  \end{tabularx}
+\end{table}
+
+The polarity split step follows the nonlinear step. It accepts as input the set of $w$ images produced by the nonlinear step and outputs another set of $l_l=w$ or $l_l=2w$ images $\{\textbf{I}_i^p\}_{i=1}^{l_l}$ of the same size as the ones in the input set. This stage can be either on or off. If it is off, then we have the simplest case, dubbed \emph{None}. This stage has no effect and the output is simply a copy of the input. If it is on, however, the output becomes twice the size of the input, in terms of number of images. The first half contains all the coefficients which have positive sign while the second half contains all the coefficients which have negative sign. Intuitively, the input was duplicated to form the output. Then, in the first half of the image set, all negative responses were replaced by $0$ while in the second half, all positive responses were replaced by $0$. Depending on how we treat signs in the seconf half, we can have two types of polarity split, \emph{NoSign} and \emph{KeepSign}, which apply or fail to apply an absolute value on the coefficients in the second half of the output image set, respectively. The operations performed here treat, again, each pixel and each image as independent. The actual operations are nonlinear of course, but not as strict as the nonlinear stage. The three different types of polarity split stages are presented in \textbf{Table \ref{table:OverviewExComputation}}. The parameter which describes the polarity split step is the type of polarity split to employ $\mathcal{P}$.
+
+The reduce step follows the polarity split step. It accepts as input the set of $l_l$ images produced by the polarity split step and outputs another set of $l_l$ images $\{\textbf{I}_i^r\}_{i=1}^{l_l}$ of size smaller by a factor of $r$ in both the number of rows and columns than the input set. If the number of rows and columns is not a multiple of $r$, the extra elements are discarded. It basically splits an input image into $\hctimes{r}{r}$ non-overlapping but tightly spaced patches. Coefficient $\textbf{I}_i^r(\alpha,\beta)$ is computed from all the pixels in $\textbf{I}_i^p(\hcrange{\alpha}{\alpha+r},\hcrange{\beta}{\beta+r})$. The simplest kind of reduce operation is simply to copy the top-left pixel from the input image to the output image and ignore all the others in the specific reduce region. This is called \emph{Subsample} reduce. Other approaches include the \emph{MaxNoSign} and \emph{MaxKeepSign} reduce operations, which make the output pixel be equal to the largest coefficiet, in amplitude, from the reduce region. The diffrence between the two is that in the former, no sign information is kept - only positive values are returned, while in the latter, sign information is kept. A sum of the different values can also be taken, and this is the approach used by the \emph{SumAbs} and \emph{SumSqr} reduce types, which compute a sum of absolute values or sum of squared values, respectively, from the reduce region. The five different types of reduce stages are presented in \textbf{Table \ref{table:OverviewExComputation}}. The parameters which describe the reduce stage are the tye of reduce stage $\mathcal{R}$ and the size of the reduce region $r$.
+
+Each stage has a well-defined role and a particular performance reason for existing. The coding stage is, obviously, needed to actually extract feature responses. Without it, there is no point in continuing. What about the other stages, then? How do they affect performance? The second stage provides the necessary boost for superior performance in classification and regression problems. This is known from classical MLPs. More precisely, using artifical neurons without any kind of non-linearity, reduced the approximation powers of the MLP to that of a normal Perceptron, as the output was still just a linear combination of the input, albeit more inefficiently written. The pair of coding and nonlinear stages give the different methods their powers. Adding a polarity split stage has been observed to increase classification accuracy \cite{importance-encoding-sparse-coding-vq}. From our point of view, it is essentially free performance, since the feature vector dimensionality doubles without a corresponding increase in feature count, which would entail larger computational costs from the coding methods. Finally, the reduce stage has the role of making the recoder more resistant to small translations of the input. If a feature ``appears'' anywhere in a reduce region, the corresponding output coefficient will have a high value, regardless of exact position.
+
+\textbf{Figure \ref{fig:OverviewExHighLevelRecoder}} shows an overview of the high-level transformations suffered by the data as it passes through a recoder. The feed-forward nature becomes apparent. However, this is not quite an ANN in the classical sense. The polarity split and reduce stages can very well be modelled as artificial neurons by an appropriate function and weight selection. The None and Logistic nonlinear stages lend themselves to such an understanding as well. However, the Global nonlinear stage as well as the kinds of coding methods we will see in \textbf{Chapter \ref{cite:CodingAndCodingMethods}} do not appear to be very amicable to such a treatement. That doens't mean the whole recoder cannot be seen as a neural network. It is - just not an MLP. Therefore, backpropagation cannot be applied unless the architecture is designed to. This has not proven a problem in practice. Good results have been obtained without fine-tuning. Moreover, we have used networks with just one recoder. The networks are still ``deep'' by MLP standards, but not as deep as could be built. This has been dictated by the properties of the datasets we benchmarked on - deeper networks were not needed. Architecture selection has become a much more important issue now. Best performance can be obtained by a rigurous search through the space of possible designs, although rules of thumb and good practices can be gleaned. Again \textbf{Chapter \ref{chap:Experiments}} provides more commentary and insights into what makes a good architecture.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+  [data/.style={rectangle,draw=red!50,thick,fill=red!30,minimum size=10mm},
+   stage/.style={circle,draw=blue!50,thick,fill=blue!20,minimum size=10mm},
+   param/.style={rectangle,draw=green!50,thick,fill=green!20,minimum size=10mm}]
+  \useasboundingbox (0,0) rectangle (\textwidth,9);
+  \node[data] (input) at (2.2,6.2) {$\{\textbf{I}_i^{l-1}\}_{i=1}^{l_{l-1}}$};
+  \node[stage] (coding) [below=of input] {$\mathcal{C}_{\textbf{C}}$};
+  \node[param] (p_coding) [below=of coding] {$p,w,\textbf{C}$};
+  \node[data] (o_coding) [below right=of coding] {$\{\textbf{I}_i^c\}_{i=1}^{w}$};
+  \node[stage] (nonlinear) [above right=of o_coding] {$\mathcal{N}$};
+  \node[data] (o_nonlinear) [below right=of nonlinear] {$\{\textbf{I}_i^n\}_{i=1}^w$};
+  \node[stage] (polarity_split) [above right=of o_nonlinear] {$\mathcal{P}$};
+  \node[data] (o_polarity_split) [below right=of polarity_split] {$\{\textbf{I}_i^p\}_{i=1}^{l_l}$};
+  \node[stage] (reduce) [above right=of o_polarity_split] {$\mathcal{R}$};
+  \node[param] (p_reduce) [below=of reduce] {$r$};
+  \node[data] (o_reduce) [above=of reduce] {$\{\textbf{I}_i^r\}_{i=1}^{l_l}$};
+  \draw [->] (input.south) -- (coding.north);
+  \draw [->] (p_coding.north) -- (coding.south);
+  \draw [->] (coding.south east) -- (o_coding.north west);
+  \draw [->] (o_coding.north east) -- (nonlinear.south west);
+  \draw [->] (nonlinear.south east) -- (o_nonlinear.north west);
+  \draw [->] (o_nonlinear.north east) -- (polarity_split.south west);
+  \draw [->] (polarity_split.south east) -- (o_polarity_split.north west);
+  \draw [->] (o_polarity_split.north east) -- (reduce.south west);
+  \draw [->] (p_reduce.north) -- (reduce.south);
+  \draw [->] (reduce.north) -- (o_reduce.south);
+\end{tikzpicture}
+\caption{High level view of a recoder. Red nodes correspond to the different forms the input image set passes through before the output image set is obtained. Blue nodes represent different stages. Green nodes represent parameters for blue nodes.}
+\label{fig:OverviewExHighLevelRecoder}
+\end{figure}
+
+\clearpage
+\newpage
+\thispagestyle{empty}
+\mbox{}
 
 \chapter{Coding and Different Coding Methods}
 \label{chap:CodingAndCodingMethods}
@@ -206,8 +317,8 @@ Another way to measure sparseness is to look at the distribution of the coeffici
   \includegraphics[width=0.40\textwidth]{thesis_data/coding_methods/coeff_full.png}
   \label{fig:CodingMethodsCoeffFull}
 } 
-\label{fig:CodingMethodsCoeffHists}
 \caption{Histograms for sparse and normal code words. There are $61$ bins spread evenly in $[-1.5,1.5]$. All horizontal axes are between $[-1.5,1.5]$ all vertical one are between $[0,250]$.}
+\label{fig:CodingMethodsCoeffHists}
 \end{figure}
 
 The methods we are going to study will directly constrain either $\rho(\textbf{a})$ or the shape of the distribution in order to achieve the desired level of sparseness. The augumented optimization problem becomes:
@@ -799,7 +910,7 @@ Before we describe the experiments performed and the results obtained, \textbf{F
     $p$ & $5,7,9,11,13,15,17$ \tabularnewline \hline
     $w$ & $p^2,3p^2$ and $1024,1536,2048$ \tabularnewline \hline
     $\textbf{C}$ & Random, \textbf{PCA}, Sparse \tabularnewline \hline
-    $\hat{\rho} = k / w$ & $0.05,0.10,\dots,0.70,0.75$ \tabularnewline \hline
+    $\hat{\rho} = k / w$ & $0.05,0.10,\dots,0.45,0.50$ \tabularnewline \hline
     $\mathcal{C}_{\textbf{C},k}$ & \textbf{Corr}, \textbf{MP}, \textbf{OMP}, \textbf{OOMP} \tabularnewline \hline
     $\mathcal{N}$ & Linear, Logistic, GlobalOrder \tabularnewline \hline
     $\mathcal{P}$ & None, NoSign, KeepSign \tabularnewline \hline
@@ -820,9 +931,9 @@ Returning to our experiment, we can see in \textbf{Table \ref{table:RecoderEvAll
   \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
     \hline
      & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^0$ & $11$ & $363$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & $\textbf{99.06}$ & $0.26$ \tabularnewline
-    $\Theta_2^0$ & $11$ & $363$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & $\textbf{99.28}$ & $0.31$ \tabularnewline
-    $\Theta_3^0$ & $11$ & $363$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & $\textbf{99.13}$ & $0.20$ \tabularnewline
+    $\Theta_1^0$ & $11$ & $3p^2$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & $\textbf{99.06}$ & $0.26$ \tabularnewline
+    $\Theta_2^0$ & $11$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & $\textbf{99.28}$ & $0.31$ \tabularnewline
+    $\Theta_3^0$ & $11$ & $2p^2$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & $\textbf{99.13}$ & $0.20$ \tabularnewline
     \hline
   \end{tabularx}
 \end{table}
@@ -835,40 +946,18 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Summarized experiment results for MNIST.}
   \label{table:RecoderEvMNISTResultsSummarized}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|c|c|c|c|c|c|c|c|c|c|c|}
+  \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
     \hline
     & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^1$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_2^1$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_3^1$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
-    $\Theta_1^2$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_2^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_3^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
-    $\Theta_1^3$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_2^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_3^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    \hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Summarized experiment results for SmallNORB.}
-  \label{table:RecoderEvNORBSmallResultsSummarized}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|c|c|c|c|c|c|c|c|c|c|c|}
-    \hline
-    & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^1$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_2^1$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_3^1$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
-    $\Theta_1^2$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_2^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_3^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
-    $\Theta_1^3$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_2^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline
-    $\Theta_3^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & GlobalOrder & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_1^1$ & $11$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
+    $\Theta_2^1$ & $15$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
+    $\Theta_3^1$ & $13$ & $3p^2$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & x & x \tabularnewline\hline\hline
+    $\Theta_1^2$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_2^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_3^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
+    $\Theta_1^3$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_2^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_3^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
     \hline
   \end{tabularx}
 \end{table}
@@ -879,15 +968,25 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for first experiments on MNIST.}
   \label{table:RecoderEvMNISTResultsPWCScore}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cRR|c|c|c|c|c|c|c|}
-    \cline{4-10}
-    & & & \multicolumn{7}{c|}{$p$} \tabularnewline \cline{4-10}
-    & & & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline \hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.30^{(1)}$ & $98.47^{(1)}$ & $98.62^{(1)}$ & $98.77^{(1)}$ & $98.68^{(1)}$ & $98.76^{(1)}$ & $98.56^{(1)}$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{ccRR|ccccccc|}
+    \cline{5-11}
+    & & & & \multicolumn{7}{c|}{$p$} \tabularnewline \cline{5-11}
+    & & & & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.41$ & $98.45$ & $98.64$ & $98.69$ & $98.68$ & $98.62$ & $98.56$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.46$ & $98.62$ & $98.81$ & $98.85$ & $98.77$ & $98.76$ & $98.68$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.01$ & $98.15$ & $98.30$ & $98.50$ & $98.52$ & $98.52$ & $98.49$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.04$ & $98.25$ & $98.46$ & $98.54$ & $98.62$ & $98.71$ & $98.73$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.23$ & $98.32$ & $98.51$ & $98.50$ & $98.59$ & $98.73$ & $98.87$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.91$ & $98.28$ & $98.68$ & $98.82$ & $98.87$ & $98.91$ & $98.89$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.24$ & $98.62$ & $98.85$ & $\textbf{98.95}$ & $98.88$ & $\textbf{98.99}$ & $98.95$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.42$ & $97.82$ & $98.21$ & $98.31$ & $98.32$ & $98.51$ & $98.54$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.52$ & $97.85$ & $98.29$ & $98.54$ & $98.56$ & $98.77$ & $98.78$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $97.96$ & $97.94$ & $98.25$ & $98.28$ & $98.38$ & $98.52$ & $98.68$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.62$ & $98.62$ & $98.68$ & $98.71$ & $98.63$ & $98.64$ & $98.55$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.65$ & $98.77$ & $98.83$ & $98.84$ & $98.74$ & $98.76$ & $98.60$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.07$ & $98.24$ & $98.44$ & $98.54$ & $98.48$ & $98.47$ & $98.38$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.33$ & $98.57$ & $98.73$ & $98.80$ & $98.87$ & $98.82$ & $98.88$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.50$ & $98.63$ & $98.59$ & $98.68$ & $\textbf{98.89}$ & $98.86$ & $98.80$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -897,22 +996,34 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for second experiment on MNIST.}
   \label{table:RecoderEvMNISTResultsRhoCCkScore}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccc|R|R|R|R|R|}
-    \cline{4-8}
-    & & & \multicolumn{5}{c|}{$\hat{\delta}$} \tabularnewline\cline{4-8}
-    & & & $0.00$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ \tabularnewline\hline
-    \multicolumn{1}{|c|}{\multirow{12}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{3}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & \multirow{3}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & \multirow{3}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & \multirow{3}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{cccc|RRRRR|}
+    \cline{5-9}
+    & & & & \multicolumn{5}{c|}{$\hat{\delta}$} \tabularnewline\cline{5-9}
+    & & & & $0.00$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_1^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_2^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_3^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -922,14 +1033,20 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for third experiment on MNIST.}
   \label{table:RecoderEvMNISTSmallResultsNP}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cR|R|R|R|}
-    \cline{3-5}
-    & & \multicolumn{3}{c|}{$\mathcal{N}$} \tabularnewline
-    \cline{3-5}
-    & & Linear & Logistic & GlobalOrder \tabularnewline\hline
-    \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & NoSign & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & KeepSign & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{ccR|RRR|}
+    \cline{4-6}
+    & & & \multicolumn{3}{c|}{$\mathcal{N}$} \tabularnewline
+    \cline{4-6}
+    & & & Linear & Logistic & Global \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_1^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_2^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_3^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -939,16 +1056,48 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for fourth experiment on MNIST.}
   \label{table:RecoderEvMNISTSmallResultsRr}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cR|c|c|c|c|c|c|c|c|}
-    \cline{3-10}
-    & & \multicolumn{8}{c|}{$r$} \tabularnewline
-    \cline{3-10}
-    &            & 2 & 3 & 4 & 6 & 8 & 10 & 14 & 20 \tabularnewline\hline
-    \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & MaxNoSign   & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & MaxKeepSign & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & SumAbs      & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & SumSqr      & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{ccc|RRRRRRRR|}
+    \cline{4-11}
+    & & & \multicolumn{8}{c|}{$r$} \tabularnewline
+    \cline{4-11}
+    & & & 2 & 3 & 4 & 6 & 8 & 10 & 14 & 20 \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Summarized experiment results for SmallNORB.}
+  \label{table:RecoderEvNORBSmallResultsSummarized}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
+    \hline
+    & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
+    $\Theta_1^1$ & $11$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
+    $\Theta_2^1$ & $15$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
+    $\Theta_3^1$ & $13$ & $3p^2$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & x & x \tabularnewline\hline\hline
+    $\Theta_1^2$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_2^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_3^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
+    $\Theta_1^3$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_2^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    $\Theta_3^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
+    \hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -958,15 +1107,25 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for first experiments on SmallNORB.}
   \label{table:RecoderEvNORBSmallResultsPWCScore}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cRR|c|c|c|c|c|c|c|}
-    \cline{4-10}
-    & & & \multicolumn{7}{c|}{$p$} \tabularnewline \cline{4-10}
-    & & & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline \hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.30^{(1)}$ & $98.47^{(1)}$ & $98.62^{(1)}$ & $98.77^{(1)}$ & $98.68^{(1)}$ & $98.76^{(1)}$ & $98.56^{(1)}$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 & 98.50 \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{ccRR|ccccccc|}
+    \cline{5-11}
+    & & & & \multicolumn{7}{c|}{$p$} \tabularnewline \cline{5-11}
+    & & & & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.41$ & $98.45$ & $98.64$ & $98.69$ & $98.68$ & $98.62$ & $98.56$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.46$ & $98.62$ & $98.81$ & $98.85$ & $98.77$ & $98.76$ & $98.68$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.01$ & $98.15$ & $98.30$ & $98.50$ & $98.52$ & $98.52$ & $98.49$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.04$ & $98.25$ & $98.46$ & $98.54$ & $98.62$ & $98.71$ & $98.73$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.23$ & $98.32$ & $98.51$ & $98.50$ & $98.59$ & $98.73$ & $98.87$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.91$ & $98.28$ & $98.68$ & $98.82$ & $98.87$ & $98.91$ & $98.89$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.24$ & $98.62$ & $98.85$ & $\textbf{98.95}$ & $98.88$ & $\textbf{98.99}$ & $98.95$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.42$ & $97.82$ & $98.21$ & $98.31$ & $98.32$ & $98.51$ & $98.54$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.52$ & $97.85$ & $98.29$ & $98.54$ & $98.56$ & $98.77$ & $98.78$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $97.96$ & $97.94$ & $98.25$ & $98.28$ & $98.38$ & $98.52$ & $98.68$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.62$ & $98.62$ & $98.68$ & $98.71$ & $98.63$ & $98.64$ & $98.55$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.65$ & $98.77$ & $98.83$ & $98.84$ & $98.74$ & $98.76$ & $98.60$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.07$ & $98.24$ & $98.44$ & $98.54$ & $98.48$ & $98.47$ & $98.38$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.33$ & $98.57$ & $98.73$ & $98.80$ & $98.87$ & $98.82$ & $98.88$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.50$ & $98.63$ & $98.59$ & $98.68$ & $\textbf{98.89}$ & $98.86$ & $98.80$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -976,22 +1135,34 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for second experiment on SmallNORB.}
   \label{table:RecoderEvNORBSmallResultsRhoCCkScore}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccc|R|R|R|R|R|}
-    \cline{4-8}
-    & & & \multicolumn{5}{c|}{$\hat{\delta}$} \tabularnewline\cline{4-8}
-    & & & $0.00$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ \tabularnewline\hline
-    \multicolumn{1}{|c|}{\multirow{12}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{3}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & \multirow{3}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & \multirow{3}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & \multirow{3}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.50 + \hat{\delta}$} & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{cccc|RRRRR|}
+    \cline{5-9}
+    & & & & \multicolumn{5}{c|}{$\hat{\delta}$} \tabularnewline\cline{5-9}
+    & & & & $0.00$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_1^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_2^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_3^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -1001,14 +1172,20 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for third experiment on SmallNORB.}
   \label{table:RecoderEvNORBSmallSmallResultsNP}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cR|R|R|R|}
-    \cline{3-5}
-    & & \multicolumn{3}{c|}{$\mathcal{N}$} \tabularnewline
-    \cline{3-5}
-    & & Linear & Logistic & GlobalOrder \tabularnewline\hline
-    \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & NoSign & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & KeepSign & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{ccR|RRR|}
+    \cline{4-6}
+    & & & \multicolumn{3}{c|}{$\mathcal{N}$} \tabularnewline
+    \cline{4-6}
+    & & & Linear & Logistic & Global \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_1^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_2^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_3^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -1018,16 +1195,26 @@ We split the parameter set into three groups: feature set parameters ($p$,$w$ an
   \caption{Classification scores for fourth experiment on SmallNORB.}
   \label{table:RecoderEvNORBSmallSmallResultsRr}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cR|c|c|c|c|c|c|c|c|}
-    \cline{3-10}
-    & & \multicolumn{8}{c|}{$r$} \tabularnewline
-    \cline{3-10}
-    &            & 2 & 3 & 4 & 6 & 8 & 10 & 14 & 20 \tabularnewline\hline
-    \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & MaxNoSign   & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & MaxKeepSign & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & SumAbs      & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline
-    \multicolumn{1}{|c|}{} & SumSqr      & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ & $98.50^1$ \tabularnewline\hline
+  \begin{tabularx}{\textwidth}{ccc|RRRRRRRR|}
+    \cline{4-11}
+    & & & \multicolumn{8}{c|}{$r$} \tabularnewline
+    \cline{4-11}
+    & & & 2 & 3 & 4 & 6 & 8 & 10 & 14 & 20 \tabularnewline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
+    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
+    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
