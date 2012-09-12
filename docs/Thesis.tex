@@ -104,7 +104,22 @@ We end with a description of the style conventions in use throught this thesis. 
 
 This chapter will describe the Deep Learning inspired feature extractor architecture. This kind of splitting of concerns in a classifier between feature extraction and actual decision is very old, and was one way of overcoming the inherent hardness of the problem. Humans would design certain features, that is, certain properties of an image, which are thought relevant to the application at hand. Then, these features are ``extracted'' from the the image, that is, the amount in which the image contains each feature is computed, producing the feature response vector. Finally, the actual statistical classifier is fed just the list of responses in order to obtain an predicted label. Two major tasks become apparent, namely, the design of features and the process of computing responses. \textbf{Chapter \ref{chap:CodingAndCodingMethods}} deals with the later problem while \textbf{Chapter \ref{chap:ObtainingFeatureSet}} deals with the former.
 
-In our framework, a feature is a small image patch - a filter - of some sort. A feature set consists of $w$ normalized square images of size $d = \hctimes{p}{p}$ with $p < \min(m,n)$. We denote it by $\textbf{C} = \left[ \textbf{C}^1 \left|\right. \textbf{C}^2 \left|\right. \dots \left|\right. \textbf{C}^w \right] \in \mathbb{R}^{\hctimes{d}{w}}$ with $\|\mathbf{C}^i\| = 1$ for all $i \in \hcrange{1}{w}$. For now we consider the feature set as given. Speaking broadly, though, feature sets can be generated randomly \cite{random-weights-feature-learning,beyond-simple-features}, or taken to be a well-known set, such as DCT bases or Gabor Wavelet bases \cite{simple-method-sparse-coding}, or, even learned from a sample of patches extracted from the training set of the classification system \cite{emergence-sparse-coding,sparse-coding-strategy-V1,tiny-images}. More details about feature set construction will be given in \textbf{Chapter \ref{chap:ObtainingFeatureSet}}.
+In our framework, a feature is a small image patch - a filter - of some sort. A feature set consists of $w$ normalized square images of size $d = \hctimes{p}{p}$ with $p < \min(m,n)$. We denote it by $\textbf{C} = \left[ \textbf{C}^1 \left|\right. \textbf{C}^2 \left|\right. \dots \left|\right. \textbf{C}^w \right] \in \mathbb{R}^{\hctimes{d}{w}}$ with $\|\mathbf{C}^i\| = 1$ for all $i \in \hcrange{1}{w}$. For now we consider the feature set as given. Speaking broadly, though, feature sets can be generated randomly \cite{random-weights-feature-learning,beyond-simple-features}, or taken to be a well-known set, such as DCT bases or Gabor Wavelet bases \cite{simple-method-sparse-coding}, or, even learned from a sample of patches extracted from the training set of the classification system \cite{emergence-sparse-coding,sparse-coding-strategy-V1,tiny-images}. More details about feature set construction will be given in \textbf{Chapter \ref{chap:ObtainingFeatureSet}}. \textbf{Figure \ref{fig:OverviewExFeatures}} shows an example of three different types of feature sets.
+
+\begin{figure}
+\centering
+\subfigure{
+  \includegraphics[width=0.30\textwidth]{thesis_data/overviewex/features_dct.png}
+}
+\subfigure{
+  \includegraphics[width=0.30\textwidth]{thesis_data/overviewex/features_pca.png}
+}
+\subfigure{
+  \includegraphics[width=0.30\textwidth]{thesis_data/overviewex/features_sparse.png}
+}
+\caption{Three different types of feature sets.}
+\label{fig:OverviewExFeatures}
+\end{figure}
 
 A feature extractor is composed of a number of $L$ recoding modules, linked in a serial manner. Each one has an associated set of features $\textbf{C}_l$ with $l \in \hcrange{1}{L}$. The input image is propagated through these modules and transformed by them. The first such module starts with the image $\textbf{I}$ and produces a set of images $\{\textbf{I}_i^1\}_{i=1}^{l_1}$. The next module accepts as input $\{\textbf{I}_i^1\}_{i=1}^{l_1}$ and produces $\{\textbf{I}_i^2\}_{i=1}^{l_2}$. The last module outputs $\{\textbf{I}_i^L\}_{i=1}^{l_L}$, which is linearized to produce the feature vector $\mathbf{F}$. The stacking of these module produces a deep forward path for the input image. As we will see, this transformation can be described as a neural network with many layers. \textbf{Figure \ref{fig:OverviewExHighLevelExtractor}} presents this high level view of the feature extractor.
 
@@ -253,6 +268,9 @@ The associated quality measure for the coding method is $\mathbb{E} [ \epsilon(\
 
 The associated quality measure for the coding method is $\mathbb{E} [ \rho(\textbf{a}) ]$. \textbf{Chapter \ref{chap:Experiments}} will empirically compare coding methods from both a reconstruction and sparseness point of view, as well as presenting the links between the two quality measures and classification accuracy.
 
+\section{Correlation Coding}
+\label{sec:CorrelationCoding}
+
 The simplest coding method, named \textbf{Corr}, builds $\textbf{a}$ as the inner-product between the signal and each feature. The inner-product is a useful similarity measure in the Euclidean spaces we usually work with and is directly proportional to the ``angle'' between signal and feature. Let $\textbf{a}^\star$ be the associated code for input $\textbf{x}$. This method produces it and the approximation $\textbf{C}\textbf{a}^\star$ as:
 
 \begin{align*}
@@ -263,6 +281,9 @@ The simplest coding method, named \textbf{Corr}, builds $\textbf{a}$ as the inne
 When the feature set is critically-complete and the vectors are orthonormal, then we have a perfect reconstruction because $\textbf{C}\textbf{C}^T = \mathbb{I}$ and $\textbf{C}\textbf{a}^\star = \textbf{x}$. This is the case, for example, when using DCT or certain wavelet feature sets. However, when the feature set is critically-complete and non-orthonormal or under-complete or over-complete, the reconstruction is no longer perfect. While for the first two cases, we have a ``bounded'' error between approximation and best approximation, given by $\textbf{C}^T\textbf{x} - \textbf{C}(\textbf{C}^T\textbf{C})^{-1}\textbf{C}^T\textbf{x}$, in the latter case the error norm grows as the number of features grows. The experiments will illustrate this, but it is intuitively obvious: since the reconstruction is a sum of features weighted by the response of the signal to each feature and \textbf{Corr} computes responses independently for each feature and there is no reason to thing that after a certain value of $w$, features will not be similar to the signal, the responses will have independently large values, thus the error will tend to increase as more and more terms are added.
 
 Because of this, simply using the \textbf{Corr} coding method will yield poor results for most tasks, without extra limiting factors in the architecture. MLPs and CNNs, for example, use this method coupled with a logistic nonlinearity. The advantage of this method is that it computes each code coefficient independently. In the larger scheme of things, this means that each output pixel from the coding stage is independent from each other. Furthermore, the type of computation performed - a weighted sum - is amenable to analysis. As such, fine-tuning by back-propagation will only work when employing this method as a coding method. The next methods will lose the coefficient independence property but will gain better reconstructive and sparseness inducing properties.
+
+\section{Least Squares Approximation}
+\label{sec:LeastSquaresApproximation}
 
 In general, coding methods try to build an $\textbf{a}^\star$ that will produce the best approximation of $\textbf{x}$, usually subject to some constraints, most notably, sparseness ones. If we pose the problem as one of minimizing $\epsilon(\textbf{a})$ we stumble upon the classical least squares problem:
 
@@ -309,6 +330,9 @@ Actually computing the inverse of $\textbf{C}^T\textbf{C}$ is not recommended ho
 We have reduced the problem of finding the optimal code and reconstruction to transpose operations, matrix-vector multiplications and solving upper triangular systems of equations, all of which can be efficiently performed in $\Theta(wd)$ time. Finding $\textbf{Q}$ and $\textbf{R}$ is another story however, but $\Theta(w^2d)$ algorithms based on the Gram-Schmidt decomposition exist for this purpose. The overall time complexity is therefore $\Theta(w^2d)$. Notice also that, when $w = d$, $\textbf{Q}$ actually is an orthonormal matrix, therefore $\textbf{C}\textbf{x} = \textbf{Q}\textbf{Q}^T\textbf{x} = \textbf{x}$. We obtain perfect reconstruction, which is what we would have expected since the columnspace of $\textbf{C}$ is equal to $\hcsignalspace$.
 
 For very large values of $d$ and $w$, performing the computations required for the analytic solution can be prohibitive. Since the minimization problem is convex, techniques from classical optimization can be used to find a suitable $\textbf{a}^\star$ without actually performing any inversion of $\textbf{C}$. This is the interative solution to the least squares problem. Most algorithms require the ability to compute the cost function as well as the gradient of this function with respect to $\textbf{a}$. Both operations can be implemented in terms of transpose operations, matrix-vector multiplications and vector additions. Actually computing them has time complexity $\Theta(wd)$ for the value of the cost function and $\Theta(wd)$ for the gradient vector at a certain $\textbf{a}$. The overall time complexity is therefore $\Theta(Twd)$, where $T$ is the number of steps required for convergence and is, hopefully, much smaller than $d$ or $w$.
+
+\section{Sparse Overcomplete Least Squares Approximation}
+\label{sec:SparseOvercompleteLeastSquaresApproximation}
 
 In the second major case, for $w > d$, the methods we've developed so far do not produce good results. The cost function retains its nice properties, with the exception that there isn't a single unique global minima, but rather a flat region of equal lowest cost. The iterative approach will produce one of these global minima, but the analytical solution via QR decomposition will flat out not work, as it can compute at most $d$ columns of $\textbf{Q}$, leaving the other $w - d$ equal to $\textbf{0}$. The core problem is how to restrict the space of global minima, to ones which better interest us. This is an example of an ill-posed problem and it is usually solved by augmenting the cost function in some way, in order to restrict the space of possible options. What this means basically is that using only the reconstruction error as a guide for finding $\textbf{a}^\star$ is not a precise enough constraint and we need more information about the structure of a good code in order to pick the best one.
 
@@ -360,6 +384,9 @@ Again, $\lambda$ is the regularization parameter which controls the tradeoff bet
 \begin{equation*}
 \textbf{a}^{\star} = \arg\min_{\textbf{a}} \frac{1}{2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 + \lambda \| \textbf{a} \|_p
 \end{equation*}
+
+\section{Matching Pursuit}
+\label{sec:MatchingPursuit}
 
 We will focus on a group of iterative methods for computing $\textbf{a}^\star$, known as matching pursuits, which originate in the signal processing community. The general problem they try to solve is the Lagrangian dual of the $\mathcal{L}_0$ norm least squares problem from before:
 
@@ -464,6 +491,9 @@ Thus, we have expressed the computation of the inner product between the current
 
 As it is, the runtime of this algorithm is $T_2^{MP} = \Theta(w^2d + kw)$, which does not seem like much of an improvement. However, in the broad picture, many patches are coded with the same feature set. Therefore, we need to compute only once $\mathcal{S}^f$, and then use it for all patches. The average time complexity for coding $N$ patches if $\Theta(w^2d/N + kw)$ which tends to $\Theta(kw)$ for large enough $N$. Therefore, the actual time complexity is $T_2^{MP} = \Theta(kw)$, which is an order of magnitude lower than the original time $T_1^{MP}$.
 
+\section{Orthogonal Matching Pursuit}
+\label{ref:OrthogonalMatchingPursuit}
+
 An improvement to \textbf{MP} is Orthogonal Matching Pursuit (\textbf{OMP}) \cite{matchingpursuit2,orthopursuit}, which addresses the two issues discussed above. Again, \textbf{Table \ref{table:PursuitParametrization}} shows the forms the $\text{\textbf{sim}}$ and $\text{\textbf{next}}$ functions take. Also, notice that at each iteration, only the features not considered before are processed. All the properties of \textbf{MP} hold here as well. At iteration $t$ we solve a classical least squares problem with the subset of features in $\Lambda^t$. This makes sense, because the matrix will always be tall - $\left| \Lambda^t \right| \leq d$ - otherwise we produce a $0$ norm residual which effectively stops the algorithm. The algorithm is presented in \textbf{Algorithm \ref{algo:OrthogonalMatchingPursuitMethodV1}}.
 
 \begin{algorithm}
@@ -549,6 +579,9 @@ The algorithm is presented now in \textbf{Algorithm \ref{algo:OrthogonalMatching
 
 The running time of this algorithm is $T_2^{OMP} = \Theta(dk^2)$, which is much better than $T_1^{OMP}$, but an order of magnitude larger than $T_2^{MP}$. This was to be expected however, given the greater amount of work the algorithm does, as well as its more robust properties. Another nice property of \textbf{OMP} is that $\mathcal{R}^t\textbf{x}$ is orthogonal to the span of $\textbf{Q}^1,\dots,\textbf{Q}^{t-1}$.
 
+\section{Optimized Orthogonal Matching Pursuit}
+\label{ref:OptimizedOrthogonalMatchingPursuit}
+
 A final pursuit method studied is Optimized Orthogonal Matching Pursuit (\textbf{OOMP}) \cite{optimizedorthopursuit,orthogonalls} also known as Orthogonal Least Squares (\textbf{OLS}). It is similar to \textbf{OMP}. The major difference is the way in which the decision for which $\textbf{C}^\omega$ to use is taken. We select the one feature which gives the smallest least squares difference between $\textbf{x}$ and its reconstruction, that is, the feature $\omega$ which will cause the residual $\mathcal{R}^t\textbf{x}$ comptuted after the inner-loop iteration, to have the smallest norm. Once this decision has been made, however, the behaviour is identical to $\textbf{OMP}$ and the same optimality and orthogonality properties hold. The algorithm is presented in \textbf{Algorithm \ref{algo:OptimizedOrthogonalMatchingPursuitMethodV1}}.
 
 \begin{algorithm}
@@ -626,40 +659,178 @@ When $k=1$ then all three of \textbf{MP}, \textbf{OMP} and \textbf{OOMP} produce
 \chapter{Obtaining a Feature Set}
 \label{chap:ObtainingFeatureSet}
 
-We now turn to the problem of learning the feature set $\textbf{C}$, given a coding method $\hat{\mathcal{C}}_\textbf{C}$ and a sample $\textbf{X} = \left[ \textbf{X}^1 \left|\right. \textbf{X}^2 \left|\right. \dots \left|\right. \textbf{X}^N \right] \in \mathbb{R}^{\hctimes{d}{N}}$ of linearized image patches of size $\hctimes{p}{p}$, usually extracted from either the whole training set or from a larger ``natural scenes'' dataset \cite{self-taught-learning}. The literature on feature set learning is vaster than that on coding. In particular, many methods can agnostic of a coding method and can work with whatever the user provides. More importantly, recent results show that the order of importance of the three components is: extractor architecture, coding method, feature set learning method \cite{importance-encoding-sparse-coding-vq,random-weights-feature-learning,beyond-simple-features}. The other two can almost make up for a bad feature set (say, a completely random one).
+\textbf{Chapter \ref{chap:OverviewFeatureExtraction}} described the general model of a feature extractor for image processing tasks, as well as the simpler extractor we employ in this work, which uses just one recoder module. Before the coding stage can begin, a feature set has to be provided. First, remember that a feature set consists of $w$ normalized square images of size $d = \hctimes{p}{p}$ with $p < \min(m,n)$. We denote it by $\textbf{C} = \left[ \textbf{C}^1 \left|\right. \textbf{C}^2 \left|\right. \dots \left|\right. \textbf{C}^w \right] \in \mathbb{R}^{\hctimes{d}{w}}$ with $\|\mathbf{C}^i\| = 1$ for all $i \in \hcrange{1}{w}$. Whereas previous chapters assumed this set to be ``given'', this chapter will deal with obtaining such features, with an emphasis on learning them from data.
 
-The simplest solution is to use a set of randomly generated features. Each element from $\textbf{C}^i$ is generated independently. The only constraint is that the distribution allow positive and negative values and be unimodal. Other shape constraints do not influence performance \cite{random-weights-feature-learning}. Although un-intuitive, random features work surprisingly well, hinting that the performance of this approach comes more from the architecture described in a previous section than the particular choice of features. Nevertheless, for best performance, a more structured feature set seems to be required. A correlation between feature extractor performance (as measured in classification tasks) with fixed architecture and, in turn, random features and trained features exists, and it can be employed for faster architecture selection.
+\section{Random, Handmade and DCT Features.}
+\label{sec:RandomDCTPCAFeatures}
 
-Figure \ref{fig:RandomAndHandmadeFeatures}shows an example of 16 randomly chosen features. We have for a particular feature $i$ that $C^i_{\alpha\beta} \leftarrow U[-1,1]$. A normalization also occurs. As expected, the filters do not show specific structure. However, they can be seen as selecting for sinusoids components of the inputs corresponding to the highest amplitude spectral component of the filter \cite{random-weights-feature-learning}.
+By far the simplest solution is to use a set of randomly generated features. Each $C_j^i$ is chosen independetly from a tightly peaked symmetric distribution around $0$. Surprisingly, even with such a simple setup, using a feature extraction architecture like the one we described achieves sufficient performance \cite{importance-encoding-sparse-coding-vq,beyond-simple-features}. More so, if we use the Global nonlinear stage, then random features actually provide the best performance, as \textbf{Chapter \ref{chap:Experiments}} will show. For other setups, learned features provide a significant boost to the system performance. \textbf{Figure \ref{fig:ObtainingSetFeatures}\subref{fig:ObtainingSetFeaturesRandom}} shows an example of how a set of $25$ random features look like.
 
-A feature set can be, of course, crafted by hand. Figure \ref{fig:RandomAndHandmadeFeatures}\subref{fig:HandmadeFeatures} shows an example of 10 designed features, similar to Haar Wavelets. Needless to say, this is not a scalable strategy for the common case of thousands of features currently employed in state of the art methods. A well known set can be emplyed then. Figure \ref{fig:DCTFeatures} shows several DCT features, while (figure here) shows several Gabor Wavelet features. The former are more computationally easy to work with while the latter allow overcomplete representations, thanks to their parametrization.
+Another solution would be to use hand-crafted features or a well known set of features. If the problem domain is well understood, it might be possible to design the features manually, especially if training data is scarce and the actual features are complex. This approach has severe scaling issues though, therefore it is mentioned here for the sake of completeness. DCT features are an example of a ``famous'' feature set which can be employed. They have numerous nice properties, being, for example, an orthonormal basis for $\hcsignalspace$. Naturally, only a under-completer or critically-complete feature set can be built from DCT features, usually by selecting the components of greatest frequency. This is again a major problem. Wavelet bases, especially Gabor ones \cite{sparse-coding-strategy-V1,simple-method-sparse-coding} overcome most of the problems mentioned so far. They are, by design, overcomplete, and they have numerous parameters to tweak, either manually, from domain knowledge, or automatically, through more fast learning methods. They are a viable alternative when more sophisticated methods are not desired. \textbf{Figure \ref{fig:ObtainingSetFeatures}\subref{fig:ObtainingSetFeaturesHandmade}} shows an example of $25$ hand-built features, similar to Haar wavelets. \textbf{Figure \ref{fig:ObtainingSetFeatures}\subref{fig:ObtainingSetFeaturesDCT}} shows an example of $25$ DCT features, corresponding to the lowest $5$ horizontal and vertical frequencies.
 
-The focus of this chapter is, however, on learned feature sets. We select as a training set for this purpose a set of $100000$ patches of size $d = \hctimes{11}{11}$ randomly extracted from the MNIST and SmallNORB datasets, respectively. A sample of these can be seen in image (cite here). Two pre-processing steps are applied. First, from each image the DC component is subtracted. Second, the mean of all the patches is extracted from each patch, such that $E[final_patch] = \textbf{O}_{\hctimes{11}{11}}$. The final training set can be seen in figure (fig here). See the experiments section for how the patches were extracted. Another dataset will be employed as well, for didactic purposes. It can be seen in Figure \ref{fig:ThreeComponentPointCloud}. It consists of three slightly overlapping subsets generated from a different gaussian each. The set has a relatively complicated topology and is useful for illustrating the differences in learning algorithms.
+\begin{figure}
+  \centering
+  \subfigure[Random features.]{
+    \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/features_random.png}
+    \label{fig:ObtainingSetFeaturesRandom}
+  }
+  \subfigure[Handmade features.]{
+    \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/features_handmade.png}
+    \label{fig:ObtainingSetFeaturesHandmade}
+  }
+  \subfigure[DCT features.]{
+    \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/features_dct.png}
+    \label{fig:ObtainingSetFeaturesDCT}
+  }
+  \caption{Example of three kinds of feature sets of size $w=25$.}
+  \label{fig:ObtainingSetFeatures}
+\end{figure}
+
+What the random, DCT and Gabor feature sets have in common is that they span the whole of $\hcsignalspace$. However, the types of images encountered in nature or in specific applications are not evenly distributed in this space. More likely, they reside on a lower-dimensional manifold embedded in $\hcsignalspace$. It seems silly to waste resources in order to be able to represent signals which are not relevant. Therefore, feature learning tries to build features which are adapted to the data at hand and its particularities. The set of learned features might be overcomplete even though the real dimensionality of the data may be lower than $d$, because, for better reconstructive or sparsity inducing capabilities, more features might be needed. An intuition for this situation can be seen by looking at the two dimensional dataset presented in \textbf{Figure \ref{fig:ObtainingSetFourComponent}\subref{fig:ObtainingSetFourComponentDataset}}. If we use the \textbf{MP} coding method with $k=2$ with the feature set in green, which is the canonical basis for $\mathbb{R}^2$, we obtain a coefficient distribution as in \textbf{Figure \ref{fig:ObtainingSetFourComponent}\subref{fig:ObtainingSetFourComponentFullHist}}. If we use the same coding setup but with the feature set in red, which is a sparse set with $w=4$, we obtain a coefficien distribution as in \textbf{Figure \ref{fig:ObtainingSetFourComponent}\subref{fig:ObtainingSetFourComponentSparseHist}}. There is a clear qualitative difference between the two, the latter being very sparse, even though the reconstructive power is the same, because both feature sets spanning $\mathbb{R}^2$. Finally, if we use a random feature set, we obtain a coefficien distribution as in \textbf{Figure \ref{fig:ObtainingSetFourComponent}\subref{fig:ObtainingSetFourComponentRandomHist}}. For this case as well we have a sparse distribution of coefficients, though not as pronounced as the one for the ``sparse'' feature set. The dataset set has $800$ observations. The histograms have $33$ bins, spread evenly in the interval $[-10,10]$. 
+
+\begin{figure}
+  \centering
+  \subfigure[The four component data set.]{
+    \includegraphics[width=0.90\textwidth]{thesis_data/obtainingset/four_components.png}
+    \label{fig:ObtainingSetFourComponentDataset}
+  }
+  \subfigure[Histogram for $w=2$ feature set.]{
+    \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/full_hist.png}
+    \label{fig:ObtainingSetFourComponentFullHist}
+  }
+  \subfigure[Histogram for $w=4$ sparse feature set.]{
+    \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/sparse_hist.png}
+    \label{fig:ObtainingSetFourComponentSparseHist}
+  }
+  \subfigure[Histogram for $w=4$ random feature set.]{
+    \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/random_hist.png}
+    \label{fig:ObtainingSetFourComponentRandomHist}
+  }
+  \caption{An example dataset where an overcomplete feature set induces better sparsity than a critically complete one. All histograms have horizontal axes between $[-10,10]$ and vertical axes between $[0,3000]$.}
+  \label{fig:ObtainingSetFourComponent}
+\end{figure}
+
+\section{SparseNet / Gradient Descent}
+\label{sec:SparseNetGradientDescent}
+
+We now turn to the problem of feature learning. Assume we are given a sample of $N$ linearized patches $\textbf{X} = \left[ \textbf{X}^1 \left|\right. \textbf{X}^2 \left|\right. \dots \left|\right. \textbf{X}^N \right] \in \mathbb{R}^{\hctimes{d}{N}}$ and a coding method $\mathcal{C}_\textbf{C}$. The goal is to learn a set of features $\textbf{C}^\star$ such that average ``cost'' per code word $E_{\textbf{X},\textbf{C}}$ is small. Usually the cost is taken to be the augmented cost function $\frac{1}{2} \| \textbf{x} - \textbf{C}^\star\textbf{a} \|_2^2 + \lambda \mathbb{S}(\textbf{a})$ which the given coding method is trying to minimize. We have:
+
+\begin{align*}
+E_{\textbf{X},\textbf{C}} & = \mathbb{E} [ \frac{1}{2} \| \textbf{x} - \textbf{C}\textbf{a}(\textbf{x}) \|_2^2 + \lambda\mathbb{S}(\textbf{a}(\textbf{x}))] \\
+& = \frac{1}{N} \sum_{i=1}^N{\left( \frac{1}{2} \| \textbf{X}^i - \textbf{C}\textbf{a}^i \|_2^2 + \lambda\mathbb{S}(\textbf{a}^i)) \right)} \\
+\textbf{C}^\star & = \arg\min_\textbf{C} E_{\textbf{X},\textbf{C}}
+\end{align*}
+
+Here $\textbf{a}^i$ is the best code for $\textbf{X}^i$ as computed by $\mathcal{C}_\textbf{C}$ and is usually obtained by trying to minimize the augmented cost function. We estimated the average cost on the sample we have in order to compute $E_{\textbf{X},\textbf{C}}$.
+
+The simplest learning method is PCA. It finds the directions of maximum variance in the dataset and uses those as the optimal feature set $\textbf{C}^\star$. The results of applying PCA to learn a feature set for image patches can be seen in \textbf{Figure \ref{fig:ObtainingSetLearn}\subref{fig:ObtainingSetLearnPCA}}. PCA has several problems however. First, it cannot ``learn'' more than $d$ features. Second, it assumes an unrealistic model for image data: a Gaussian point cloud. As we mentioned, the distribution of natural images is assumed to lie on a lower dimensional manifold embedded in the $d$-dimensional space and the Gaussian approximation is very crude. Thirdly, as we will see in \textbf{Chapter \ref{chap:Experiments}} PCA doesn't induce sparseness in the code word. This is to be expected from a theoretical point of view, as no special constraints for sparseness are imposed in the optimization problem which underlies PCA.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.8\textwidth]{thesis_data/three_component_point_cloud.png}
-\caption{The three component dataset.}
-\label{fig:ThreeComponentPointColud}
+\subfigure[PCA features.]{
+  \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/features_pca.png}
+  \label{fig:ObtainingSetLearnPCA}
+}
+\subfigure[Gradient descent sparse features.]{
+  \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/features_sparse_grad_st.png}
+  \label{fig:ObtainingSetLearnSparseGradSt}
+}
+\subfigure[Sparse Coding Neural Gas sparse features.]{
+  \includegraphics[width=0.30\textwidth]{thesis_data/obtainingset/features_sparse_neural_gas.png}
+  \label{fig:ObtainingSetLearnSparseNeuralGas}
+}
+\caption{Examples of three different kinds of learned feature sets of size $w=25$.}
+\label{fig:ObtainingSetLearn}
 \end{figure}
 
-The simplest learning method is PCA. It finds the directions of maximum variance in the dataset. The results of applying PCA to learn a feature set can be seen in Figure (alal). PCA has several problems however. First, it cannot ``learn'' more than $d$ features. Second, it assumes an unrealistic model for image data: a Gaussian point cloud. The distribution of natural images is assumed to lie on a lower dimensional manifold embedded in the $d$-dimensional space and the Gaussian approximation is very crude. Comparing the features from PCA and Gabor Wavelets we can see clear distinctions. The latter perform better.
+The simplest method that induces sparseness is a simple gradient descent in the space of dictionaries, trying to minimize average code word cost, as estimated on the training dataset $\textbf{X}$. This is basically the SparseNet feature learning algorithm proposed in \cite{emergence-sparse-coding}. $\mathcal{C}_\textbf{C}$ must, of course, be a coding method which has good sparseness properties. The actual implementation should use the stochastic gradient descent, working with $2-10$ patches at a time. In any case, we need to compute the gradient with respect to $\textbf{C}$:
 
-Maybe talk about ICA a little bit here.
+\begin{align*}
+\frac{d E_{\textbf{X},\textbf{C}}}{d\textbf{C}} & = \frac{d\mathbb{E} [ \frac{1}{2} \| \textbf{x} - \textbf{C}\textbf{a}(\textbf{x}) \|_2^2 + \lambda\mathbb{S}(\textbf{a}(\textbf{x}))]}{d\textbf{C}} \\
+& = \frac{d\frac{1}{N} \sum_{i=1}^N{\left( \frac{1}{2} \| \textbf{X}^i - \textbf{C}\textbf{a}^i \|_2^2 + \lambda\mathbb{S}(\textbf{a}^i)) \right)}}{d\textbf{C}} \\
+& = - \frac{1}{N} \left( \textbf{X} - \textbf{C}\textbf{A} \right) \textbf{A}^T
+\end{align*}
 
-There are at least two other general directions of learnings: autoencoders (with sparse and noisy variants) and Restricted Boltzmann Machines. We will not cover these here.
+In the last expression we have $\textbf{A} = \left[ \textbf{a}^1 \left|\right. \dots \left|\right. \textbf{a}^N \right] \in \mathbb{R}^{\hctimes{w}{N}}$ or the equivalent for the small subsample used in stochastic gradient descent. The sparseness inducing part has been removed from the gradient computation because $\mathbb{S}$ does not depend on $\textbf{C}$. Therefore, the gradient update step does not take into account any sparseness constraints, except as inposed by the coding methods themselves.
 
-The main impulse for searching for a better algorithm came from the work of Olshausen and Field \cite{emergence-sparse-coding,sparse-coding-strategy-V1}, who, building on the work of \cite{macaque-cortex}, which showed that the receptive fields of cells in the V1 area of the brain, responsible for early visual processing, had response properties similar to bandpass selective and oriented filters, not unlike certain Wavelet families, devised an algorithm for learning such filters / feature sets and replicating the behaviour of the brain. Their central insight was that sparseness was the requried constraint on the coding phase.
+The process of finding $\textbf{C}^\star$ can then be described as an alternating optimization problem, similar to the Expectation Maximization algorithm. First, a $\tilde{\textbf{C}}$ is chosen randomly as the starting point for the search. Then, an active set of signals $\tilde{\textbf{X}}$ is chosen and the associated code words are computed as $\tilde{\textbf{A}}$. For each code word, the specific optimization problem defined by $\mathcal{C}_{\tilde{\textbf{C}}}$ must be solved. After this stage is done, the $\tilde{\textbf{C}}$ is updated in the direction pointed by the gradient $dE_{\tilde{\textbf{X}},\tilde{\textbf{C}}} / d\textbf{C}$. The two stages then alternate, with a different active set at each iteration, until a convergence criterion is met. The active set can be the whole training dataset $\textbf{X}$, in which case we have a standard gradient descent, or a randomly selected subset of $\textbf{X}$, in which case we have mini-batch or stochastic gradient descent, depending on the size of the subset. After each such iteration the current features are normalized. This prevents them from growing unbounded and is a requirement by the other components of the recoder architecture. \textbf{Algorithm \ref{algo:GradSt}} presents this feature learning method.
 
-[[[Show mathematical derivation of SparseNet algorithm]]]
+\begin{algorithm}
+\caption{Gradient Learning Method}
+\label{algo:GradSt}
+\begin{algorithmic}
+\Require $\textbf{X},w,\mathcal{C}_\textbf{C},q,T_{max},\mu^0,\mu^{T_{max}}$
+\Ensure $\textbf{C}^{T_{max}}$
+\State $\textbf{C}^0 \gets \mbox{randomly initialize $w$ normalized features}$
+\For {$t = \hcrange{1}{T_{max}}$}
+\State $\mu^t \gets \mu^0(\mu^{T_{max}} / \mu_0)^{t / T_{max}}$ \Comment{Current learning rate}
+\State $\tilde{\textbf{X}} \gets \mbox{randomly select $q$ observations from $\textbf{X}$}$
+\State $\tilde{\textbf{A}} \gets \left[ \mathcal{C}_{\textbf{C}^{t-1}}(\textbf{X}^i) \mbox{~for $i \in \hcrange{1}{q}$} \right]$
+\State $\textbf{C}^t \gets \textbf{C}^{t-1} - \frac{\mu^t}{q} \left( \tilde{\textbf{X}} - \textbf{C}^{t-1}\tilde{\textbf{A}} \right) \tilde{\textbf{A}}^T$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
-Figure (there) shows examples of bases learned from these. The Zero Component Analysis transform was applied to the dataset before learning to decorelate the input components and speed up convergence.
+Historically speaking, the main reason for requiring that the coding method have good sparseness inducing properties, comes from \cite{emergence-sparse-coding,sparse-coding-strategy-V1}, who, building on the work of \cite{macaque-cortex}, which showed that the receptive fields of cells in the V1 area of the brain, responsible for early visual processing, had response properties similar to bandpass selective and oriented filters, not unlike certain Wavelet families, devised an algorithm for learning such filters / feature sets and replicating the behaviour of the brain. Their central insight was that sparseness was the requried constraint on the coding phase. Sparse bases have, after this, proven their worth in practice. \textbf{Figure \ref{fig:ObtainingSetLearn}\subref{fig:ObtainingSetLearnSparseGradSt}} shows an example of a sparse feature set learned by this method.
 
-Generalizing this, we can perform gradient descent or stochastic gradient descent with any coding method, in this double loop. For example, bases learned with inner product coding (bad) and MP, OMP and OOMP coding can be seen in figure (...).
+The SparseNet algorithm can be derived as a result of trying to estimate the distribution of images. The signal $\textbf{x}$, which is a linearized $\hctimes{p}{p}$ sized patch, comes from a certain distribution $\mathbb{P}_\textbf{x}$. Our goal is to approximate this distribution with $\hat{\mathbb{P}}_\textbf{x}[\textbf{C}]$, which is the distribution of images arising as a linear combination of the features in $\textbf{C}$. We can factor this in terms of $\textbf{a}$:
 
-[[[Other methods in this direction are MOD and K-SVD and others (build reference here)]]]
+\begin{equation*}
+\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x}) = \int{ \mathbb{P}_\textbf{x}[\textbf{C}](\textbf{x}\left|\right.\textbf{a}) \mathbb{P}_\textbf{a}(\textbf{a}) d\textbf{a}}
+\end{equation*}
 
-An alternative I've worked with and slightly improved (in the sense of generalizing it) is the Sparse Coding Neural Gas of \cite{sparse-coding-neural-gas-1,sparse-coding-neural-gas-2,sparse-coding-neural-gas-3, sparse-coding-neural-gas-4}. This is adaptation of the Neural Gas \cite{neural-gas-1,neural-gas-2} algorithm introduced in the context of vector quantization. Vector quantization can be considered as a stricter version of feature learning, where the codes are $1$-sparse and only a boolean ``indictator'' of the feature most similar to the input $\textbf{x}$, as measured by the Euclidean distance, is stored.
+Given our linear generative model and assuming a Gaussian additive noise of variance $\sigma_\epsilon^2$, we can estimate the probability of $\textbf{x}$ arising as a linear combination of the features in $\textbf{C}$ given a certain $\textbf{a}$ as:
+
+\begin{equation*}
+\mathbb{P}_\textbf{x}[\textbf{C}](\textbf{x}\left|\right.\textbf{a}) = \mathcal{N}(\textbf{C}\textbf{a},\sigma_\epsilon^2)
+\end{equation*}
+
+In the critically complete case, and per our feature independence requirement, there will be only one mode to this function (in terms of $\textbf{a}$), corresponding to the $\textbf{a}^\star$. All other points will have lower density than this. In the overcomplete case, there are an infinity of $\textbf{a}$s which could explain a single $\textbf{x}$. The maximum density is found in the subspace where $\textbf{x} = \textbf{C}\textbf{a}$, all other points having a lower density.
+
+For the coefficients, we assume a factorial distribution for each $a_i$ which incorporates our prior knowledge that the coefficients should be sparse. The distribution $\mathbb{P}_\textbf{a}$ then treats each coefficient as independent and sparse. We have:
+
+\begin{align*}
+\mathbb{P}_\textbf{a}(\textbf{a}) & = \Pi_{i=1}^{w}{\mathbb{P}(a_i)} \\
+& = \Pi_{i=1}^{w} {\frac{1}{Z_\beta} \exp(-\beta S(a_i))}
+\end{align*}
+
+Here, $\beta$ is a shape factor which controls the steepness of the distribution, $Z_\beta$ is a normalizing constant and $S$ is the function that appears in the SparseNet coding method optimization problem. It induces sparseness by forcing $\mathbb{P}(a_i)$ to have a sparse form, such as a Caucy distribution for $S(x)=\log(1 + x^2)$ and $\beta=1$. The same remarks can be made for $\mathbb{P}_\textbf{a}$ with regards to $S$ as were made for $\mathbb{S}$ in the coding method chapter.
+
+Ideally, we would want a feature set $\textbf{C}$ which causes $\mathbb{P}_\textbf{x}$ and $\hat{\mathbb{P}}_\textbf{x}[\textbf{C}]$ to be identical, or at least very close. A way to measure this closeness is with the Kullback-Liebler divergence. The closer the two functions match, the smaller this measure is. Identical functions yield a $0$ divergence. We have:
+
+\begin{equation*}
+KL[\textbf{C}] = \int{\mathbb{P}_\textbf{x}(\textbf{x}) \log{\frac{\mathbb{P}_\textbf{x}(\textbf{x})}{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})}} d\textbf{x}}
+\end{equation*}
+
+The goal of learning is finding $\textbf{C}^\star$ which minimizes this divergence. Because $\mathbb{P}_\textbf{x}$ is a constant, we have:
+
+\begin{align*}
+\textbf{C}^\star & = \arg\min_\textbf{C} KL[\textbf{C}] \\
+& = \arg\min_\textbf{C} \int{\mathbb{P}_\textbf{x}(\textbf{x}) \log{\frac{\mathbb{P}_\textbf{x}(\textbf{x})}{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})}} d\textbf{x}} \\
+& = \arg\min_\textbf{C} \int{\mathbb{P}_\textbf{x}(\textbf{x}) \log{\mathbb{P}_\textbf{x}(\textbf{x})} d\textbf{x}} - \int{\mathbb{P}_\textbf{x}(\textbf{x}) \log{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})} d\textbf{x}} \\
+& = \arg\max_\textbf{C} \int{\mathbb{P}_\textbf{x}(\textbf{x}) \log{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})} d\textbf{x}} \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \log{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})} ]
+\end{align*}
+
+The problem has turned into one of finding the feature set which maximizes the expected log-likelihood of the images under our sparse and independent prior $\mathbb{P}_\textbf{a}$. Unfortunately in order to compute $\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})$ we need to evalute an integral over all $\textbf{a}$s. This is basically intractable. However, if we assume the distribution function is peaked around a single $\textbf{a}$ we can replace the integral with just the maximum. It is a decent approximation. We have:
+
+\begin{align*}
+\textbf{C}^\star & = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \log{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})} ] = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{\hat{\mathbb{P}_\textbf{x}}[\textbf{C}](\textbf{x}\left|\right.\textbf{a})\mathbb{P}_\textbf{a}(\textbf{a})} ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{\mathcal{N}(\textbf{C}\textbf{a},\sigma_\epsilon^2)(\textbf{x}) \Pi_{i=1}^w{\frac{1}{Z_\beta} \exp(-\beta S(a_i))}} ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{ \{ \frac{1}{Z} \exp \left( -\frac{1}{2\sigma_\epsilon^2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 \right) \Pi_{i=1}^w{\frac{1}{Z_\beta} \exp(-\beta S(a_i))} \} } ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{ \{ \exp \left( -\frac{1}{2\sigma_\epsilon^2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 \right) \Pi_{i=1}^w{\exp(-\beta S(a_i))} \} } ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \{ - \frac{1}{2\sigma_\epsilon^2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 - \beta \sum_{i=1}^w{S(a_i)} \} ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \min_\textbf{a} \{ \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 + 2\beta\sigma_\epsilon^2\sum{i=1}^wS(a_i) \} ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \min_\textbf{a} \{ \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 + \lambda\sum_{i=1}^wS(a_i) \} ] \\
+& = \arg\max_\textbf{C} \frac{1}{N} \sum_{i=1}^N \min_\textbf{a} \{ \| \textbf{X}^i - \textbf{C}\textbf{a} \|_2^2 + \lambda\sum_{i=1}^wS(a_i) \}
+\end{align*}
+
+We have replaced $2\beta\sigma_\epsilon^2$ with $\lambda$. This final form is basically equivalent to the gradient descent minimization problem adapted to the SparseNet coding method and with the minimization problem for the code word cost explicitly shown.
+
+\section{Sparse Coding Neural Gas}
+\label{sec:SparseCodingNeuralGas}
+
+An alternative learning method is the Sparse Coding Neural Gas of \cite{sparse-coding-neural-gas-1,sparse-coding-neural-gas-2,sparse-coding-neural-gas-3, sparse-coding-neural-gas-4}. This is adaptation of the Neural Gas \cite{neural-gas-1,neural-gas-2} algorithm introduced in the context of vector quantization. Vector quantization can be considered as a stricter version of feature learning, where the codes are $1$-sparse and only a boolean ``indictator'' of the feature most similar to the input $\textbf{x}$, as measured by the Euclidean distance, is stored.
 
 The Neural Gas algorithm is an iterative one. It begins by initializing $\textbf{C}$ to $w$ random observations from the training sample $\textbf{X}$. Then, for a number of $T_{max}$ iterations, an adaptation process takes place, which slowly changes $\textbf{C}$ in order to best represent the distribution over the input space. More precisely, at each iteration $t$ an observation is randomly selected from $\textbf{X}$ and distances to each element of $\textbf{C}$ are computed. Each feature is then modified in a manner proportional to the distorsion between it and the signal $\textbf{x}$, on the one hand, and the ranking of this distorsion in the list of all distorsions, on the other hand. Therefore, the update process includes a local and a global component. \textbf{Algorithm \ref{algo:NeuralGas}} gives the whole picture. Note that both a time decreasing learning factor is used as well as a time decreasing neighbourhood control. 
 
@@ -671,7 +842,7 @@ The Neural Gas algorithm is an iterative one. It begins by initializing $\textbf
 \Ensure $\textbf{C}$
 \State $\textbf{C} \gets \mbox{randomly select $w$ observations from $\textbf{X}$}$
 \For {$t = \hcrange{1}{T_{max}}$}
-\State $\mu^t \gets \mu^0 (\mu^{T_max} / \mu^0)^{t / T_{max}}$ \Comment {Current learning rate}
+\State $\mu^t \gets \mu^0 (\mu^{T_{max}} / \mu^0)^{t / T_{max}}$ \Comment {Current learning rate}
 \State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$ \Comment {Current neighbourhood control}
 \State $\textbf{x} \gets \text{an observation from $\textbf{X}$}$
 \State $\textbf{a} \gets [ ~ \|\textbf{x} - \textbf{C}^i\|_2^2 ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ~ ]$
@@ -700,7 +871,7 @@ The Neural Gas algorithm works in the input space rather than feature set space.
 \end{algorithmic}
 \end{algorithm}
 
-A further improvement is possible considering the fact that many coding methods are iterative and produce orderings of a subset $\hcrange{1}{w} \setminus \Lambda^t$ of the feature elements at each iteration. \textbf{MP} and \textbf{OMP} are such methods. A second version of the Sparse Coding Neural Gas is presented as \textbf{Algorithm \ref{algo:SparseCodingNeuralGasV2}}. Notice that at each iteration only the subset of previously unselected features is updated, instead of the whole set. Also, the variable $S^i$, which is a substitute for all the abstracted coding method specific information, must contain a copy of the original feature set $\textbf{C}$ at iteration $t$, before the inner-loop coding procedure. The reason for this is that $\textbf{C}$ is updated in the inner-loop and it can cause problems for the coder to change the features as time progresses.
+A further improvement is possible considering the fact that many coding methods are iterative and produce orderings of a subset $\hcrange{1}{w} \setminus \Lambda^t$ of the feature elements at each iteration. \textbf{MP}, \textbf{OMP} and \textbf{OOMP} are such methods. A second version of the Sparse Coding Neural Gas is presented as \textbf{Algorithm \ref{algo:SparseCodingNeuralGasV2}}. Notice that at each iteration only the subset of previously unselected features is updated, instead of the whole set. Also, the variable $S^i$, which is a substitute for all the abstracted coding method specific information, must contain a copy of the original feature set $\textbf{C}$ at iteration $t$, before the inner-loop coding procedure. The reason for this is that $\textbf{C}$ is updated in the inner-loop and it can cause problems for the coder to change the features as time progresses. \textbf{Algorithm \ref{algo:SparseCodingNeuralGasV2OMP}} shows an example of how to incorporate a non-trivial coding method, namely \textbf{OMP}, into this algorithm. \textbf{Figure \ref{fig:ObtainingSetLearn}\subref{fig:ObtainingSetLearnSparseNeuralGas}} shows an example of a feature set learned with this the Sparse Coding Neural Gas.
 
 \begin{algorithm}
 \caption{Sparse Coding Neural Gas V2}
@@ -723,6 +894,41 @@ A further improvement is possible considering the fact that many coding methods 
 \end{algorithmic}
 \end{algorithm}
 
+\begin{algorithm}
+\caption{Sparse Coding Neural Gas V2 with the \textbf{OMP} coding method}
+\label{algo:SparseCodingNeuralGasV2OMP}
+\begin{algorithmic}
+\Require $\textbf{X},w,\mathcal{C},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}},k$
+\Ensure $\textbf{C}$
+\State $C \gets \mbox{randomly initialize $w$ normalized features}$
+\For {$t = \hcrange{1}{T_{max}}$}
+\State $\mu^t \gets \mu^0 (\mu^{T_{max}} / \mu^0)^{t / T_{max}}$  \Comment {Current learning rate}
+\State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$ \Comment {Current neighbourhood control}
+\State $\textbf{x} \gets \text{an observation from $\textbf{X}$}$
+\State $\Lambda^0 \gets \phi$
+\State $\textbf{a}^0 \gets \textbf{0}$
+\State $\mathcal{R}^0\textbf{x} \gets \textbf{x}$
+\State $\textbf{Q} \gets \textbf{0}$
+\State $\textbf{R} \gets \textbf{0}$
+\State $(\textbf{Q}^T\textbf{x}) \gets \textbf{0}$
+\State $\tilde{\textbf{C}} \gets \textbf{C}$
+\For {$i = \hcrange{0}{k}$}
+\State $\alpha \gets [ \langle \mathcal{R}^{i-1}\textbf{x} , \tilde{\textbf{C}}^j \rangle \mbox{~for $j \in \hcrange{1}{w} \setminus \Lambda^{i-1}$} ]$
+\State $\omega \gets \arg \max_{j \in \hcrange{1}{w} \setminus \Lambda^{i-1}} \left| \alpha \right|$
+\State $\Lambda^i \gets \Lambda^{i-1} \cup \omega$
+\State $\textbf{R}^i \gets [ \langle \tilde{\textbf{C}}^\omega, \textbf{Q}^j \rangle~\mbox{\textbf{for} $j \in \hcrange{1}{d}$ \textbf{if} $j < t$ \textbf{else} $0$} ]$ \Comment{Fill column $i$ of $\textbf{R}$}
+\State $\textbf{Q}^i \gets \tilde{\textbf{C}}^\omega - \textbf{Q}^{\hcrange{1}{i-1}}\textbf{R}^i_{\hcrange{1}{i-1}}$ \Comment{Substract projection of $\tilde{\textbf{C}}^\omega$ on all $\textbf{Q}^i$ from $\tilde{\textbf{C}}^\omega$}
+\State $\textbf{Q}^i \gets \textbf{Q}^i / \| \textbf{Q}^i \|_2$ \Comment{Normalize column $i$ of $\textbf{Q}$}
+\State $\textbf{R}^i_i \gets \langle \tilde{\textbf{C}}^\omega, \textbf{Q}^i \rangle$
+\State $(\textbf{Q}^T\textbf{x})_i \gets \langle \textbf{x}, \textbf{Q}^i \rangle$
+\State $\mathcal{R}^i\textbf{x} \gets \mathcal{R}^{i-1}\textbf{x} -  (\textbf{Q}^T\textbf{x})_i \textbf{Q}^i$
+\State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\alpha}(\alpha_j) / \lambda^t} \alpha_j (\textbf{x} - \alpha_j \textbf{C}^j) ~ \mbox{\textbf{for} $j \in \hcrange{1}{w}\setminus\Lambda^i$} ~ ]$
+\State $\textbf{C} \gets \mbox{normalize each feature in $\textbf{C}$}$
+\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
 \chapter{Experiments}
 \label{chap:Experiments}
 
@@ -736,27 +942,27 @@ We further transform only those patches which will be used as training data for 
 
 \begin{figure}
 \centering
-\subfigure[A subsample from the MNIST dataset]{
+\subfigure[A subsample from the MNIST dataset.]{
   \includegraphics[width=0.40\textwidth]{thesis_data/mnist_example.png}
   \label{fig:MNISTExample}
 }
-\subfigure[A subsample from the SmallNORB dataset]{
+\subfigure[A subsample from the SmallNORB dataset.]{
   \includegraphics[width=0.40\textwidth]{thesis_data/norbsmall_example.png}
   \label{fig:NORBSmallExample}
 }
-\subfigure[MNIST patches]{
+\subfigure[MNIST patches.]{
   \includegraphics[width=0.40\textwidth]{thesis_data/mnist_patches.png}
   \label{fig:MNISTPatches}
 }
-\subfigure[SmallNORB patches]{
+\subfigure[SmallNORB patches.]{
   \includegraphics[width=0.40\textwidth]{thesis_data/norbsmall_patches.png}
   \label{fig:NORBSmallPatches}
 }
-\subfigure[MNIST patches with ZCA applied]{
+\subfigure[MNIST patches with ZCA applied.]{
   \includegraphics[width=0.40\textwidth]{thesis_data/mnist_patches_zca.png}
   \label{fig:MNISTPatchesZCA}
 }
-\subfigure[SmallNORB patches widt ZCA applied]{
+\subfigure[SmallNORB patches widt ZCA applied.]{
   \includegraphics[width=0.40\textwidth]{thesis_data/norbsmall_patches_zca.png}
   \label{fig:NORBSmallPatchesZCA}
 }
@@ -878,6 +1084,148 @@ A summary of the results can be seen in \textbf{Table \ref{table:RecSparseSparse
 \section{Coder Architecture Evaluation}
 \label{sec:CoderArchitectureEvaluation}
 
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Results for $p$ on MNIST.}
+  \label{table:RecoderEvMNISTp}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRR|}
+    \hline
+    $p$ & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline\hline
+    Score & $98.50$ & $98.84$ & $\textbf{98.97}$ & $98.96$ & $98.96$ & $98.95$ & $98.95$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $3.6$k & $7.2$k & $11.9$k & $17.7$k & $24.8$k & $33.1$k & $42.4$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.25$ & $0.31$ & $0.36$ & $0.40$ & $0.43$ & $0.45$ & $0.46$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ on MNIST.}
+  \label{table:RecoderEvMNISTCCC}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRR|}
+    \hline
+    $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ & Random and \textbf{Corr} & Random and \textbf{MP} & Sparse and \textbf{Corr} & Sparse and \textbf{MP} \tabularnewline\hline\hline
+    Score & $\textbf{98.97}$ & $98.84$ & $98.45$ & $98.44$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.36$ & $0.45$ & $0.28$ & $0.28$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hat{\rho}$ on MNIST.}
+  \label{table:RecoderEvMNISTrho}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $\hat{\rho}$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ & $0.25$ & $0.30$ & $0.35$ & $0.40$ \tabularnewline\hline\hline
+    Score & $98.94$ & $\textbf{98.97}$ & $98.96$ & $98.95$ & $98.93$ & $98.93$ & $98.89$ & $98.86$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.22$ & $0.36$ & $0.46$ & $0.55$ & $0.61$ & $0.66$ & $0.70$ & $0.73$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{P}$ on MNIST.}
+  \label{table:RecoderEvMNISTP}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRR|}
+    \hline
+    $\mathcal{P}$ & None & NoSign & KeepSign \tabularnewline\hline\hline
+    Score & $98.97$ & $\textbf{99.03}$ & $98.99$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $23.8$k & $23.8$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.36$ & $0.19$ & $0.19$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{R}$ on MNIST.}
+  \label{table:RecoderEvMNISTR}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRR|}
+    \hline
+    $\mathcal{P}$ & Subsample & MaxNoSign & MaxKeepSign & SumAbs & SumSqr \tabularnewline\hline\hline
+    Score & $97.86$ & $99.02$ & $99.03$ & $98.87$ & $\textbf{99.03}$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $23.8$k & $23.8$k & $23.8$k & $23.8$ & $23.8$ \tabularnewline
+    $\rho(\textbf{F})$ & $0.05$ & $0.19$ & $0.19$ & $0.19$ & $0.19$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $r$ on MNIST.}
+  \label{table:RecoderEvMNISTr}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $r$ & $2$ & $3$ & $4$ & $5$ & $6$ & $7$ & $10$ & $15$ \tabularnewline\hline\hline
+    Score & $98.83$ & $98.93$ & $99.03$ & $\textbf{99.06}$ & $99.03$ & $99.03$ & $98.39$ & $94.24$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $95.2$k & $39.3$k & $23.8$k & $12.1$k & $7.7$k & $7.7$k & $1.9$ & $486$ \tabularnewline
+    $\rho(\textbf{F})$ & $0.07$ & $0.14$ & $0.19$ & $0.28$ & $0.36$ & $0.39$ & $0.62$ & $0.78$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Results for $p$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallp}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRR|}
+    \hline
+    $p$ & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline\hline
+    Score & $98.50$ & $98.84$ & $\textbf{98.97}$ & $98.96$ & $98.96$ & $98.95$ & $98.95$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $3.6$k & $7.2$k & $11.9$k & $17.7$k & $24.8$k & $33.1$k & $42.4$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.25$ & $0.31$ & $0.36$ & $0.40$ & $0.43$ & $0.45$ & $0.46$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallCCC}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRR|}
+    \hline
+    $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ & Random and \textbf{Corr} & Random and \textbf{MP} & Sparse and \textbf{Corr} & Sparse and \textbf{MP} \tabularnewline\hline\hline
+    Score & $\textbf{98.97}$ & $98.84$ & $98.45$ & $98.44$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.36$ & $0.45$ & $0.28$ & $0.28$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hat{\rho}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallrho}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $\hat{\rho}$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ & $0.25$ & $0.30$ & $0.35$ & $0.40$ \tabularnewline\hline\hline
+    Score & $98.94$ & $\textbf{98.97}$ & $98.96$ & $98.95$ & $98.93$ & $98.93$ & $98.89$ & $98.86$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.22$ & $0.36$ & $0.46$ & $0.55$ & $0.61$ & $0.66$ & $0.70$ & $0.73$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{P}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallP}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRR|}
+    \hline
+    $\mathcal{P}$ & None & NoSign & KeepSign \tabularnewline\hline\hline
+    Score & $98.97$ & $\textbf{99.03}$ & $98.99$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $23.8$k & $23.8$k \tabularnewline
+    $\rho(\textbf{F})$ & $0.36$ & $0.19$ & $0.19$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{R}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallR}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRR|}
+    \hline
+    $\mathcal{P}$ & Subsample & MaxNoSign & MaxKeepSign & SumAbs & SumSqr \tabularnewline\hline\hline
+    Score & $97.86$ & $99.02$ & $99.03$ & $98.87$ & $\textbf{99.03}$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $23.8$k & $23.8$k & $23.8$k & $23.8$ & $23.8$ \tabularnewline
+    $\rho(\textbf{F})$ & $0.05$ & $0.19$ & $0.19$ & $0.19$ & $0.19$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $r$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallr}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $r$ & $2$ & $3$ & $4$ & $5$ & $6$ & $7$ & $10$ & $15$ \tabularnewline\hline\hline
+    Score & $98.83$ & $98.93$ & $99.03$ & $\textbf{99.06}$ & $99.03$ & $99.03$ & $98.39$ & $94.24$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $95.2$k & $39.3$k & $23.8$k & $12.1$k & $7.7$k & $7.7$k & $1.9$ & $486$ \tabularnewline
+    $\rho(\textbf{F})$ & $0.07$ & $0.14$ & $0.19$ & $0.28$ & $0.36$ & $0.39$ & $0.62$ & $0.78$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
 [[[Show link reconstruction power and classification accuracy]]]
 
 In this section we will seek the best coder architectures for the image classification tasks posed by the MNIST and SmallNORB datasets, described in the start of this chapter. We will use the feature extractor model described in \textbf{Chapter \ref{chap:OverviewFeatureExtraction}}, and, as mentioned there, we will employ just one recoder module. Given a certain problem, the task is to pick the recoder parameters in such a way as to maximize the classification accuracy on the test version of the dataset. The recoder parameters are the parameters for each of the four stages. For the coding stage we have the feature size $d = \hctimes{p}{p}$, the feature set $\textbf{C}$ and $w$, the number of allowed non-small coefficients $k$ and the actual coding method $\mathcal{C}_{\textbf{C},k}$. For the nonlinear step we have the nonlinearity type $\mathcal{N}$. For the polarity split stage we have the split type $\mathcal{P}$. Finally, for the reduce step we have the reducer procedure $\mathcal{R}$ and the size of the spread $r$. Instead of $k$ we will use $\hat{\rho} = k/w$. This makes it somewhat easier to compare parameter sets, independent of $w$. Thus, a full parameterization of the recoder is $(p,w,\textbf{C},\hat{\rho},\mathcal{C}_{\textbf{C},k},\mathcal{N},\mathcal{P},\mathcal{R},r)$.
@@ -930,301 +1278,7 @@ Before we describe the experiments performed and the results obtained, \textbf{F
 
 Returning to our experiment, we can see in \textbf{Table \ref{table:RecoderEvAllowedParams}} a list of possible values for all the different parameters associated with a recoder, usable by both datasets. An exhaustive search of the full parameter space would require evaluating almost $5$ million different parameter combinations - clearly a very hard task! The only way forward is to manage this complexity. One approach for doing this, is to split the problem into several subproblems which are ``independent'' enough. The best configuration is then formed by combining the answers to the subproblems. One thing we'll need is an initial ``good-enough'' parameter set. \textbf{Table \ref{table:RecoderEvInitialConfigs}} presents not one, but two such configurations, dubbed $\Theta_1^0$,$\Theta_2^0$ and $\Theta_3^0$, which have been obtained through trial and error and eariler undocumented experiments. The subproblems will try to improve upon these three initial configurations.
 
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Initial ``good'' configurations.}
-  \label{table:RecoderEvInitialConfigs}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
-    \hline
-     & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^0$ & $11$ & $3p^2$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & $\textbf{99.06}$ & $0.26$ \tabularnewline
-    $\Theta_2^0$ & $11$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & $\textbf{99.28}$ & $0.31$ \tabularnewline
-    $\Theta_3^0$ & $11$ & $2p^2$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & $\textbf{99.13}$ & $0.20$ \tabularnewline
-    \hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
 We split the parameter set into three groups: feature set parameters ($p$,$w$ and $\textbf{C}$), coding method parameters ($\hat{\rho}$ and $\mathcal{C}_{\textbf{C},k}$) and aftercoding stage parameters ($\mathcal{N}$, $\mathcal{P}$, $\mathcal{R}$ and $r$). The subproblems will then handle each of these three parameter sets sperately. More precisely, the following procedure will be followed. Every combination of feature set parameters from \textbf{Table \ref{table:RecoderEvAllowedParams}} is used, except the $w$s which are over $1000$. More precisely, for every $p$ tested we use a critically-complete feature set and a double overcomplete feature set. We do not use feature sets of a higher count because of computational concerns. There are nine distinct values for $p$, two values for $w$ and three values for \textbf{C}. Therefore we can form $90$ different parameter combinations. For each test, the other parameters come from $\Theta_1^0$, $\Theta_2^0$ and $\Theta_3^0$ respectively. Therefore, we will test a total of $270$ full parameter combinations. After this first experiment, we select the three best full parameter configurations and name them $\Theta_1^1$, $\Theta_2^1$ and $\Theta_3^1$. We then continue with the second experiment, which looks at every combination of coding method parameters from \textbf{Table \ref{table:RecoderEvAllowedParams}}. There are twenty distinct values for $\hat{\rho}$ and three distinct values for $\mathcal{C}_{\textbf{C},k}$. Therefore we can form $60$ different parameter combinations. For each test, the other parameters come from $\Theta_1^1$, $\Theta_2^1$ and $\Theta_3^1$ respectively. Therefore, we will test a total of $180$ full parameter combinations. After this second experiment, we select the three best full parameter configurations and name them $\Theta_1^2$, $\Theta_2^2$ and $\Theta_3^2$. We then continue with the third experiment, which looks at every combination of parameters for all the stages after the coding stage. There are three distinct values for $\mathcal{N}$, three distinct values for $\mathcal{R}$, five distinct values for $\mathcal{R}$ and eight distinct values for $r$. Therefore, we can form $360$ different parameter combinations. For each test, the other parameters come from $\Theta_1^2$, $\Theta_2^2$ and $\Theta_3^2$ respectively. Therefore we will test a total of $1080$ full parameter combinations. After this third experiment, we select the three best full parameter configurations and name them $\Theta_1^3$, $\Theta_2^3$ and $\Theta_3^3$. As a final experiment we will look at how these three configurations perform with very high $w$ and varying $\hat{\rho}$.
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Summarized experiment results for MNIST.}
-  \label{table:RecoderEvMNISTResultsSummarized}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
-    \hline
-    & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^1$ & $11$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
-    $\Theta_2^1$ & $15$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
-    $\Theta_3^1$ & $13$ & $3p^2$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & x & x \tabularnewline\hline\hline
-    $\Theta_1^2$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_2^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_3^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
-    $\Theta_1^3$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_2^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_3^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    \hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for first experiments on MNIST.}
-  \label{table:RecoderEvMNISTResultsPWCScore}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccRR|ccccccc|}
-    \cline{5-11}
-    & & & & \multicolumn{7}{c|}{$p$} \tabularnewline \cline{5-11}
-    & & & & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.41$ & $98.45$ & $98.64$ & $98.69$ & $98.68$ & $98.62$ & $98.56$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.46$ & $98.62$ & $98.81$ & $98.85$ & $98.77$ & $98.76$ & $98.68$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.01$ & $98.15$ & $98.30$ & $98.50$ & $98.52$ & $98.52$ & $98.49$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.04$ & $98.25$ & $98.46$ & $98.54$ & $98.62$ & $98.71$ & $98.73$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.23$ & $98.32$ & $98.51$ & $98.50$ & $98.59$ & $98.73$ & $98.87$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.91$ & $98.28$ & $98.68$ & $98.82$ & $98.87$ & $98.91$ & $98.89$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.24$ & $98.62$ & $98.85$ & $\textbf{98.95}$ & $98.88$ & $\textbf{98.99}$ & $98.95$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.42$ & $97.82$ & $98.21$ & $98.31$ & $98.32$ & $98.51$ & $98.54$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.52$ & $97.85$ & $98.29$ & $98.54$ & $98.56$ & $98.77$ & $98.78$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $97.96$ & $97.94$ & $98.25$ & $98.28$ & $98.38$ & $98.52$ & $98.68$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.62$ & $98.62$ & $98.68$ & $98.71$ & $98.63$ & $98.64$ & $98.55$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.65$ & $98.77$ & $98.83$ & $98.84$ & $98.74$ & $98.76$ & $98.60$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.07$ & $98.24$ & $98.44$ & $98.54$ & $98.48$ & $98.47$ & $98.38$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.33$ & $98.57$ & $98.73$ & $98.80$ & $98.87$ & $98.82$ & $98.88$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.50$ & $98.63$ & $98.59$ & $98.68$ & $\textbf{98.89}$ & $98.86$ & $98.80$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for second experiment on MNIST.}
-  \label{table:RecoderEvMNISTResultsRhoCCkScore}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cccc|RRRRR|}
-    \cline{5-9}
-    & & & & \multicolumn{5}{c|}{$\hat{\delta}$} \tabularnewline\cline{5-9}
-    & & & & $0.00$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_1^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_2^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_3^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for third experiment on MNIST.}
-  \label{table:RecoderEvMNISTSmallResultsNP}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccR|RRR|}
-    \cline{4-6}
-    & & & \multicolumn{3}{c|}{$\mathcal{N}$} \tabularnewline
-    \cline{4-6}
-    & & & Linear & Logistic & Global \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_1^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_2^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_3^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for fourth experiment on MNIST.}
-  \label{table:RecoderEvMNISTSmallResultsRr}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccc|RRRRRRRR|}
-    \cline{4-11}
-    & & & \multicolumn{8}{c|}{$r$} \tabularnewline
-    \cline{4-11}
-    & & & 2 & 3 & 4 & 6 & 8 & 10 & 14 & 20 \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Summarized experiment results for SmallNORB.}
-  \label{table:RecoderEvNORBSmallResultsSummarized}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|ccccccccccc|}
-    \hline
-    & $p$ & $w$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{N}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\mathbb{E}[\rho]$ \tabularnewline\hline\hline
-    $\Theta_1^1$ & $11$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
-    $\Theta_2^1$ & $15$ & $3p^2$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & x & x \tabularnewline
-    $\Theta_3^1$ & $13$ & $3p^2$ & Sparse & $0.10$ & \textbf{OMP} & Logistic & KeepSign & SumSqr & $4$ & x & x \tabularnewline\hline\hline
-    $\Theta_1^2$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_2^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_3^2$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline\hline\hline
-    $\Theta_1^3$ & $11$ & $256$ & Sparse & $0.10$ & \textbf{MP} & Logistic & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_2^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    $\Theta_3^3$ & $11$ & $256$ & Random & $0.10$ & \textbf{Corr} & Global & None & SumSqr & $4$ & 98.50 & 0.11 \tabularnewline
-    \hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for first experiments on SmallNORB.}
-  \label{table:RecoderEvNORBSmallResultsPWCScore}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccRR|ccccccc|}
-    \cline{5-11}
-    & & & & \multicolumn{7}{c|}{$p$} \tabularnewline \cline{5-11}
-    & & & & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.41$ & $98.45$ & $98.64$ & $98.69$ & $98.68$ & $98.62$ & $98.56$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.46$ & $98.62$ & $98.81$ & $98.85$ & $98.77$ & $98.76$ & $98.68$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.01$ & $98.15$ & $98.30$ & $98.50$ & $98.52$ & $98.52$ & $98.49$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.04$ & $98.25$ & $98.46$ & $98.54$ & $98.62$ & $98.71$ & $98.73$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.23$ & $98.32$ & $98.51$ & $98.50$ & $98.59$ & $98.73$ & $98.87$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.91$ & $98.28$ & $98.68$ & $98.82$ & $98.87$ & $98.91$ & $98.89$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.24$ & $98.62$ & $98.85$ & $\textbf{98.95}$ & $98.88$ & $\textbf{98.99}$ & $98.95$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.42$ & $97.82$ & $98.21$ & $98.31$ & $98.32$ & $98.51$ & $98.54$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $97.52$ & $97.85$ & $98.29$ & $98.54$ & $98.56$ & $98.77$ & $98.78$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $97.96$ & $97.94$ & $98.25$ & $98.28$ & $98.38$ & $98.52$ & $98.68$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^0$}} & \multicolumn{1}{|c}{\multirow{5}{*}{$\textbf{C}$}} & \multicolumn{1}{|R}{\multirow{2}{*}{Random}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.62$ & $98.62$ & $98.68$ & $98.71$ & $98.63$ & $98.64$ & $98.55$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.65$ & $98.77$ & $98.83$ & $98.84$ & $98.74$ & $98.76$ & $98.60$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\textbf{PCA}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.07$ & $98.24$ & $98.44$ & $98.54$ & $98.48$ & $98.47$ & $98.38$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{\multirow{2}{*}{Sparse}} & \multicolumn{1}{|R|}{$w=p^2$} & $98.33$ & $98.57$ & $98.73$ & $98.80$ & $98.87$ & $98.82$ & $98.88$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{} & \multicolumn{1}{|R}{} & \multicolumn{1}{|R|}{$w=3p^2$} & $98.50$ & $98.63$ & $98.59$ & $98.68$ & $\textbf{98.89}$ & $98.86$ & $98.80$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for second experiment on SmallNORB.}
-  \label{table:RecoderEvNORBSmallResultsRhoCCkScore}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{cccc|RRRRR|}
-    \cline{5-9}
-    & & & & \multicolumn{5}{c|}{$\hat{\delta}$} \tabularnewline\cline{5-9}
-    & & & & $0.00$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_1^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_2^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{8}{*}{$\Theta_3^1$}} & \multicolumn{1}{|c|}{\multirow{8}{*}{$\mathcal{C}_{\textbf{C},k}$}} & \multirow{2}{*}{\textbf{Corr}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{MP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & \multirow{2}{*}{\textbf{OOMP}} & \multicolumn{1}{|c|}{$\hat{\rho}=0.05+\hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & & \multicolumn{1}{|c|}{$\hat{\rho} = 0.25 + \hat{\delta}$} & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for third experiment on SmallNORB.}
-  \label{table:RecoderEvNORBSmallSmallResultsNP}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccR|RRR|}
-    \cline{4-6}
-    & & & \multicolumn{3}{c|}{$\mathcal{N}$} \tabularnewline
-    \cline{4-6}
-    & & & Linear & Logistic & Global \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_1^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_2^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{3}{*}{$\Theta_3^2$}} & \multicolumn{1}{|c|}{\multirow{3}{*}{$\mathcal{P}$}} & None & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & NoSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & KeepSign & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Classification scores for fourth experiment on SmallNORB.}
-  \label{table:RecoderEvNORBSmallSmallResultsRr}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{ccc|RRRRRRRR|}
-    \cline{4-11}
-    & & & \multicolumn{8}{c|}{$r$} \tabularnewline
-    \cline{4-11}
-    & & & 2 & 3 & 4 & 6 & 8 & 10 & 14 & 20 \tabularnewline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_1^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_2^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline\hline
-    \multicolumn{1}{|c}{\multirow{5}{*}{$\Theta_3^3$}} & \multicolumn{1}{|c|}{\multirow{5}{*}{$\mathcal{R}$}} & Subsample   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxNoSign   & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & MaxKeepSign & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumAbs      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline
-    \multicolumn{1}{|c}{} & \multicolumn{1}{|c|}{} & SumSqr      & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ & $x^1$ \tabularnewline\hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
 
 In order to evaluate the performance of a recoder with a certain configuration $\Theta$ on a dataset, we transform both the training and the testing parts of the dataset with the recoder and then we train a Linear SVM in a One-vs-All fashion using the training part of the dataset. We then classify the testing part and measure the classification accuracy as well as compute the average sparsity. The quality of one configuration relative to another is determined using only the classification accuracy though. For speed reasons, roughly one third of the training portion of the dataset is actually used for training, the so-called \emph{model selection} subsample. This will make the classification accuracy slightly lower, but it will do so in a systematic way, enabling us to still select the proper configuration without fear of having a rank inversion when using on the full training dataset.
 
