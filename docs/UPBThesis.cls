@@ -21,7 +21,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \def\fileversion{1.0}
 \def\filedate{03/04/2011}
-\ProvidesClass{teza-upb}[\filedate\space v\fileversion\space
+\ProvidesClass{UPBThesis}[\filedate\space v\fileversion\space
 			 Standard LaTeX2e document class]
 % this style is really a driver for the report style, so pass all
 % options through.
@@ -288,21 +288,21 @@
 % so that single spacing is used.
 % (Note \def\figure{\@float{figure}<set single spacing>} doesn't work
 %  because figure has an optional argument)
-\def\@xfloat#1[#2]{\ifhmode \@bsphack\@floatpenalty -\@Mii\else
-   \@floatpenalty-\@Miii\fi\def\@captype{#1}\ifinner
-      \@parmoderr\@floatpenalty\z@
-    \else\@next\@currbox\@freelist{\@tempcnta\csname ftype@#1\endcsname
-       \multiply\@tempcnta\@xxxii\advance\@tempcnta\sixt@@n
-       \@tfor \@tempa :=#2\do
-                        {\if\@tempa h\advance\@tempcnta \@ne\fi
-                         \if\@tempa t\advance\@tempcnta \tw@\fi
-                         \if\@tempa b\advance\@tempcnta 4\relax\fi
-                         \if\@tempa p\advance\@tempcnta 8\relax\fi
-         }\global\count\@currbox\@tempcnta}\@fltovf\fi
-    \global\setbox\@currbox\vbox\bgroup 
-    \def\baselinestretch{1}\@normalsize
-    \boxmaxdepth\z@
-    \hsize\columnwidth \@parboxrestore}
+% \def\@xfloat#1[#2]{\ifhmode \@bsphack\@floatpenalty -\@Mii\else
+%    \@floatpenalty-\@Miii\fi\def\@captype{#1}\ifinner
+%       \@parmoderr\@floatpenalty\z@
+%     \else\@next\@currbox\@freelist{\@tempcnta\csname ftype@#1\endcsname
+%        \multiply\@tempcnta\@xxxii\advance\@tempcnta\sixt@@n
+%        \@tfor \@tempa :=#2\do
+%                         {\if\@tempa h\advance\@tempcnta \@ne\fi
+%                          \if\@tempa t\advance\@tempcnta \tw@\fi
+%                          \if\@tempa b\advance\@tempcnta 4\relax\fi
+%                          \if\@tempa p\advance\@tempcnta 8\relax\fi
+%          }\global\count\@currbox\@tempcnta}\@fltovf\fi
+%     \global\setbox\@currbox\vbox\bgroup 
+%     \def\baselinestretch{1}\@normalsize
+%     \boxmaxdepth\z@
+%     \hsize\columnwidth \@parboxrestore}
 
 % Single space footnotes.
 \long\def\@footnotetext#1{\insert\footins{\def\baselinestretch{1}\footnotesize

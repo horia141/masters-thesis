@@ -205,6 +205,8 @@ Each stage has a well-defined role and a particular performance reason for exist
 
 \textbf{Figure \ref{fig:OverviewExHighLevelRecoder}} shows an overview of the high-level transformations suffered by the data as it passes through a recoder. The feed-forward nature becomes apparent. However, this is not quite an ANN in the classical sense. The polarity split and reduce stages can very well be modelled as artificial neurons by an appropriate function and weight selection. The None and Logistic nonlinear stages lend themselves to such an understanding as well. However, the Global nonlinear stage as well as the kinds of coding methods we will see in \textbf{Chapter \ref{cite:CodingAndCodingMethods}} do not appear to be very amicable to such a treatement. That doens't mean the whole recoder cannot be seen as a neural network. It is - just not an MLP. Therefore, backpropagation cannot be applied unless the architecture is designed to. This has not proven a problem in practice. Good results have been obtained without fine-tuning. Moreover, we have used networks with just one recoder. The networks are still ``deep'' by MLP standards, but not as deep as could be built. This has been dictated by the properties of the datasets we benchmarked on - deeper networks were not needed. Architecture selection has become a much more important issue now. Best performance can be obtained by a rigurous search through the space of possible designs, although rules of thumb and good practices can be gleaned. Again \textbf{Chapter \ref{chap:Experiments}} provides more commentary and insights into what makes a good architecture.
 
+[[[Talk about the evolution of the dimensionality of the data as its being processed]]]
+
 \begin{figure}
 \centering
 \begin{tikzpicture}
@@ -213,7 +215,7 @@ Each stage has a well-defined role and a particular performance reason for exist
    param/.style={rectangle,draw=green!50,thick,fill=green!20,minimum size=10mm}]
   \useasboundingbox (0,0) rectangle (\textwidth,9);
   \node[data] (input) at (2.2,6.2) {$\{\textbf{I}_i^{l-1}\}_{i=1}^{l_{l-1}}$};
-  \node[stage] (coding) [below=of input] {$\mathcal{C}_{\textbf{C}}$};
+  \node[stage] (coding) [below=of input] {$\mathcal{C}_{\textbf{C},k}$};
   \node[param] (p_coding) [below=of coding] {$p,w,\textbf{C}$};
   \node[data] (o_coding) [below right=of coding] {$\{\textbf{I}_i^c\}_{i=1}^{w}$};
   \node[stage] (nonlinear) [above right=of o_coding] {$\mathcal{N}$};
@@ -460,13 +462,13 @@ The runtime of this variant is $T_1^{MP} = \Theta(kwd)$. This is somewhat subopt
 
 \begin{align*}
 \mathcal{R}^t\textbf{x} & = \mathcal{R}^{t-1}\textbf{x} - a_\omega^t\textbf{C}^\omega \\
-\mathcal{R}^t\textbf{x} & = \mathcal{R}^{t-1}\textbf{x} - \langle \mathcal{R}^{t-1}\textbf{x}, \mathcal{C}^\omega \rangle \textbf{C}^\omega
+\mathcal{R}^t\textbf{x} & = \mathcal{R}^{t-1}\textbf{x} - \langle \mathcal{R}^{t-1}\textbf{x}, \textbf{C}^\omega \rangle \textbf{C}^\omega
 \end{align*}
 
 Now, if we want to compute the inner product between $\mathcal{R}^t\textbf{x}$ and a $\textbf{C}^i$, we have:
 
 \begin{align*}
-\langle \mathcal{R}^t\textbf{x}, \textbf{C}^i \rangle & = \langle \mathcal{R}^{t-1}\textbf{x} - \langle \mathcal{R}^{t-1}\textbf{x}, \mathcal{C}^\omega \rangle \textbf{C}^\omega , \textbf{C}^i \rangle \\
+\langle \mathcal{R}^t\textbf{x}, \textbf{C}^i \rangle & = \langle \mathcal{R}^{t-1}\textbf{x} - \langle \mathcal{R}^{t-1}\textbf{x}, \textbf{C}^\omega \rangle \textbf{C}^\omega , \textbf{C}^i \rangle \\
 & = \langle \mathcal{R}^{t-1}\textbf{x}, \textbf{C}^i \rangle - \langle \mathcal{R}^{t-1}\textbf{x}, \textbf{C}^\omega \rangle \langle \textbf{C}^\omega, \textbf{C}^i \rangle
 \end{align*}
 
@@ -713,7 +715,7 @@ What the random, DCT and Gabor feature sets have in common is that they span the
 \section{SparseNet / Gradient Descent}
 \label{sec:SparseNetGradientDescent}
 
-We now turn to the problem of feature learning. Assume we are given a sample of $N$ linearized patches $\textbf{X} = \left[ \textbf{X}^1 \left|\right. \textbf{X}^2 \left|\right. \dots \left|\right. \textbf{X}^N \right] \in \mathbb{R}^{\hctimes{d}{N}}$ and a coding method $\mathcal{C}_\textbf{C}$. The goal is to learn a set of features $\textbf{C}^\star$ such that average ``cost'' per code word $E_{\textbf{X},\textbf{C}}$ is small. Usually the cost is taken to be the augmented cost function $\frac{1}{2} \| \textbf{x} - \textbf{C}^\star\textbf{a} \|_2^2 + \lambda \mathbb{S}(\textbf{a})$ which the given coding method is trying to minimize. We have:
+We now turn to the problem of feature learning. Assume we are given a sample of $N$ linearized patches $\textbf{X} = \left[ \textbf{X}^1 \left|\right. \textbf{X}^2 \left|\right. \dots \left|\right. \textbf{X}^N \right] \in \mathbb{R}^{\hctimes{d}{N}}$ and a coding method $\mathcal{C}_{\textbf{C},k}$. The goal is to learn a set of features $\textbf{C}^\star$ such that average ``cost'' per code word $E_{\textbf{X},\textbf{C}}$ is small. Usually the cost is taken to be the augmented cost function $\frac{1}{2} \| \textbf{x} - \textbf{C}^\star\textbf{a} \|_2^2 + \lambda \mathbb{S}(\textbf{a})$ which the given coding method is trying to minimize. We have:
 
 \begin{align*}
 E_{\textbf{X},\textbf{C}} & = \mathbb{E} [ \frac{1}{2} \| \textbf{x} - \textbf{C}\textbf{a}(\textbf{x}) \|_2^2 + \lambda\mathbb{S}(\textbf{a}(\textbf{x}))] \\
@@ -721,7 +723,7 @@ E_{\textbf{X},\textbf{C}} & = \mathbb{E} [ \frac{1}{2} \| \textbf{x} - \textbf{C
 \textbf{C}^\star & = \arg\min_\textbf{C} E_{\textbf{X},\textbf{C}}
 \end{align*}
 
-Here $\textbf{a}^i$ is the best code for $\textbf{X}^i$ as computed by $\mathcal{C}_\textbf{C}$ and is usually obtained by trying to minimize the augmented cost function. We estimated the average cost on the sample we have in order to compute $E_{\textbf{X},\textbf{C}}$.
+Here $\textbf{a}^i$ is the best code for $\textbf{X}^i$ as computed by $\mathcal{C}_{\textbf{C},k}$ and is usually obtained by trying to minimize the augmented cost function. We estimated the average cost on the sample we have in order to compute $E_{\textbf{X},\textbf{C}}$.
 
 The simplest learning method is PCA. It finds the directions of maximum variance in the dataset and uses those as the optimal feature set $\textbf{C}^\star$. The results of applying PCA to learn a feature set for image patches can be seen in \textbf{Figure \ref{fig:ObtainingSetLearn}\subref{fig:ObtainingSetLearnPCA}}. PCA has several problems however. First, it cannot ``learn'' more than $d$ features. Second, it assumes an unrealistic model for image data: a Gaussian point cloud. As we mentioned, the distribution of natural images is assumed to lie on a lower dimensional manifold embedded in the $d$-dimensional space and the Gaussian approximation is very crude. Thirdly, as we will see in \textbf{Chapter \ref{chap:Experiments}} PCA doesn't induce sparseness in the code word. This is to be expected from a theoretical point of view, as no special constraints for sparseness are imposed in the optimization problem which underlies PCA.
 
@@ -743,7 +745,7 @@ The simplest learning method is PCA. It finds the directions of maximum variance
 \label{fig:ObtainingSetLearn}
 \end{figure}
 
-The simplest method that induces sparseness is a simple gradient descent in the space of dictionaries, trying to minimize average code word cost, as estimated on the training dataset $\textbf{X}$. This is basically the SparseNet feature learning algorithm proposed in \cite{emergence-sparse-coding}. $\mathcal{C}_\textbf{C}$ must, of course, be a coding method which has good sparseness properties. The actual implementation should use the stochastic gradient descent, working with $2-10$ patches at a time. In any case, we need to compute the gradient with respect to $\textbf{C}$:
+The simplest method that induces sparseness is a simple gradient descent in the space of dictionaries, trying to minimize average code word cost, as estimated on the training dataset $\textbf{X}$. This is basically the SparseNet feature learning algorithm proposed in \cite{emergence-sparse-coding}. $\mathcal{C}_{\textbf{C},k}$ must, of course, be a coding method which has good sparseness properties. The actual implementation should use the stochastic gradient descent, working with $2-10$ patches at a time. In any case, we need to compute the gradient with respect to $\textbf{C}$:
 
 \begin{align*}
 \frac{d E_{\textbf{X},\textbf{C}}}{d\textbf{C}} & = \frac{d\mathbb{E} [ \frac{1}{2} \| \textbf{x} - \textbf{C}\textbf{a}(\textbf{x}) \|_2^2 + \lambda\mathbb{S}(\textbf{a}(\textbf{x}))]}{d\textbf{C}} \\
@@ -753,19 +755,19 @@ The simplest method that induces sparseness is a simple gradient descent in the 
 
 In the last expression we have $\textbf{A} = \left[ \textbf{a}^1 \left|\right. \dots \left|\right. \textbf{a}^N \right] \in \mathbb{R}^{\hctimes{w}{N}}$ or the equivalent for the small subsample used in stochastic gradient descent. The sparseness inducing part has been removed from the gradient computation because $\mathbb{S}$ does not depend on $\textbf{C}$. Therefore, the gradient update step does not take into account any sparseness constraints, except as inposed by the coding methods themselves.
 
-The process of finding $\textbf{C}^\star$ can then be described as an alternating optimization problem, similar to the Expectation Maximization algorithm. First, a $\tilde{\textbf{C}}$ is chosen randomly as the starting point for the search. Then, an active set of signals $\tilde{\textbf{X}}$ is chosen and the associated code words are computed as $\tilde{\textbf{A}}$. For each code word, the specific optimization problem defined by $\mathcal{C}_{\tilde{\textbf{C}}}$ must be solved. After this stage is done, the $\tilde{\textbf{C}}$ is updated in the direction pointed by the gradient $dE_{\tilde{\textbf{X}},\tilde{\textbf{C}}} / d\textbf{C}$. The two stages then alternate, with a different active set at each iteration, until a convergence criterion is met. The active set can be the whole training dataset $\textbf{X}$, in which case we have a standard gradient descent, or a randomly selected subset of $\textbf{X}$, in which case we have mini-batch or stochastic gradient descent, depending on the size of the subset. After each such iteration the current features are normalized. This prevents them from growing unbounded and is a requirement by the other components of the recoder architecture. \textbf{Algorithm \ref{algo:GradSt}} presents this feature learning method.
+The process of finding $\textbf{C}^\star$ can then be described as an alternating optimization problem, similar to the Expectation Maximization algorithm. First, a $\tilde{\textbf{C}}$ is chosen randomly as the starting point for the search. Then, an active set of signals $\tilde{\textbf{X}}$ is chosen and the associated code words are computed as $\tilde{\textbf{A}}$. For each code word, the specific optimization problem defined by $\mathcal{C}_{\tilde{\textbf{C}},k}$ must be solved. After this stage is done, the $\tilde{\textbf{C}}$ is updated in the direction pointed by the gradient $dE_{\tilde{\textbf{X}},\tilde{\textbf{C}}} / d\textbf{C}$. The two stages then alternate, with a different active set at each iteration, until a convergence criterion is met. The active set can be the whole training dataset $\textbf{X}$, in which case we have a standard gradient descent, or a randomly selected subset of $\textbf{X}$, in which case we have mini-batch or stochastic gradient descent, depending on the size of the subset. After each such iteration the current features are normalized. This prevents them from growing unbounded and is a requirement by the other components of the recoder architecture. \textbf{Algorithm \ref{algo:GradSt}} presents this feature learning method.
 
 \begin{algorithm}
 \caption{Gradient Learning Method}
 \label{algo:GradSt}
 \begin{algorithmic}
-\Require $\textbf{X},w,\mathcal{C}_\textbf{C},q,T_{max},\mu^0,\mu^{T_{max}}$
+\Require $\textbf{X},w,\mathcal{C}_{\textbf{C},k},q,T_{max},\mu^0,\mu^{T_{max}}$
 \Ensure $\textbf{C}^{T_{max}}$
 \State $\textbf{C}^0 \gets \mbox{randomly initialize $w$ normalized features}$
 \For {$t = \hcrange{1}{T_{max}}$}
 \State $\mu^t \gets \mu^0(\mu^{T_{max}} / \mu_0)^{t / T_{max}}$ \Comment{Current learning rate}
 \State $\tilde{\textbf{X}} \gets \mbox{randomly select $q$ observations from $\textbf{X}$}$
-\State $\tilde{\textbf{A}} \gets \left[ \mathcal{C}_{\textbf{C}^{t-1}}(\textbf{X}^i) \mbox{~for $i \in \hcrange{1}{q}$} \right]$
+\State $\tilde{\textbf{A}} \gets \left[ \mathcal{C}_{\textbf{C}^{t-1},k}(\textbf{X}^i) \mbox{~for $i \in \hcrange{1}{q}$} \right]$
 \State $\textbf{C}^t \gets \textbf{C}^{t-1} - \frac{\mu^t}{q} \left( \tilde{\textbf{X}} - \textbf{C}^{t-1}\tilde{\textbf{A}} \right) \tilde{\textbf{A}}^T$
 \EndFor
 \end{algorithmic}
@@ -782,7 +784,7 @@ The SparseNet algorithm can be derived as a result of trying to estimate the dis
 Given our linear generative model and assuming a Gaussian additive noise of variance $\sigma_\epsilon^2$, we can estimate the probability of $\textbf{x}$ arising as a linear combination of the features in $\textbf{C}$ given a certain $\textbf{a}$ as:
 
 \begin{equation*}
-\mathbb{P}_\textbf{x}[\textbf{C}](\textbf{x}\left|\right.\textbf{a}) = \mathcal{N}(\textbf{C}\textbf{a},\sigma_\epsilon^2)
+\mathbb{P}_\textbf{x}[\textbf{C}](\textbf{x}\left|\right.\textbf{a}) = \mathcal{N}[\textbf{C}\textbf{a},\sigma_\epsilon^2](\textbf{x})
 \end{equation*}
 
 In the critically complete case, and per our feature independence requirement, there will be only one mode to this function (in terms of $\textbf{a}$), corresponding to the $\textbf{a}^\star$. All other points will have lower density than this. In the overcomplete case, there are an infinity of $\textbf{a}$s which could explain a single $\textbf{x}$. The maximum density is found in the subspace where $\textbf{x} = \textbf{C}\textbf{a}$, all other points having a lower density.
@@ -815,8 +817,8 @@ The goal of learning is finding $\textbf{C}^\star$ which minimizes this divergen
 The problem has turned into one of finding the feature set which maximizes the expected log-likelihood of the images under our sparse and independent prior $\mathbb{P}_\textbf{a}$. Unfortunately in order to compute $\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})$ we need to evalute an integral over all $\textbf{a}$s. This is basically intractable. However, if we assume the distribution function is peaked around a single $\textbf{a}$ we can replace the integral with just the maximum. It is a decent approximation. We have:
 
 \begin{align*}
-\textbf{C}^\star & = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \log{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})} ] = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{\hat{\mathbb{P}_\textbf{x}}[\textbf{C}](\textbf{x}\left|\right.\textbf{a})\mathbb{P}_\textbf{a}(\textbf{a})} ] \\
-& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{\mathcal{N}(\textbf{C}\textbf{a},\sigma_\epsilon^2)(\textbf{x}) \Pi_{i=1}^w{\frac{1}{Z_\beta} \exp(-\beta S(a_i))}} ] \\
+\textbf{C}^\star & = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \log{\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x})} ] = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log \{ {\hat{\mathbb{P}}_\textbf{x}[\textbf{C}](\textbf{x}\left|\right.\textbf{a})\mathbb{P}_\textbf{a}(\textbf{a})} \} ] \\
+& = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{ \{ \mathcal{N}[\textbf{C}\textbf{a},\sigma_\epsilon^2](\textbf{x}) \Pi_{i=1}^w{\frac{1}{Z_\beta} \exp(-\beta S(a_i))}} \} ] \\
 & = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{ \{ \frac{1}{Z} \exp \left( -\frac{1}{2\sigma_\epsilon^2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 \right) \Pi_{i=1}^w{\frac{1}{Z_\beta} \exp(-\beta S(a_i))} \} } ] \\
 & = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \log{ \{ \exp \left( -\frac{1}{2\sigma_\epsilon^2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 \right) \Pi_{i=1}^w{\exp(-\beta S(a_i))} \} } ] \\
 & = \arg\max_\textbf{C} \mathbb{E}_{\mathbb{P}_\textbf{x}} [ \max_\textbf{a} \{ - \frac{1}{2\sigma_\epsilon^2} \| \textbf{x} - \textbf{C}\textbf{a} \|_2^2 - \beta \sum_{i=1}^w{S(a_i)} \} ] \\
@@ -857,14 +859,14 @@ The Neural Gas algorithm works in the input space rather than feature set space.
 \caption{Sparse Coding Neural Gas V1}
 \label{algo:SparseCodingNeuralGasV1}
 \begin{algorithmic}
-\Require $\textbf{X},w,\mathcal{C},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}}$
+\Require $\textbf{X},w,\mathcal{C}_{\textbf{C},k},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}}$
 \Ensure $\textbf{C}$
 \State $\textbf{C} \gets \mbox{randomly initialize $w$ normalized features}$
 \For {$t = \hcrange{1}{T_{max}}$}
 \State $\mu^t \gets \mu^0 (\mu^{T_{max}} / \mu^0)^{t / T_{max}}$  \Comment {Current learning rate}
 \State $\lambda^t \gets \lambda^0 (\lambda^{T_{max}} / \lambda^0)^{t / T_{max}}$ \Comment {Current neighbourhood control}
 \State $\textbf{x} \gets \text{an observation from $\textbf{X}$}$
-\State $\textbf{a} \gets \mathcal{C}_{\textbf{C}}\{ \textbf{x} \}$
+\State $\textbf{a} \gets \mathcal{C}_{\textbf{C},k}\{ \textbf{x} \}$
 \State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\textbf{a}}(a_i) / \lambda^t} a_i (\textbf{x} - a_i \textbf{C}^i) ~ \mbox{\textbf{for} $i \in \hcrange{1}{w}$} ~ ]$
 \State $\textbf{C} \gets \mbox{normalize each feature in $\textbf{C}$}$
 \EndFor
@@ -877,7 +879,7 @@ A further improvement is possible considering the fact that many coding methods 
 \caption{Sparse Coding Neural Gas V2}
 \label{algo:SparseCodingNeuralGasV2}
 \begin{algorithmic}
-\Require $\textbf{X},w,\mathcal{C},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}}$
+\Require $\textbf{X},w,\mathcal{C}_{\textbf{C},k},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}}$
 \Ensure $\textbf{C}$
 \State $C \gets \mbox{randomly initialize $w$ normalized features}$
 \For {$t = \hcrange{1}{T_{max}}$}
@@ -886,7 +888,7 @@ A further improvement is possible considering the fact that many coding methods 
 \State $\textbf{x} \gets \text{an observation from $\textbf{X}$}$
 \State $S^0 \gets \text{initialize coding method specific state}$
 \For {$i = \hcrange{0}{k}$}
-\State $[\alpha^i~\Lambda^i~S^{i+1}] \gets \mathcal{C}_{\textbf{C}} \{S^i,\textbf{x}\}$ \Comment {$\alpha^i$ stores similarities for features in $\hcrange{1}{w} \setminus \Lambda^i$}
+\State $[\alpha^i~\Lambda^i~S^{i+1}] \gets \mathcal{C}_{\textbf{C},k} \{S^i,\textbf{x}\}$ \Comment {$\alpha^i$ stores similarities for features in $\hcrange{1}{w} \setminus \Lambda^i$}
 \State $\textbf{C} \gets \textbf{C} + [ ~ \mu^t e^{-rank_{\alpha^i}(\alpha_j^i) / \lambda^t} \alpha_j^i (\textbf{x} - \alpha_j^i \textbf{C}^j) ~ \mbox{\textbf{for} $j \in \hcrange{1}{w}\setminus\Lambda^i$} ~ ]$
 \State $\textbf{C} \gets \mbox{normalize each feature in $\textbf{C}$}$
 \EndFor
@@ -898,7 +900,7 @@ A further improvement is possible considering the fact that many coding methods 
 \caption{Sparse Coding Neural Gas V2 with the \textbf{OMP} coding method}
 \label{algo:SparseCodingNeuralGasV2OMP}
 \begin{algorithmic}
-\Require $\textbf{X},w,\mathcal{C},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}},k$
+\Require $\textbf{X},w,\mathcal{C}_{\textbf{C},k},T_{max},\lambda^0,\lambda^{T_{max}},\mu^0,\mu^{T_{max}},k$
 \Ensure $\textbf{C}$
 \State $C \gets \mbox{randomly initialize $w$ normalized features}$
 \For {$t = \hcrange{1}{T_{max}}$}
@@ -932,7 +934,7 @@ A further improvement is possible considering the fact that many coding methods 
 \chapter{Experiments}
 \label{chap:Experiments}
 
-The following suite of experiments are meant to illustrate the strengths and weaknesses of the different coding methods, feature learning algorithms and recoding architectures. We will make reference to two datasets in this section. The first one is the MNIST handwritten digit dataset, which is available from \cite{mnist-website} and is described in more detail in \cite{gradient-based-learning}. Briefly, it consists of $60000$ training and $10000$ test images of size $\hctimes{28}{28}$. Each image represents a single arabic digit, placed such that the center of mass of the non-zero pixels corresponds to the center of the image. A small sample of these images can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:MNISTExample}}. The second one is the NORB object recognition dataset, or, more specifically, the SmallNORB variant. This set is available from \cite{norbsmall-website} and is described in more detail in \cite{learning-methods-invariance-pose-lighting}. Briefly, it consists of $23400$ training and $23400$ test stereo images of size $\hctimes{32}{32}$. Each image represents one shot of a plastic toy, using a certain camera rotation and elevation. There are five categories of toys: human, animal, plane, truck, car. A small sample of these images can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:NORBSmallExample}}. We discard the right channel and use only the left one.
+The following suite of experiments are meant to illustrate the strengths and weaknesses of the different coding methods, feature learning algorithms and recoding architectures. We will make reference to two datasets in this section. The first one is the MNIST handwritten digit dataset, which is available from \cite{mnist-website} and is described in more detail in \cite{gradient-based-learning}. Briefly, it consists of $60000$ training and $10000$ test images of size $\hctimes{28}{28}$. Each image represents a single arabic digit, placed such that the center of mass of the non-zero pixels corresponds to the center of the image. A small sample of these images can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:MNISTExample}}. The second one is the NORB object recognition dataset, or, more specifically, the SmallNORB variant. This set is available from \cite{norbsmall-website} and is described in more detail in \cite{learning-methods-invariance-pose-lighting}. Briefly, it consists of $23400$ training and $23400$ test stereo images of size $\hctimes{96}{96}$. Each image represents one shot of a plastic toy, using a certain camera rotation and elevation. There are five categories of toys: human, animal, plane, truck, car. A small sample of these images can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:NORBSmallExample}}. We discard the right channel and use only the left one.
 
 Most of the experiments will use patches extracted from one or the other of the two datasets. For MNIST, these patches will have size $\hctimes{9}{9}$, while for SmallNORB, they will have size $\hctimes{13}{13}$. To extract one patch, we choose one image at random from the training dataset. Then, we choose one pixel from this image, again, at random, but far enough from the borders. Finally, if the patch centered at this pixel has a variance greater then a treshhold, $\sigma^2_\tau$, we keep it, otherwise we repeat the whole procedure. For our experiments, we used a threshold of $\sigma^2_\tau = 0.01$. The reason for variance filtering is to exclude the constant or almost-constant patches which provide no useful information for the feature learning algorithms \cite{simple-method-sparse-coding,tiny-images}, but which take up computational resources. Naturally, to extract $N$ patches, the procedure is repeated $N$ times. A small sample of MNIST patches can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:MNISTPatches}}. A similar sample of SmallNORB patches can be seen in \textbf{Figure \ref{fig:ViewsOfMNISTAndNORBSmall}\subref{fig:NORBSmallPatches}}.
 
@@ -1000,34 +1002,34 @@ For this experiment we will constrain the reconstructive powers of the methods b
   \caption{Average reconstruction error for different coding methods and different feature sets.}
   \label{table:RecSparseErrors}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|R|c|c|c|c|c|}
+  \begin{tabularx}{\textwidth}{|R|R|ccccc|}
     \hline
     Features & Method & $k=1$ & $k=3$ & $k=16$ & $k=64$ & $k=w$ \tabularnewline \hline\hline
     \multirow{5}{*}{Random $w=169$} & \textbf{Corr} & $1.95$  & $1.88$ & $1.72$ & $1.81$ & $1.93$ \tabularnewline
     & \textbf{MP} & $1.95$ & $1.87$ & $1.57$ & $1.14$ & $0.87$ \tabularnewline
     & \textbf{OMP} & $1.95$ & $1.87$ & $1.55$ & $0.93$ & $0.00$ \tabularnewline
     & \textbf{OOMP} & $1.95$ & $1.87$ & $1.55$ & $0.93$ & $0.00$ \tabularnewline
-    & SparseNet & $1.97$ & $1.93$ & $1.79$ & $1.58$ & $1.50$ \tabularnewline \hline
+    & SparseNet & $1.97$ & $1.93$ & $1.79$ & $1.58$ & $1.50$ \tabularnewline \hline\hline
     \multirow{5}{*}{\textbf{PCA} $w=169$} & \textbf{Corr} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
     & \textbf{MP} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
     & \textbf{OMP} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
     & \textbf{OOMP} & $1.47$ & $1.07$ & $0.55$ & $0.20$ & $0.00$ \tabularnewline
-    & SparseNet & $1.58$ & $1.30$ & $1.01$ & $0.91$ & $0.90$ \tabularnewline \hline
+    & SparseNet & $1.58$ & $1.30$ & $1.01$ & $0.91$ & $0.90$ \tabularnewline \hline\hline
     \multirow{5}{*}{Sparse $w=169$} & \textbf{Corr} & $1.76$ & $1.62$ & $1.25$ & $1.03$ & $1.04$ \tabularnewline
     & \textbf{MP} & $1.76$ & $1.61$ & $1.17$ & $0.57$ & $0.16$ \tabularnewline
     & \textbf{OMP} & $1.76$ & $1.61$ & $1.16$ & $0.50$ & $0.00$ \tabularnewline
     & \textbf{OOMP} & $1.76$ & $1.61$ & $1.16$ & $0.50$ & $0.00$ \tabularnewline
-    & SparseNet & $1.83$ & $1.74$ & $1.51$ & $1.29$ & $1.24$ \tabularnewline \hline
+    & SparseNet & $1.83$ & $1.74$ & $1.51$ & $1.29$ & $1.24$ \tabularnewline \hline\hline
     \multirow{5}{*}{Random $w=512$} & \textbf{Corr} & $1.93$ & $1.84$ & $1.71$ & $2.59$ & $5.20$ \tabularnewline
     & \textbf{MP} & $1.93$ & $1.83$ & $1.40$ & $0.68$ & $0.01$ \tabularnewline
     & \textbf{OMP} & $1.93$ & $1.83$ & $1.37$ & $0.44$ & $0.00$ \tabularnewline
     & \textbf{OOMP} & $1.93$ & $1.83$ & $1.37$ & $0.43$ & $0.00$ \tabularnewline
-    & SparseNet & $1.96$ & $1.93$ & $1.78$ & $1.47$ & $0.89$ \tabularnewline \hline
+    & SparseNet & $1.96$ & $1.93$ & $1.78$ & $1.47$ & $0.89$ \tabularnewline \hline\hline
     \multirow{5}{*}{Sparse $w=512$} & \textbf{Corr} & $1.75$ & $1.62$ & $1.98$ & $3.84$ & $7.02$ \tabularnewline
     & \textbf{MP} & $1.76$ & $1.53$ & $0.99$ & $0.40$ & $0.00$ \tabularnewline
     & \textbf{OMP} & $1.76$ & $1.53$ & $0.95$ & $0.26$ & $0.00$ \tabularnewline
     & \textbf{OOMP} & $1.76$ & $1.53$ & $0.95$ & $0.25$ & $0.00$ \tabularnewline
-    & SparseNet & $1.88$ & $1.78$ & $1.56$ & $1.23$ & $0.80$ \tabularnewline \hline
+    & SparseNet & $1.88$ & $1.78$ & $1.56$ & $1.23$ & $0.80$ \tabularnewline \hline\hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
@@ -1052,13 +1054,13 @@ Reconstruction power is just one measure of the quality of a coding method, howe
   \caption{Average sparseness for different coding methods and different feature sets.}
   \label{table:RecSparseSparseness}
   \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|R|c|c|c|c|c|}
+  \begin{tabularx}{\textwidth}{|R|ccccc|}
     \hline
     Features & \textbf{Corr} & \textbf{MP} & \textbf{OMP} & \textbf{OOMP} & SparseNet \tabularnewline \hline\hline
-    Random $w=169$ & $0.48$ & $0.50$ & $0.50$ & $0.50$ & $0.41$ \tabularnewline \hline
-    \textbf{PCA} $w=169$ & $0.36$ & $0.36$ & $0.36$ & $0.36$ & $0.38$ \tabularnewline \hline
-    Sparse $w=169$ & $0.46$ & $0.50$ & $0.45$ & $0.45$ & $0.42$ \tabularnewline \hline
-    Random $w=512$ & $0.47$ & $0.28$ & $0.13$ & $0.13$ & $0.37$ \tabularnewline \hline
+    Random $w=169$ & $0.48$ & $0.50$ & $0.50$ & $0.50$ & $0.41$ \tabularnewline
+    \textbf{PCA} $w=169$ & $0.36$ & $0.36$ & $0.36$ & $0.36$ & $0.38$ \tabularnewline
+    Sparse $w=169$ & $0.46$ & $0.50$ & $0.45$ & $0.45$ & $0.42$ \tabularnewline
+    Random $w=512$ & $0.47$ & $0.28$ & $0.13$ & $0.13$ & $0.37$ \tabularnewline
     Sparse $w=512$ & $0.47$ & $0.19$ & $0.12$ & $0.12$ & $0.35$ \tabularnewline
     \hline
   \end{tabularx}
@@ -1076,159 +1078,10 @@ A summary of the results can be seen in \textbf{Table \ref{table:RecSparseSparse
 
 \textbf{Figure \ref{fig:RecSparseHists}} gives an ideea of the distribution of the patches in the different cases. We used $61$ bins spread evenly in the interval $[-1.5,1.5]$. Notice how spiked the distributions for the pursuits are, expecially for \textbf{OMP} and \textbf{OOMP}. Again, these two produce almost identical results. The distribution for \textbf{Corr} is however very flat. \textbf{MP} is situated somewhat between these two extremes, but with a clear peak around $0$. Similarly, SparseNet has a peak around $0$, but the distribution has a skwed form, resulting from the regularization term we used. The effect is good, although the sparsity is clearly more strinking in the \textbf{OMP} and \textbf{OOMP} methods. The \textbf{PCA} features do not produce very ``sparse'' looking histograms, regardless of the methods employed, despite good reconstruction performance and acceptable average sparseness. Real sparseness is to be found in the way the values are distributed - there must be just a few code word coefficients with large values, besides being a lot of them equal to or near $0$.
 
-\section{Learning Sparse Feature Sets}
-\label{sec:LearningSparseFeatureSet}
-
-[[[We have to see about what we'll talk about in this section.]]]
-
 \section{Coder Architecture Evaluation}
 \label{sec:CoderArchitectureEvaluation}
 
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Results for $p$ on MNIST.}
-  \label{table:RecoderEvMNISTp}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRRRR|}
-    \hline
-    $p$ & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline\hline
-    Score & $98.50$ & $98.84$ & $\textbf{98.97}$ & $98.96$ & $98.96$ & $98.95$ & $98.95$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $3.6$k & $7.2$k & $11.9$k & $17.7$k & $24.8$k & $33.1$k & $42.4$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.25$ & $0.31$ & $0.36$ & $0.40$ & $0.43$ & $0.45$ & $0.46$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ on MNIST.}
-  \label{table:RecoderEvMNISTCCC}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRR|}
-    \hline
-    $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ & Random and \textbf{Corr} & Random and \textbf{MP} & Sparse and \textbf{Corr} & Sparse and \textbf{MP} \tabularnewline\hline\hline
-    Score & $\textbf{98.97}$ & $98.84$ & $98.45$ & $98.44$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.36$ & $0.45$ & $0.28$ & $0.28$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\hat{\rho}$ on MNIST.}
-  \label{table:RecoderEvMNISTrho}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
-    \hline
-    $\hat{\rho}$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ & $0.25$ & $0.30$ & $0.35$ & $0.40$ \tabularnewline\hline\hline
-    Score & $98.94$ & $\textbf{98.97}$ & $98.96$ & $98.95$ & $98.93$ & $98.93$ & $98.89$ & $98.86$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.22$ & $0.36$ & $0.46$ & $0.55$ & $0.61$ & $0.66$ & $0.70$ & $0.73$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\mathcal{P}$ on MNIST.}
-  \label{table:RecoderEvMNISTP}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRR|}
-    \hline
-    $\mathcal{P}$ & None & NoSign & KeepSign \tabularnewline\hline\hline
-    Score & $98.97$ & $\textbf{99.03}$ & $98.99$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $11.9$k & $23.8$k & $23.8$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.36$ & $0.19$ & $0.19$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\mathcal{R}$ on MNIST.}
-  \label{table:RecoderEvMNISTR}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRR|}
-    \hline
-    $\mathcal{P}$ & Subsample & MaxNoSign & MaxKeepSign & SumAbs & SumSqr \tabularnewline\hline\hline
-    Score & $97.86$ & $99.02$ & $99.03$ & $98.87$ & $\textbf{99.03}$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $23.8$k & $23.8$k & $23.8$k & $23.8$ & $23.8$ \tabularnewline
-    $\rho(\textbf{F})$ & $0.05$ & $0.19$ & $0.19$ & $0.19$ & $0.19$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $r$ on MNIST.}
-  \label{table:RecoderEvMNISTr}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
-    \hline
-    $r$ & $2$ & $3$ & $4$ & $5$ & $6$ & $7$ & $10$ & $15$ \tabularnewline\hline\hline
-    Score & $98.83$ & $98.93$ & $99.03$ & $\textbf{99.06}$ & $99.03$ & $99.03$ & $98.39$ & $94.24$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $95.2$k & $39.3$k & $23.8$k & $12.1$k & $7.7$k & $7.7$k & $1.9$ & $486$ \tabularnewline
-    $\rho(\textbf{F})$ & $0.07$ & $0.14$ & $0.19$ & $0.28$ & $0.36$ & $0.39$ & $0.62$ & $0.78$ \tabularnewline
-    \hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-\renewcommand{\arraystretch}{1.2}
-\begin{table}
-  \caption{Results for $p$ on SmallNORB.}
-  \label{table:RecoderEvNORBSmallp}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRRRR|}
-    \hline
-    $p$ & $5$ & $7$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline\hline
-    Score & $98.50$ & $98.84$ & $\textbf{98.97}$ & $98.96$ & $98.96$ & $98.95$ & $98.95$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $3.6$k & $7.2$k & $11.9$k & $17.7$k & $24.8$k & $33.1$k & $42.4$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.25$ & $0.31$ & $0.36$ & $0.40$ & $0.43$ & $0.45$ & $0.46$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ on SmallNORB.}
-  \label{table:RecoderEvNORBSmallCCC}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRR|}
-    \hline
-    $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C}}}$ & Random and \textbf{Corr} & Random and \textbf{MP} & Sparse and \textbf{Corr} & Sparse and \textbf{MP} \tabularnewline\hline\hline
-    Score & $\textbf{98.97}$ & $98.84$ & $98.45$ & $98.44$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.36$ & $0.45$ & $0.28$ & $0.28$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\hat{\rho}$ on SmallNORB.}
-  \label{table:RecoderEvNORBSmallrho}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
-    \hline
-    $\hat{\rho}$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ & $0.25$ & $0.30$ & $0.35$ & $0.40$ \tabularnewline\hline\hline
-    Score & $98.94$ & $\textbf{98.97}$ & $98.96$ & $98.95$ & $98.93$ & $98.93$ & $98.89$ & $98.86$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.22$ & $0.36$ & $0.46$ & $0.55$ & $0.61$ & $0.66$ & $0.70$ & $0.73$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\mathcal{P}$ on SmallNORB.}
-  \label{table:RecoderEvNORBSmallP}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRR|}
-    \hline
-    $\mathcal{P}$ & None & NoSign & KeepSign \tabularnewline\hline\hline
-    Score & $98.97$ & $\textbf{99.03}$ & $98.99$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $11.9$k & $23.8$k & $23.8$k \tabularnewline
-    $\rho(\textbf{F})$ & $0.36$ & $0.19$ & $0.19$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $\mathcal{R}$ on SmallNORB.}
-  \label{table:RecoderEvNORBSmallR}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRR|}
-    \hline
-    $\mathcal{P}$ & Subsample & MaxNoSign & MaxKeepSign & SumAbs & SumSqr \tabularnewline\hline\hline
-    Score & $97.86$ & $99.02$ & $99.03$ & $98.87$ & $\textbf{99.03}$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $23.8$k & $23.8$k & $23.8$k & $23.8$ & $23.8$ \tabularnewline
-    $\rho(\textbf{F})$ & $0.05$ & $0.19$ & $0.19$ & $0.19$ & $0.19$ \tabularnewline
-    \hline
-  \end{tabularx}
-  \caption{Results for $r$ on SmallNORB.}
-  \label{table:RecoderEvNORBSmallr}
-  \newcolumntype{R}{>{\centering}X}
-  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
-    \hline
-    $r$ & $2$ & $3$ & $4$ & $5$ & $6$ & $7$ & $10$ & $15$ \tabularnewline\hline\hline
-    Score & $98.83$ & $98.93$ & $99.03$ & $\textbf{99.06}$ & $99.03$ & $99.03$ & $98.39$ & $94.24$ \tabularnewline
-    $\left|\textbf{F}\right|$ & $95.2$k & $39.3$k & $23.8$k & $12.1$k & $7.7$k & $7.7$k & $1.9$ & $486$ \tabularnewline
-    $\rho(\textbf{F})$ & $0.07$ & $0.14$ & $0.19$ & $0.28$ & $0.36$ & $0.39$ & $0.62$ & $0.78$ \tabularnewline
-    \hline
-  \end{tabularx}
-\end{table}
-\renewcommand{\arraystretch}{1.0}
-
-[[[Show link reconstruction power and classification accuracy]]]
-
-In this section we will seek the best coder architectures for the image classification tasks posed by the MNIST and SmallNORB datasets, described in the start of this chapter. We will use the feature extractor model described in \textbf{Chapter \ref{chap:OverviewFeatureExtraction}}, and, as mentioned there, we will employ just one recoder module. Given a certain problem, the task is to pick the recoder parameters in such a way as to maximize the classification accuracy on the test version of the dataset. The recoder parameters are the parameters for each of the four stages. For the coding stage we have the feature size $d = \hctimes{p}{p}$, the feature set $\textbf{C}$ and $w$, the number of allowed non-small coefficients $k$ and the actual coding method $\mathcal{C}_{\textbf{C},k}$. For the nonlinear step we have the nonlinearity type $\mathcal{N}$. For the polarity split stage we have the split type $\mathcal{P}$. Finally, for the reduce step we have the reducer procedure $\mathcal{R}$ and the size of the spread $r$. Instead of $k$ we will use $\hat{\rho} = k/w$. This makes it somewhat easier to compare parameter sets, independent of $w$. Thus, a full parameterization of the recoder is $(p,w,\textbf{C},\hat{\rho},\mathcal{C}_{\textbf{C},k},\mathcal{N},\mathcal{P},\mathcal{R},r)$.
+In this section we will seek the best coder architectures for the image classification tasks posed by the MNIST and SmallNORB datasets, described in the start of this chapter. We will use the feature extractor model described in \textbf{Chapter \ref{chap:OverviewFeatureExtraction}}, and, as mentioned there, we will employ just one recoder module. We will focus on the Global nonlinearity. Given a certain problem, the task is to pick the recoder parameters in such a way as to maximize the classification accuracy on the test version of the dataset. The recoder parameters are the parameters for each of the four stages. For the coding stage we have the feature size $d = \hctimes{p}{p}$, the feature set type $\textbf{C}$, the number of allowed non-small coefficients $k$ and the actual coding method $\mathcal{C}_{\textbf{C},k}$. The number of features $w$ is fixed at $3p^2$. The nonlinear step is, of course, fixed at $\mathcal{N} = \mbox{Global}$. For the polarity split stage we have the split type $\mathcal{P}$. Finally, for the reduce step we have the reducer procedure $\mathcal{R}$ and the size of the spread $r$. Instead of $k$ we will use $\hat{\rho} = k/w$, which is the maximum allowed sparseness induced by the coding method. This makes it somewhat easier to compare parameter sets, independent of $w$. Thus, a full parameterization of the recoder is $(p,\textbf{C},\hat{\rho},\mathcal{C}_{\textbf{C},k},\mathcal{P},\mathcal{R},r)$.
 
 \begin{wrapfigure}{R}{0.25\textwidth}
 \begin{center}
@@ -1263,33 +1116,240 @@ Before we describe the experiments performed and the results obtained, \textbf{F
     \hline
     Parameter & Allowed values \tabularnewline \hline\hline
     $p$ & $5,7,9,11,13,15,17$ \tabularnewline \hline
-    $w$ & $p^2,3p^2$ and $1024,1536,2048$ \tabularnewline \hline
-    $\textbf{C}$ & Random, \textbf{PCA}, Sparse \tabularnewline \hline
-    $\hat{\rho} = k / w$ & $0.05,0.10,\dots,0.45,0.50$ \tabularnewline \hline
+    $\textbf{C}$ & Random, Sparse \tabularnewline \hline
+    $\hat{\rho} = k / w$ & $0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40$ \tabularnewline \hline
     $\mathcal{C}_{\textbf{C},k}$ & \textbf{Corr}, \textbf{MP}, \textbf{OMP}, \textbf{OOMP} \tabularnewline \hline
-    $\mathcal{N}$ & Linear, Logistic, GlobalOrder \tabularnewline \hline
     $\mathcal{P}$ & None, NoSign, KeepSign \tabularnewline \hline
     $\mathcal{R}$ & Subsample, MaxNoSign, MaxKeepSign, SumAbs, SumSqr \tabularnewline \hline
-    $r$ & $2,3,4,6,8,10,14,20$ \tabularnewline
+    $r$ & $2,3,4,5,6,7,10,15$ \tabularnewline
     \hline
   \end{tabularx}
 \end{table}
 \renewcommand{\arraystretch}{1.0}
 
-Returning to our experiment, we can see in \textbf{Table \ref{table:RecoderEvAllowedParams}} a list of possible values for all the different parameters associated with a recoder, usable by both datasets. An exhaustive search of the full parameter space would require evaluating almost $5$ million different parameter combinations - clearly a very hard task! The only way forward is to manage this complexity. One approach for doing this, is to split the problem into several subproblems which are ``independent'' enough. The best configuration is then formed by combining the answers to the subproblems. One thing we'll need is an initial ``good-enough'' parameter set. \textbf{Table \ref{table:RecoderEvInitialConfigs}} presents not one, but two such configurations, dubbed $\Theta_1^0$,$\Theta_2^0$ and $\Theta_3^0$, which have been obtained through trial and error and eariler undocumented experiments. The subproblems will try to improve upon these three initial configurations.
+Returning to our experiment, we can see in \textbf{Table \ref{table:RecoderEvAllowedParams}} a list of possible values for all the different parameters associated with a recoder, usable by both datasets. An exhaustive search of the full parameter space would require evaluating over $60000$ different parameter combinations - clearly a very hard task! The only way forward is to manage this complexity. One approach for doing this, is to split the problem into several subproblems which are ``independent'' enough. The best configuration is then formed by combining the answers to the subproblems. One thing we'll need is an initial ``good-enough'' parameter set. \textbf{Table \ref{table:RecoderEvInitialConfigs}} presents two such configurations, one for each dataset. The source of these configurations is experience: both the authors' and others as well as intuitions about the dataset.
 
-We split the parameter set into three groups: feature set parameters ($p$,$w$ and $\textbf{C}$), coding method parameters ($\hat{\rho}$ and $\mathcal{C}_{\textbf{C},k}$) and aftercoding stage parameters ($\mathcal{N}$, $\mathcal{P}$, $\mathcal{R}$ and $r$). The subproblems will then handle each of these three parameter sets sperately. More precisely, the following procedure will be followed. Every combination of feature set parameters from \textbf{Table \ref{table:RecoderEvAllowedParams}} is used, except the $w$s which are over $1000$. More precisely, for every $p$ tested we use a critically-complete feature set and a double overcomplete feature set. We do not use feature sets of a higher count because of computational concerns. There are nine distinct values for $p$, two values for $w$ and three values for \textbf{C}. Therefore we can form $90$ different parameter combinations. For each test, the other parameters come from $\Theta_1^0$, $\Theta_2^0$ and $\Theta_3^0$ respectively. Therefore, we will test a total of $270$ full parameter combinations. After this first experiment, we select the three best full parameter configurations and name them $\Theta_1^1$, $\Theta_2^1$ and $\Theta_3^1$. We then continue with the second experiment, which looks at every combination of coding method parameters from \textbf{Table \ref{table:RecoderEvAllowedParams}}. There are twenty distinct values for $\hat{\rho}$ and three distinct values for $\mathcal{C}_{\textbf{C},k}$. Therefore we can form $60$ different parameter combinations. For each test, the other parameters come from $\Theta_1^1$, $\Theta_2^1$ and $\Theta_3^1$ respectively. Therefore, we will test a total of $180$ full parameter combinations. After this second experiment, we select the three best full parameter configurations and name them $\Theta_1^2$, $\Theta_2^2$ and $\Theta_3^2$. We then continue with the third experiment, which looks at every combination of parameters for all the stages after the coding stage. There are three distinct values for $\mathcal{N}$, three distinct values for $\mathcal{R}$, five distinct values for $\mathcal{R}$ and eight distinct values for $r$. Therefore, we can form $360$ different parameter combinations. For each test, the other parameters come from $\Theta_1^2$, $\Theta_2^2$ and $\Theta_3^2$ respectively. Therefore we will test a total of $1080$ full parameter combinations. After this third experiment, we select the three best full parameter configurations and name them $\Theta_1^3$, $\Theta_2^3$ and $\Theta_3^3$. As a final experiment we will look at how these three configurations perform with very high $w$ and varying $\hat{\rho}$.
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Initial configurations and architecture performance/statistics.}
+  \label{table:RecoderEvInitialConfigs}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RcRRRRRRRR|}
+    \hline
+    Dataset & $p$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\left| \textbf{F} \right|$ & $\mathbb{E}[\rho(\textbf{F})]$ \tabularnewline\hline
+    MNIST & $11$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $98.96$ & $17.7$k & $0.40$ \tabularnewline
+    SmallNORB & $13$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $90.39$ & $32.4$k & $0.41$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
 
-In order to evaluate the performance of a recoder with a certain configuration $\Theta$ on a dataset, we transform both the training and the testing parts of the dataset with the recoder and then we train a Linear SVM in a One-vs-All fashion using the training part of the dataset. We then classify the testing part and measure the classification accuracy as well as compute the average sparsity. The quality of one configuration relative to another is determined using only the classification accuracy though. For speed reasons, roughly one third of the training portion of the dataset is actually used for training, the so-called \emph{model selection} subsample. This will make the classification accuracy slightly lower, but it will do so in a systematic way, enabling us to still select the proper configuration without fear of having a rank inversion when using on the full training dataset.
+There are a number of seven architecture parameters to choose from. We will pick the simplest possible selection scheme in order to reduce the number of configurations we have to test. The experiment protocol is simple. We will start with the initial configuration from \textbf{Table \ref{table:RecoderEvInitialConfigs}}. Starting from this, we modify according to the first parameter. The current configuration becomes the initial configuration, but with the first parameter set to the best found. The process continues in an identical manner for all parameters. Parameters $\textbf{C}$ and $\mathcal{C}_{\textbf{C},k}$ are the only two which are tested in pairs, because of the very strong influence between them. In any case, this setup reduces the number of configurations which need to be evaluated from an exponential to a linear order. There are some caveats though. First, a better configuration can be missed because it did not arise in this greedy algorithm's path. Second, glaring interactions such as the one between $p$ and $\textbf{C}$ or $\mathcal{R}$ and $r$ are not considered. The results are ``good enough'' however, and where extra tweaking might be necessary, adjustement can be easily done, like for $\textbf{C}$ and $\mathcal{C}_{\textbf{C},k}$.
 
-Selecting the classifier parameters (just $C$) for the Linear SVM is done through cross-validation. We wish to select one of $20$ possible values for $C$ logarithmically distributed between $10^{-2}$ and $1$. In order to evaluate the performance of the SVM with each choice of regularization parameter, we select half of the model selection subsample, which we call the \emph{crossvalidation} subsample. We then perform five splits of this subsample into five pairs of \emph{training} and \emph{validation} subsamples. For a certain value $C_i$ we train a One-vs-All classifier on each of the five training subsamples and compute the classification accuracy on the validation subsamples. We use the average of these five classification accuracies when choosing a best $C$. Naturally, the $C^\star$ with the greatest average accuracy is selected.
+For each configuration tested we will be interested in three things: the feature vector size $\left| \textbf{F} \right|$, the feature vector average sparsity $\mathbb{E}[\rho(\textbf{F})]$ and the classification score. The first two are easy to compute, given an image sample. The latter raises some computational and methodological problems. The first problem is caused by the fact that the datasets we operate with are rather large, numbering in the tens of thousands of images, and the recoding procedure is complex. With this in mind, we use for these model selection experiments just a subset of the full datasets. We thus replace the training dataset from both MNIST and SmallNORB with a model selection training dataset, which is a subsample of the original ones. A similar replacement happens for the test dataset. The results on these smaller sets will be lower, naturally, than on the full set, but they will be correlated with them. Therefore these experiments can help us select the best architecture. Later, once an architecture is found, we can work with the full set. The methodological problem has to do with the large amount of randomness in the extraction procedure, cause by, for example, using random features. Doing the same experiment twice, will result in slightly different scores. One way around this is using the same set of features for all experiments. Besides this, we also repeated each experiment $3$ times for each configuration and used the mean score. More repetitions would be nice, but, again, we have computational constraints.
 
-A new classifier is then trained on the whole transformed model selection subsample, using the $C^\star$ found by cross-validation. This is then used to classify the testing sample from the dataset and asses the classification accuracy. This whole process should be repeated several times in order to smooth out fluctuations in the accuracy cause by the choice of model selection and crossvalidation subsamples as well as ``built-in'' randomness, such as the choice of features in a random feature set. We only do this three times, although, as a matter of principle, we should do it a lot more. Computational constraints do not allow us to do this however. The average classification accuracy and sparseness over all the trials is reported in the tables.
+After both the model selection training and test sets have been coded, a classifier must be built and the score obtained. We train a Linear SVM in a One-vs-One fashion using the training part of the dataset. We then classify the testing part and measure the classification accuracy. Selecting the classifier parameter $C$ is done through cross-validation. We wish to select one of $20$ possible values for $C$ logarithmically distributed between $10^{-2}$ and $1$. We then perform five splits of the training subsample into five pairs of \emph{training} and \emph{validation} subsamples. For a certain value $C_i$ we train a One-vs-One classifier on each of the five training subsamples and compute the classification accuracy on the validation subsamples. We use the average of these five accuracies when choosing a best $C$. Naturally, the $C^\star$ with the greatest average accuracy is selected. A new classifier is then trained on the whole transformed model selection subsample, using the $C^\star$ found by cross-validation. This is then used to classify the testing sample from the dataset. For the Linear SVM we use the LIBLINEAR \cite{liblinear} implementation with a primal problem formulation and $\mathcal{L}_2$ loss and regularization types.
 
-We also considered a baseline setup. This consisted of simply feeding the linearized images to a linear SVM. The same cross-validation setup was used. The results can be seen in .... We also did two alternative pre-processing steps, namely standardization and normalization. The results using these can as well be seen. In any case, the results are not that great and we can safely say that using the proposed methods is at least better than an of-the-shelf immediate solution.
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Evolution of best configuration for the MNIST dataset.}
+  \label{table:RecoderEvMNISTEvolution}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RcRRRRRRRR|}
+    \hline
+    Exp. & $p$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\left| \textbf{F} \right|$ & $\mathbb{E}[\rho(\textbf{F})]$ \tabularnewline\hline
+    0 & $11$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $98.96$ & $17.7$k & $0.40$ \tabularnewline
+    1 & $9$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $98.97$ & $11.9$k & $0.36$ \tabularnewline
+    2 & $9$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $98.97$ & $11.9$k & $0.36$ \tabularnewline
+    3 & $9$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $98.97$ & $11.9$k & $0.36$ \tabularnewline
+    4 & $9$ & Random & $0.10$ & $\textbf{Corr}$ & NoSign & SumSqr & $4$ & $99.03$ & $23.8$k & $0.19$ \tabularnewline
+    5 & $9$ & Random & $0.10$ & $\textbf{Corr}$ & NoSign & SumSqr & $4$ & $99.03$ & $23.8$k & $0.19$ \tabularnewline
+    6 & $9$ & Random & $0.10$ & $\textbf{Corr}$ & NoSign & SumSqr & $5$ & $99.06$ & $12.1$k & $0.28$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+For the MNIST dataset, the model selection training dataset consisted of $20000$ observations, while the test dataset consisted of the full $10000$ test images. In total there are $30000$ images to transform. For cross-validation, the split was $1:1$, therefore each of the $5$ folds had $10000$ training and $10000$ test images. \textbf{Tables \ref{table:RecoderEvMNISTp},\ref{table:RecoderEvMNISTCCCk},\ref{table:RecoderEvMNISTrho},\ref{table:RecoderEvMNISTP},\ref{table:RecoderEvMNISTR}} and \textbf{\ref{table:RecoderEvMNISTr}} present the results of the six experiments. Included are the classification score, the feature vector size $\left| \textbf{F} \right|$ as well as the feature vector sparseness $\mathbb{E}[\rho(\textbf{F})]$. The best parameter choice is written in bold for each table. \textbf{Table \ref{table:RecoderEvMNISTEvolution}} shows the evolution of the current best configuration as the experiments progress. Several things have to be noted though. Notice that a smaller than ``intuitive'' patch size was selected. With regards to patch size, there is a sweet spot in the region $9$-$13$ which provides the best performance. Smaller patche sizes than this have noticeably lower performance while larger ones have a smaller performance and are also not justified by their greater computational costs. Patch size is related to feature size. The best patch sizes will be those that accurately capture the features in the dataset so that the feature extraction process can work. Small patches do not achieve this, while larger ones do, though, for very large sizes, features will be harder to extract, and performance will suffer. There is also a tradeoff between feature vector size and sparsity, the first increasing while the latter descreasing with larger $p$. Also, notice the superior coding setup of \textbf{Corr} with Random features. This is somewhat of a surprise, as one would expect at least Sparse features to provide a better performance. This is a particularity of the Global nonlinearity however. Informal experiments show that for the Logistic nonlinearity things stand as you would expect them. It is not clear though if this is a fault in the learned sparse features or an advantage of the nonlinearity. In any case, it simplifies the design of machine learning systems tremendously as it alleviates the need for feature learning, which might not always be achievable due to limited datasets. On the other hand, there is a clear difference in sparsity. The sparse feature sets induces substantially more sparseness than the random ones. The desired coding method sparsity $\hat{\rho}$ has a similar behaviour to $p$. Values which are too small end up not capturing the structure of the problem while values which are too large end up including ``noise''. A just right value of $0.10$ was selected. Further fine-tuning could be possible here, say walking the interval $[0.06,0.14]$ with a step of $0.01$. For now we are satisfied with the answer, however. Of all the parameters, this one most impacts the sparsity of the feature vector. As expected, polarity split does indeed increase performance. The greatest increse is for the NoSign type. Also, the MaxNoSign, MaxKeepSign and SumSqr reduce methods produce roughly the same results, while SumAbs is noticeably weaker and, as expected, Subsample is very weak, as it discards a lot of useful information. In fact, Subsample is the only coding method which affects sparseness, in the sense of making it lower, since a subsampled coefficient might be zero, even though the reduce region associated with it has non-zero values. We select SumSqr as the best, mainly because we have used it so far. Finally an $r$ equal to $5$ was selected as the best reduce region size. This parameter is similar to $p$ in many regards as it controls the tradeoff between local and global behaviour in the recoder. Small values produce very large and sparse feature vectors, but there is no translation invariance. Large values on the other hand produce very small and dense feature vectors but behave more like tests for the presence of a feature in the whole image, which is not that useful for classification tasks, as can be plainly seen. A ``just right'' value is needed, and these types of experiments are good for selecting them.
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Results for $p$ on MNIST.}
+  \label{table:RecoderEvMNISTp}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRR|}
+    \hline
+    $p$ & $5$ & $7$ & $\textbf{9}$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline\hline
+    Score & $98.50$ & $98.84$ & $\textbf{98.97}$ & $98.96$ & $98.96$ & $98.95$ & $98.95$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $3.6$k & $7.2$k & $\textbf{11.9\mbox{k}}$ & $17.7$k & $24.8$k & $33.1$k & $42.4$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.25$ & $0.31$ & $\textbf{0.36}$ & $0.40$ & $0.43$ & $0.45$ & $0.46$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C},k}}$ on MNIST.}
+  \label{table:RecoderEvMNISTCCCk}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRR|}
+    \hline
+    $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C},k}}$ & \textbf{Random and Corr} & Random and \textbf{MP} & Sparse and \textbf{Corr} & Sparse and \textbf{MP} \tabularnewline\hline\hline
+    Score & $\textbf{98.97}$ & $98.84$ & $98.45$ & $98.44$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $\textbf{11.9\mbox{k}}$ & $11.9$k & $11.9$k & $11.9$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $\textbf{0.36}$ & $0.45$ & $0.28$ & $0.28$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hat{\rho}$ on MNIST.}
+  \label{table:RecoderEvMNISTrho}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $\hat{\rho}$ & $0.05$ & $\textbf{0.10}$ & $0.15$ & $0.20$ & $0.25$ & $0.30$ & $0.35$ & $0.40$ \tabularnewline\hline\hline
+    Score & $98.94$ & $\textbf{98.97}$ & $98.96$ & $98.95$ & $98.93$ & $98.93$ & $98.89$ & $98.86$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $\textbf{11.9\mbox{k}}$ & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k & $11.9$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.22$ & $\textbf{0.36}$ & $0.46$ & $0.55$ & $0.61$ & $0.66$ & $0.70$ & $0.73$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{P}$ on MNIST.}
+  \label{table:RecoderEvMNISTP}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRR|}
+    \hline
+    $\mathcal{P}$ & None & \textbf{NoSign} & KeepSign \tabularnewline\hline\hline
+    Score & $98.97$ & $\textbf{99.03}$ & $98.99$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $11.9$k & $\textbf{23.8\mbox{k}}$ & $23.8$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.36$ & $\textbf{0.19}$ & $0.19$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{R}$ on MNIST.}
+  \label{table:RecoderEvMNISTR}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRR|}
+    \hline
+    $\mathcal{P}$ & Subsample & MaxNoSign & MaxKeepSign & SumAbs & \textbf{SumSqr} \tabularnewline\hline\hline
+    Score & $97.86$ & $99.02$ & $99.03$ & $98.87$ & $\textbf{99.03}$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $23.8$k & $23.8$k & $23.8$k & $23.8$k & $\textbf{23.8\mbox{k}}$ \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.05$ & $0.19$ & $0.19$ & $0.19$ & $\textbf{0.19}$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $r$ on MNIST.}
+  \label{table:RecoderEvMNISTr}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $r$ & $2$ & $3$ & $4$ & $\textbf{5}$ & $6$ & $7$ & $10$ & $15$ \tabularnewline\hline\hline
+    Score & $98.83$ & $98.93$ & $99.03$ & $\textbf{99.06}$ & $99.03$ & $99.03$ & $98.39$ & $94.24$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $95.2$k & $39.3$k & $23.8$k & $\textbf{12.1\mbox{k}}$ & $7.7$k & $7.7$k & $1.9$k & $486$ \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.07$ & $0.14$ & $0.19$ & $\textbf{0.28}$ & $0.36$ & $0.39$ & $0.62$ & $0.78$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Evolution of best configuration for the SmallNORB dataset.}
+  \label{table:RecoderEvNORBSmallEvolution}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RcRRRRRRRR|}
+    \hline
+    Exp. & $p$ & $\textbf{C}$ & $\hat{\rho}$ & $\mathcal{C}_{\textbf{C},k}$ & $\mathcal{P}$ & $\mathcal{R}$ & $r$ & Score & $\left| \textbf{F} \right|$ & $\mathbb{E}[\rho(\textbf{F})]$ \tabularnewline\hline
+    0 & $13$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $91.56$ & $23.2$k & $0.44$ \tabularnewline
+    1 & $7$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $92.74$ & $9.4$k & $0.50$ \tabularnewline
+    2 & $7$ & Random & $0.10$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $92.74$ & $9.4$k & $0.50$ \tabularnewline
+    3 & $7$ & Random & $0.30$ & $\textbf{Corr}$ & None & SumSqr & $4$ & $93.37$ & $9.4$k & $0.86$ \tabularnewline
+    4 & $7$ & Random & $0.30$ & $\textbf{Corr}$ & NoSign & SumSqr & $4$ & $94.14$ & $18.8$k & $0.58$ \tabularnewline
+    5 & $7$ & Random & $0.30$ & $\textbf{Corr}$ & NoSign & SumAbs & $4$ & $94.29$ & $18.8$k & $0.58$ \tabularnewline
+    6 & $7$ & Random & $0.30$ & $\textbf{Corr}$ & NoSign & SumAbs & $5$ & $94.68$ & $10.5$k & $0.70$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+For the SmallNORB dataset, both the training and test model selection dataset consist of $10000$ images. In total there are $20000$ images to transform. For cross-validation, the split was $1:1$, therefore each of the $5$ folds had $5000$ training and $5000$ test images. More importantly, the images were subsamples from $\hctimes{96}{96}$ to $\hctimes{32}{32}$ to reduce the experiment times. \textbf{Tables \ref{table:RecoderEvNORBSmallp},\ref{table:RecoderEvNORBSmallCCCk},\ref{table:RecoderEvNORBSmallrho},\ref{table:RecoderEvNORBSmallP},\ref{table:RecoderEvNORBSmallR}} and \textbf{\ref{table:RecoderEvNORBSmallr}} present the results of the six experiments. Included are the classification score, the feature vector size $\left| \textbf{F} \right|$ as well as the feature vector sparseness $\mathbb{E}[\rho(\textbf{F})]$. The best parameter choice is written in bold for each table. \textbf{Table \ref{table:RecoderEvNORBSmallEvolution}} shows the evolution of the current best configuration as the experiments progress. Again, several things have to be noted. A smaller than ``intuitive'' patch size was again, selected, this time of size $7$. Apparently, the features in this dataset appear the most clear at a smaller patch size. This time though, as the patch size increases, the performance drops considerably, as opposed to the plateau effect we saw on MNIST. Not surprisingly, the Random features with \textbf{Corr} coding won the second experiment. On the other hand, the best sparseness was unintuitively high, equal to $0.30$, which induced an actual average spareness of $0.86$, which is very high. We have seen both for MNIST, and more precisely here, that spareness in the feature vector is not that important. What is important is sparseness induced by the coding method. Indeed, for larger values than the best $\hat{\rho}$ the cost starts dropping. Polarity splitting again improves performance, with NoSign the winner of the two. On the other hand, the differences are not that great anymore. A marked distinction from both our assumptions and MNIST is the best type of $\mathcal{R}$ which was chosen, by a large margin to be SumAbs. SumSqr was somewhat close, while MaxNoSign and MaxKeepSign were noticeably worse. Subsample, was, of course, catastrophal. Finally, as with MNIST $r=5$ proved to be, again, by a large margin, the best reduce region size. We again observed for $p$, $\hat(rho)$ and $r$ a ``bow-like'' appearance for the performance curve. The task of the designer is to pick values for these as close to as possible to the maximum.
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Results for $p$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallp}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRR|}
+    \hline
+    $p$ & $5$ & $\textbf{7}$ & $9$ & $11$ & $13$ & $15$ & $17$ \tabularnewline\hline\hline
+    Score & $90.98$ & $\textbf{92.74}$ & $92.40$ & $91.56$ & $90.44$ & $89.40$ & $89.41$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $4.8$k & $\textbf{9.4\mbox{k}}$ & $15.4$k & $23.2$k & $32.4$k & $43.2$k & $55.4$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.52$ & $\textbf{0.50}$ & $0.43$ & $0.44$ & $0.41$ & $0.40$ & $0.36$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C},k}}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallCCCk}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRR|}
+    \hline
+    $\hctimes{\textbf{C}}{\mathcal{C}_{\textbf{C},k}}$ & \textbf{Random and Corr} & Random and \textbf{MP} & Sparse and \textbf{Corr} & Sparse and \textbf{MP} \tabularnewline\hline\hline
+    Score & $\textbf{92.74}$ & $92.34$ & $91.57$ & $90.55$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $\textbf{9.4\mbox{k}}$ & $9.4$k & $9.4$k & $9.4$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $\textbf{0.50}$ & $0.58$ & $0.41$ & $0.46$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\hat{\rho}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallrho}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $\hat{\rho}$ & $0.05$ & $0.10$ & $0.15$ & $0.20$ & $0.25$ & $\textbf{0.30}$ & $0.35$ & $0.40$ \tabularnewline\hline\hline
+    Score & $92.01$ & $92.74$ & $93.05$ & $93.29$ & $93.30$ & $\textbf{93.37}$ & $93.31$ & $93.28$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $9.4$k & $9.4$k & $9.4$k & $9.4$k & $9.4$k & $\textbf{9.4\mbox{k}}$ & $9.4$k & $9.4$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.31$ & $0.50$ & $0.64$ & $0.73$ & $0.80$ & $\textbf{0.86}$ & $0.90$ & $0.92$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{P}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallP}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRR|}
+    \hline
+    $\mathcal{P}$ & None & \textbf{NoSign} & KeepSign \tabularnewline\hline\hline
+    Score & $93.37$ & $\textbf{94.14}$ & $94.13$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $9.4$k & $\textbf{18.8\mbox{k}}$ & $18.8$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.86$ & $\textbf{0.58}$ & $0.58$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $\mathcal{R}$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallR}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRR|}
+    \hline
+    $\mathcal{P}$ & Subsample & MaxNoSign & MaxKeepSign & \textbf{SumAbs} & SumSqr \tabularnewline\hline\hline
+    Score & $89.65$ & $92.47$ & $92.48$ & $\textbf{94.29}$ & $94.14$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $18.8$k & $18.8$k & $18.8$k & $\textbf{18.8\mbox{k}}$ & $18.8$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.15$ & $0.58$ & $0.58$ & $\textbf{0.58}$ & $0.58$ \tabularnewline
+    \hline
+  \end{tabularx}
+  \caption{Results for $r$ on SmallNORB.}
+  \label{table:RecoderEvNORBSmallr}
+  \newcolumntype{R}{>{\centering}X}
+  \begin{tabularx}{\textwidth}{|c|RRRRRRRR|}
+    \hline
+    $r$ & $2$ & $3$ & $4$ & $\textbf{5}$ & $6$ & $7$ & $10$ & $15$ \tabularnewline\hline\hline
+    Score & $93.57$ & $94.12$ & $94.29$ & $\textbf{94.68}$ & $93.69$ & $92.51$ & $92.55$ & $89.56$ \tabularnewline
+    $\left|\textbf{F}\right|$ & $75.2$k & $29.4$k & $18.8$k & $\textbf{10.5\mbox{k}}$ & $7.3$k & $4.7$k & $2.6$k & $1.1$k \tabularnewline
+    $\mathbb{E}[\rho(\textbf{F})]$ & $0.20$ & $0.45$ & $0.58$ & $\textbf{0.70}$ & $0.78$ & $0.84$ & $0.95$ & $1.00$ \tabularnewline
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+This experiment section has shown a good way of picking architecture parameters, which occupies a nice position on the tradeoff axis between exhaustive search and fast model selection. We have shown how it has improved performance over an intuitive configuration and it has also shed some light on the datasets we're working with and rectified some misconceptions. A better approach would be to group certain sets of parameters together, of course. The search would take longer, but better results might be obtained. On the other hand, if a certain configuration doesn't work well, and another configuration doesn't work well, then there is no reason to believe that the unified configuration will work well, so there is some basis for our choosing this simpler approach. Notice however, that the actual improvement from intuitive architecture to best architecture was $0.10$ for MNIST and $3.12$ for SmallNORB. This might matter or not, depending on the application. For the next section, that is, benchmark busting, it matters. In a complex application, where the classification task is a small part of the system, and where other checks exist, so a bad classification might not hurt, this performance bonus might not be justifiable from a performance standpoint.
+
+\section{Final Performance Evaluation}
+\label{sec:FinalPerformanceEvaluation}
+
+In the previous section we obtained good configurations for the two datasets. In this section we will push them to the extreme. The first thing we will do is perform training and evaluation on the whole respective samples. Second, we will use $w=1024$ and $w=2048$. With these we will obtain state-of-the art results. However, further improvements are possible. First, if we use a comitte of $3$ or $5$ feature extractors, each trained on the whole dataset separately, and each followed by a separate classifier, we will obtain much better accuracy. The feature extractors contain important random parts, therefore using more of them is aking to building the sampling distribution for the class estimates. We use the mode of this distribution in order to return the proper label. Second, we can extend the dataset. One way to extend them is through elastic distorsions \cite{best-practices-cnn}. The absolute state of the art results are indeed obtained with this technique. The classification setup changes a little bit. First, the One-vs-All multiclassification method is used. The reason is twofold. First, resource constraints in the software implementation make it hard to use the One-vs-One method. Second, better results are observed with this method on smaller datasets. It is however, slower than the One-vs-One approach, and since the results are still correlated, the latter is preffered for architecture selection. Another thing we have noticed is that the selected value for $C$ is always very small, around $0.01$. We will use this value by default and not perform any cross-validation for another $C$. This simplifies the training procedure. We first transform both the training and testing datasets with a recoder, build a Liner SVM in One-vs-All with $C=1$ fashion on the training feature vectors and then evaluate performance on the test feature vectors. Again the LIBLINEAR implementation for the linear SVM is used, with the primal formulation and $\mathcal{L}_2$ loss and regularization.
 
 \chapter{Conclusions}
 \label{chap:Conclusions}
+
+Built a good classifier on two extensively studied datasets.
+Built an application with it.
+Surprising fact - random weights and a novel order provide a very good performance. The more features the better.
+Actually mostly eliminates the need for cross-validation on training the classifier - using a $C = 0.014$ is good enough for most applications. Faster architecture selection. Also provided a way to select a good architecture as well as rules of thumb for intuitive selection when there isn't any time or resources for architecture selection.
 
 \bibliographystyle{unsrt}
 \bibliography{Bibliography}
