@@ -432,44 +432,47 @@
 
 
 \newcommand\inscrierep{\vbox to \textheight{%
-    \vskip 12mm
-\large{University POLITEHNICA of Bucharest\\
-\@facultatea\\
-Department \@catedra} \par\nobreak % DN
-    \vskip 20mm
 
-        \parskip0pt 
-        \parindent0pt
-        \typeout{Title}
-        \null\nobreak\vskip 10bp 
-        {\def\baselinestretch{1}\@normalsize
-%          \centering\Large\bfseries\uppercase\expandafter{\@title}\par\nobreak
-          \centering\Large\bfseries\expandafter{\@title}\par\nobreak % DN
-         }
+\includegraphics[width=0.95\textwidth,height=0.95\textwidth]{thesis_data/ad_2.jpg}
 
-        \vskip 20mm
-        {\centering\bfseries{\Huge {\@tiplucrare} Thesis}
-          \nobreak
-          \vskip 4ex plus 2ex minus 2ex 
-          \ifdraft%
-            {VERSIUNEA DRAFT CREATA LA \uppercase\expandafter{\today}\\}
-          \else %
-			submitted in partial fulfillment of the requirements for\\
-			the Degree of Master of Science\\
-			in the domain {\it\@domeniu},\\
-			study program {\it\@program}
-        \vfil
+%     \vskip 12mm
+% \large{University POLITEHNICA of Bucharest\\
+% \@facultatea\\
+% Department \@catedra} \par\nobreak % DN
+%     \vskip 20mm
 
-             \begin{tabular}
-               {>{\raggedright}p{0.7\textwidth}r}
-               \Large{Thesis Advisors} & \Large{Student}\\
-               {\@director} & {\@author}\\
-             \end{tabular}
- \vfil
+%         \parskip0pt 
+%         \parindent0pt
+%         \typeout{Title}
+%         \null\nobreak\vskip 10bp 
+%         {\def\baselinestretch{1}\@normalsize
+% %          \centering\Large\bfseries\uppercase\expandafter{\@title}\par\nobreak
+%           \centering\Large\bfseries\expandafter{\@title}\par\nobreak % DN
+%          }
+
+%         \vskip 20mm
+%         {\centering\bfseries{\Huge {\@tiplucrare} Thesis}
+%           \nobreak
+%           \vskip 4ex plus 2ex minus 2ex 
+%           \ifdraft%
+%             {VERSIUNEA DRAFT CREATA LA \uppercase\expandafter{\today}\\}
+%           \else %
+% 			submitted in partial fulfillment of the requirements for\\
+% 			the Degree of Master of Science\\
+% 			in the domain {\it\@domeniu},\\
+% 			study program {\it\@program}
+%         \vfil
+
+%              \begin{tabular}
+%                {>{\raggedright}p{0.7\textwidth}r}
+%                \Large{Thesis Advisors} & \Large{Student}\\
+%                {\@director} & {\@author}\\
+%              \end{tabular}
+%  \vfil
        
-        Year \@year\\
-   \fi %   close ifdraft
-   }}\newpage} % end titlep
+%         Year \@year\\
+%    \fi %   close ifdraft
+}\newpage} % end titlep
 
 
 \newcommand\copyrightp{%
@@ -486,23 +489,25 @@ Department \@catedra} \par\nobreak % DN
 \newcommand\declaratiep{%
 \null\vfil
 
-{\centering\bfseries\large Statement of Academic Honesty}\\
-\vspace{15mm}
+\includegraphics[width=0.95\textwidth,height=0.95\textwidth]{thesis_data/ad_3.jpg}
 
-I hereby declare that the thesis {\it{\@title}}, submitted to the Faculty of Electronics, Telecommunications and Information Technology in partial fulfillment of the requirements for the degree of {\it{\@titlulobtinut}} in the domain {\it{\@domeniu}}, study program {\it{\@program}}, is written by myself and was never before submitted to any other faculty or higher learning institution in Romania or any other country.
+% {\centering\bfseries\large Statement of Academic Honesty}\\
+% \vspace{15mm}
 
-I declare that all information sources sources I used, including the ones I found on the Internet, are properly cited in the thesis as bibliographical references. Text fragments cited "as is" or translated from other languages are written between quotes and are referenced to the source. Reformulation using different words of a certain text is also properly referenced. I understand plagiarism constitutes an offence punishable
-by law.
+% I hereby declare that the thesis {\it{\@title}}, submitted to the Faculty of Electronics, Telecommunications and Information Technology in partial fulfillment of the requirements for the degree of {\it{\@titlulobtinut}} in the domain {\it{\@domeniu}}, study program {\it{\@program}}, is written by myself and was never before submitted to any other faculty or higher learning institution in Romania or any other country.
 
-I declare that all the results I present as coming from simulations and measurements I performed, together with the procedures used to obtain them, are real and indeed come from the respective simulations and measurements. I understand that data faking is an offence punishable according to the University regulations.
-\vfil 
-Bucharest,  {\@month} {\@year} 
+% I declare that all information sources sources I used, including the ones I found on the Internet, are properly cited in the thesis as bibliographical references. Text fragments cited "as is" or translated from other languages are written between quotes and are referenced to the source. Reformulation using different words of a certain text is also properly referenced. I understand plagiarism constitutes an offence punishable
+% by law.
 
-\hfill {\@author}\\
-\\
-\\
-\hfill ...................\\
-\\
+% I declare that all the results I present as coming from simulations and measurements I performed, together with the procedures used to obtain them, are real and indeed come from the respective simulations and measurements. I understand that data faking is an offence punishable according to the University regulations.
+% \vfil 
+% Bucharest,  {\@month} {\@year} 
+
+% \hfill {\@author}\\
+% \\
+% \\
+% \hfill ...................\\
+% \\
 
 %{\@declaratie}\\
 \vfil\newpage}
@@ -523,7 +528,10 @@ Bucharest,  {\@month} {\@year}
         \thispagestyle{empty}
         \mbox{}
         \newpage
-        % \inscrierep
+        \inscrierep
+        \thispagestyle{empty}
+        \mbox{}
+        \newpage
         \declaratiep
         \newpage
         \thispagestyle{empty}
@@ -532,6 +540,18 @@ Bucharest,  {\@month} {\@year}
         \thispagestyle{empty}
         \mbox{}
         \ifcopyright\copyrightp\fi 
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
+        \newpage
+        \thispagestyle{empty}
+        \mbox{}
+        \ifdedication%
+                \begin{flushright}
+                \mbox{}\\ \mbox{}\\ \mbox{}\\ \mbox{}\\ \mbox{}\\ \mbox{}\\ \mbox{}\\
+                \@dedication
+                \end{flushright}
+        \fi
         \newpage
         \thispagestyle{empty}
         \mbox{}
@@ -587,11 +607,6 @@ Bucharest,  {\@month} {\@year}
         \ifpreface{\unnumberedsection{Preface}
                 \@preface}
         \fi   
-        \ifdedication%
-                \unnumberedsection{Dedication}
-                \@dedication
-        \fi 
-
 %        \tableofcontents
         \iffigures%
                 \addvspace{10bp}
@@ -599,9 +614,6 @@ Bucharest,  {\@month} {\@year}
                 \def\addvspace##1{}
                 \listoffigures
                 \let\addvspace=\saveaddvspace
-                \newpage
-                \thispagestyle{empty}
-                \mbox{}
                 \newpage
         \fi
         \iftables%
