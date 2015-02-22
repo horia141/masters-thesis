@@ -69,10 +69,15 @@ classdef neural_gas < transforms.record.dictionary
                     
                     saved_mse_t(iter) = norm(target_observation - dict_transp * similarities);
                     
-%                     if mod(iter-1,1000) == 0
-%                         utils.display.dictionary(dict,ceil(sqrt(size(dict,2))),sqrt(size(dict,2)));
-%                         pause(0.1);
-%                     end
+                    if mod(iter-1,100) == 0
+                        sz = sqrt(size(dict,2));
+                        subplot(2,1,1);
+                        utils.display.dictionary(dict,sz,sz);
+                        subplot(2,1,2);
+                        plot(saved_mse_t);
+                        axis([1 max_iter_count 0 max(saved_mse_t)]);
+                        pause(0.1);
+                    end
                 end
             elseif check.same(version,'V2');
                 assert(false);

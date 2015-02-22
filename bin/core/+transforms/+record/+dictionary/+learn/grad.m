@@ -31,18 +31,19 @@ classdef grad < transforms.record.dictionary
             assert(check.natural(max_iter_count));
             assert(max_iter_count >= 1);
 
-            coding_fn_t = transforms.record.dictionary.coding_setup(coding_method);
+            coding_fn_t = transforms.record.dictionary.coding_setup(coding_method,coding_params);
             
             N = dataset.count(train_sample_plain);
             d = dataset.geometry(train_sample_plain);
-            dict = transforms.record.dictionary.normalize_dict(utils.common.rand_range(-1,1,word_count,d));
+            dict = utils.common.rand_range(-1,1,word_count,d);
+            dict = transforms.record.dictionary.normalize_dict(dict);
             dict_transp = dict';
             dict_x_dict_transp = dict * dict_transp;
             saved_mse_t = zeros(1,max_iter_count);
             learning_rate_schedule = utils.common.schedule(initial_learning_rate,final_learning_rate,max_iter_count);
             
             for iter = 1:max_iter_count
-                coeffs = coding_fn_t(dict,dict_transp,dict_x_dict_transp,coding_params,coeff_count,train_sample_plain,num_workers);
+                coeffs = full(coding_fn_t(dict,dict_transp,dict_x_dict_transp,coding_params,coeff_count,train_sample_plain,num_workers));
                 
                 diff = train_sample_plain - dict_transp * coeffs;
                 delta_dict = coeffs * diff';
@@ -50,14 +51,15 @@ classdef grad < transforms.record.dictionary
                 dict = dict + (learning_rate_schedule(iter) / N) * delta_dict;
                 dict = transforms.record.dictionary.normalize_dict(dict);
                 dict_transp = dict';
+                dict_x_dict_transp = dict * dict_transp;
                 
-                mean_error = sum(mean((diff .^ 2)));
+                mean_error = mean(sum((diff .^ 2)));
                 saved_mse_t(iter) = mean_error;
-%                 if mod(iter - 1,1) == 0
-%                     sz = sqrt(size(dict,2));
-%                     utils.display.dictionary(dict,sz,sz);
-%                     pause(0.01);
-%                 end
+                if mod(iter - 1,1) == 0
+                    sz = sqrt(size(dict,2));
+                    utils.display.dictionary(dict,sz,sz);
+                    pause(0.01);
+                end
             end
             
             obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers);

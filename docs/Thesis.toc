@@ -1,14 +1,24 @@
-\contentsline {chapter}{List of Figures}{iii}{chapter*.2}
-\contentsline {chapter}{List of Tables}{iv}{chapter*.3}
-\contentsline {unnumberedsection}{List of Abbreviations}{v}{chapter*.4}
-\contentsline {unnumberedsection}{Stream of thought writing}{1}{chapter*.5}
-\contentsline {chapter}{\numberline {1}Overview of Feature Extraction}{3}{chapter.1}
-\contentsline {chapter}{\numberline {2}Coding and Different Coding Methods}{5}{chapter.2}
-\contentsline {chapter}{\numberline {3}Obtaining a Feature Set}{14}{chapter.3}
-\contentsline {chapter}{\numberline {4}Experiments}{20}{chapter.4}
-\contentsline {section}{\numberline {4.1}Coding and Sparseness}{20}{section.4.1}
-\contentsline {section}{\numberline {4.2}Learning Feature Sets}{20}{section.4.2}
-\contentsline {section}{\numberline {4.3}MNIST}{20}{section.4.3}
-\contentsline {section}{\numberline {4.4}NORB and SmallNORB}{20}{section.4.4}
-\contentsline {section}{\numberline {4.5}Text Detection Application}{20}{section.4.5}
-\contentsline {chapter}{\numberline {5}Conclusions}{21}{chapter.5}
+\contentsline {unnumberedsection}{Acknowledgements}{xi}{chapter*.1}
+\contentsline {chapter}{List of Figures}{iii}{chapter*.3}
+\contentsline {chapter}{List of Tables}{v}{chapter*.4}
+\contentsline {unnumberedsection}{List of Abbreviations}{vii}{chapter*.5}
+\contentsline {unnumberedsection}{Introduction}{1}{chapter*.6}
+\contentsline {chapter}{\numberline {1}Overview of Feature Extraction}{5}{chapter.1}
+\contentsline {chapter}{\numberline {2}Coding and Different Coding Methods}{11}{chapter.2}
+\contentsline {section}{\numberline {2.1}Correlation Coding}{12}{section.2.1}
+\contentsline {section}{\numberline {2.2}Least Squares Approximation}{12}{section.2.2}
+\contentsline {section}{\numberline {2.3}Sparse Overcomplete Least Squares Approximation}{14}{section.2.3}
+\contentsline {section}{\numberline {2.4}Matching Pursuit}{16}{section.2.4}
+\contentsline {section}{\numberline {2.5}Orthogonal Matching Pursuit}{19}{section.2.5}
+\contentsline {section}{\numberline {2.6}Optimized Orthogonal Matching Pursuit}{20}{section.2.6}
+\contentsline {chapter}{\numberline {3}Obtaining a Feature Set}{25}{chapter.3}
+\contentsline {section}{\numberline {3.1}Random, Handmade and DCT Features.}{25}{section.3.1}
+\contentsline {section}{\numberline {3.2}SparseNet / Gradient Descent}{26}{section.3.2}
+\contentsline {section}{\numberline {3.3}Sparse Coding Neural Gas}{31}{section.3.3}
+\contentsline {chapter}{\numberline {4}Experiments}{35}{chapter.4}
+\contentsline {section}{\numberline {4.1}Coding, Reconstruction and Sparseness}{37}{section.4.1}
+\contentsline {section}{\numberline {4.2}Coder Architecture Evaluation}{41}{section.4.2}
+\contentsline {section}{\numberline {4.3}Final Performance Evaluation}{51}{section.4.3}
+\contentsline {chapter}{\numberline {5}Text Detection Application}{53}{chapter.5}
+\contentsline {chapter}{\numberline {6}Conclusions}{57}{chapter.6}
+\contentsline {unnumberedsection}{Bibliography}{59}{chapter*.7}

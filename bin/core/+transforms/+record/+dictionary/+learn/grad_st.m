@@ -36,7 +36,7 @@ classdef grad_st < transforms.record.dictionary
             assert(check.natural(max_iter_count));
             assert(max_iter_count >= 1);
 
-            coding_fn_t = transforms.record.dictionary.coding_setup(coding_method);
+            coding_fn_t = transforms.record.dictionary.coding_setup(coding_method,coding_params);
             
             N = dataset.count(train_sample_plain);
             d = dataset.geometry(train_sample_plain);
@@ -61,15 +61,15 @@ classdef grad_st < transforms.record.dictionary
                 
                 mean_error = sum(mean((diff .^ 2)));
                 saved_mse_t(iter) = mean_error;
-                % if mod(iter - 1,1) == 0
-                %     sz = sqrt(size(dict,2));
-                %     subplot(2,1,1);
-                %     utilsdisplay.sparse_basis(dict,sz,sz);
-                %     subplot(2,1,2);
-                %     plot(saved_mse_t);
-                %     axis([1 max_iter_count 0 max(saved_mse_t)]);
-                %     pause(0.1);
-                % end
+                if mod(iter - 1,100) == 0
+                    sz = sqrt(size(dict,2));
+                    subplot(2,1,1);
+                    utils.display.dictionary(dict,sz,sz);
+                    subplot(2,1,2);
+                    plot(saved_mse_t);
+                    axis([1 max_iter_count 0 max(saved_mse_t)]);
+                    pause(0.1);
+                end
             end
             
             obj = obj@transforms.record.dictionary(train_sample_plain,dict,coding_method,coding_params,coeff_count,num_workers);

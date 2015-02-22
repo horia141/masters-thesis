@@ -57,7 +57,11 @@
 \figurespage
 \tablespage
 \dedication{Dedicated to Prof. Vasile Buzuloiu}
-\acknowledgements{The author would like to thank, for supporting this work, The German Academic Exchange Service Programme ``Ostpartnerschaften'', the University of L\"{u}beck,  and The Sectoral Operational Programme Human Resources Development 2007-2013 of the Romanian Ministry of Labour, Family and Social Protection through the Financial Agreement POSDRU/86/1.2/S/61756.}
+\acknowledgements{This work would not have been possible without the effort of all the LAPI team members. To them I owe a great debt of gratitude for organizing and running the ITEMS master programme through thick and thin and for providing such a wonderful opportunity. I would also like to thank the team at the Institute for Neuro-and Bionformatics from L\"{u}beck for hosting me and for providing such a nice experience.
+
+The author would also like to thank, for supporting this work, The German Academic Exchange Service Programme ``Ostpartnerschaften'', the University of L\"{u}beck,  and The Sectoral Operational Programme Human Resources Development 2007-2013 of the Romanian Ministry of Labour, Family and Social Protection through the Financial Agreement POSDRU/86/1.2/S/61756.
+
+Last, but not least, I would like to thank Andreea, for keeping focused and oriented in the right direction.}
 
 \beforepreface
 
@@ -82,7 +86,7 @@
 
 \unnumberedsection{Introduction}
 
-This thesis will study the application of new principles in Machine Learning, known under the umbrella term of Deep Learning, to the task of image recognition. The task is naturally a classification problem and benefits from extensive study inside the Statistics and Machine Learning communities. My own contribution to this field is proposing a general architecture for classification and regression systems inspired from Deep Learning, introducing a particular form for this architecture, which, despite its simplicity, produces remarkable results on a number of benchmark problems, surpassing current state of the art results, and the usage of said architecture in a Computer Vision text detection and recognition problem.
+This thesis will study the application of new principles in Machine Learning, known under the umbrella term of Deep Learning, to the task of image recognition. The task is naturally a classification problem and benefits from extensive study inside the Statistics and Machine Learning communities. My own contribution to this field is proposing a general architecture for classification and regression systems inspired from Deep Learning, introducing a particular form for this architecture, which, despite its simplicity, produces remarkable results on a number of benchmark problems, surpassing current state of the art results in some cases, and the usage of said architecture in a Computer Vision text detection and recognition problem.
 
 Concerning the classification problem, there exist efficient algorithms with a solid theoretical base such as Support Vector Machines and Classification Trees, as well as techniques for combining and boosting such methods. Each has its strengths and weaknesses, however,  when it comes to visual information processing, these techniques show their limitations. Problems arise because of the very-high dimensionality of the data, because of the non-standard probability distribution from which the data was drawn and because of non-linear dependencies between features.
 
@@ -98,7 +102,7 @@ For a general overview of the field as well as insights into why such systems wo
 
 More generally, the task of classification is split into two parts, namely feature extraction and class decision. The feature extractor is modeled as a neural network whose purpose is that of mapping inputs into a high-dimensional space of such a nature that a simple classifier can work. The classifier can be a Perceptron, making the whole system a neural network, or can be a Linear SVM, a Kernelized SVM or even a Decision Tree. The complexity of the system moves to the feature extraction stage, as the burden of presenting data, in such a way that a simple and well understood classifier can work, falls on it. As such, this work will be mostly concerened with this stage and take for granted the latter ones.
 
-The structure of the rest of this thesis is as follows. \textbf{Chapter \ref{chap:OverviewFeatureExtraction}} presents the high-level structure of a Deep Learning inspired feature extractor and presents the major choices available to a designer. \textbf{Chapter \ref{chap:CodingAndCodingMethods}} focuses on a major component of a feature extractor, namely the feature coding. \textbf{Chapter \ref{chap:ObtainingFeatureSet}} focuses on the other major component of a feture extractor, namely the learning of features. \textbf{Chapter \ref{chap:Experiments}} presents a number of experiments which highlight the different strengths and weaknesses of the feature coding and learning methods, an example of architecture selection for two benchmark image classification problems, as well as a comparision of high-performance versions of the previously found architectures against known state-of-the-art results, which our techniques surpass. \textbf{Chapter \ref{chap:TextDetectionApplication}} presents an application of the methods we have developed to the problem of image text detection.
+The structure of the rest of this thesis is as follows. \textbf{Chapter \ref{chap:OverviewFeatureExtraction}} presents the high-level structure of a Deep Learning inspired feature extractor and presents the major choices available to a designer. \textbf{Chapter \ref{chap:CodingAndCodingMethods}} focuses on a major component of a feature extractor, namely the feature coding. \textbf{Chapter \ref{chap:ObtainingFeatureSet}} focuses on the other major component of a feture extractor, namely the learning of features. \textbf{Chapter \ref{chap:Experiments}} presents a number of experiments which highlight the different strengths and weaknesses of the feature coding and learning methods, an example of architecture selection for two benchmark image classification problems, as well as a comparision of high-performance versions of the previously found architectures against known state-of-the-art results. \textbf{Chapter \ref{chap:TextDetectionApplication}} presents an application of the methods we have developed to the problem of image text detection.
 
 We end with a description of the conventions in use throught this thesis. Vectors are written in boldface with lower case letters - $\textbf{v}$. Addressing elment $i$ from $\textbf{v}$ is done with a subscript - $\textbf{v}_i$. Accessing a set of elements $\Lambda$ from $\textbf{v}$ is done using the set as a subscript - $\textbf{v}_\Lambda$. Matrices are written in boldface with capital letters - $\textbf{A}$. Accessing a certain column $i$ from $\textbf{A}$ is done with a superscript - $\textbf{A}^i$. Accessing a certain element $j$ in column $i$ from $\textbf{A}$ is done with both a superscript and a subscript - $\textbf{A}^i_j$. Accessing a certain set of columns $\Lambda$ from $\textbf{A}$ is done using the set as a superscript - $\textbf{A}^\Lambda$. Accessing a certain set of indices $\Lambda$ of column $i$ from $\textbf{A}$ is done using a superscript and the set as a subscript - $\textbf{A}^i_\Lambda$. Accessing a certain subset of indices $\Theta$ of a certain subset of columns $\Lambda$ from $\textbf{A}$ is done using the column set as a superscript and the element set as a subscript - $\textbf{A}^\Lambda_\Theta$. Every time a set is used for indexing, the resulting elements or columns are in increasing order of indices. Alternatively, a MatLAB style matrix access syntax is used if the superscript and subscript one is too cluttered. We have column selection - $\textbf{A}(:,i)$, element selection - $\textbf{A}(j,i)$, column set selection $\textbf{A}(:,\Lambda)$, element set selection from column $i$ - $\textbf{A}(\Lambda,i)$, element set selection from column set - $\textbf{A}(\Theta,\Lambda)$.
 
@@ -1371,25 +1375,182 @@ For the SmallNORB dataset, both the training and test model selection dataset co
 \end{table}
 \renewcommand{\arraystretch}{1.0}
 
-This experiment section has shown a good way of picking architecture parameters, which occupies a nice position on the tradeoff axis between exhaustive search and fast model selection. We have shown how it has improved performance over an intuitive configuration and it has also shed some light on the datasets we're working with and rectified some misconceptions. A better approach would be to group certain sets of parameters together, of course. The search would take longer, but better results might be obtained. On the other hand, if a certain configuration doesn't work well, and another configuration doesn't work well, then there is no reason to believe that the unified configuration will work well, so there is some basis for our choosing this simpler approach. Notice however, that the actual improvement from intuitive architecture to best architecture was $0.10$ for MNIST and $3.12$ for SmallNORB. This might matter or not, depending on the application. For the next section, that is, benchmark busting, it matters. In a complex application, where the classification task is a small part of the system, and where other checks exist, so a bad classification might not hurt, this performance bonus might not be justifiable from a performance standpoint.
+This experiment section has shown a good way of picking architecture parameters, which occupies a nice position on the tradeoff axis between exhaustive search and fast model selection. We have shown how it has improved performance over an intuitive configuration and it has also shed some light on the datasets we're working with and rectified some misconceptions. A better approach would be to group certain sets of parameters together, of course. The search would take longer, but better results might be obtained. On the other hand, if a certain configuration doesn't work well, and another configuration doesn't work well, then there is no reason to believe that the unified configuration will work well, so there is some basis for our choosing this simpler approach. Notice however, that the actual improvement from intuitive architecture to best architecture was $0.10$ for MNIST and $3.12$ for SmallNORB. This might matter or not, depending on the application. For the next section it matters. In a complex application, where the classification task is a small part of the system, and where other checks exist, so a bad classification might not hurt, this performance bonus might not be justifiable from a performance standpoint.
 
 Is there a link between classification performance and reconstructive or sparseness powers? $\hat{\rho}$ most controls the tradeoff between reconstructive power and sparseness, and we can see that choosing it is not a simple matter at all. A ``sweet spot'' value must be found. Too high, and the feature vector is very dense, classifier training is slow and performance suffers. Too low, and not enough characteristics of the input image are capture, therefore performance suffers as well. In conclusion, there is, of course, a dependence, but it is far from linear. Model selection seems to be, for now, the choice.
 
 \section{Final Performance Evaluation}
 \label{sec:FinalPerformanceEvaluation}
 
-In the previous section we obtained good configurations for the two datasets. In this section we will push them to the extreme. The first thing we will do is perform training and evaluation on the whole respective samples. Second, we will use $w=1024$ and $w=2048$. With these we will obtain state-of-the art results. However, further improvements are possible. First, if we use a comitte of $3$ or $5$ feature extractors, each trained on the whole dataset separately, and each followed by a separate classifier, we will obtain much better accuracy. The feature extractors contain important random parts, therefore using more of them is aking to building the sampling distribution for the class estimates. We use the mode of this distribution in order to return the proper label. Second, we can extend the dataset. One way to extend them is through elastic distorsions \cite{best-practices-cnn}. The absolute state of the art results are indeed obtained with this technique. The classification setup changes a little bit. First, the One-vs-All multiclassification method is used. The reason is twofold. First, resource constraints in the software implementation make it hard to use the One-vs-One method. Second, better results are observed with this method on smaller datasets. It is however, slower than the One-vs-One approach, and since the results are still correlated, the latter is preffered for architecture selection. Another thing we have noticed is that the selected value for $C$ is always very small, around $0.01$. We will use this value by default and not perform any cross-validation for another $C$. This simplifies the training procedure. We first transform both the training and testing datasets with a recoder, build a Liner SVM in One-vs-All with $C=1$ fashion on the training feature vectors and then evaluate performance on the test feature vectors. Again the LIBLINEAR implementation for the linear SVM is used, with the primal formulation and $\mathcal{L}_2$ loss and regularization.
+In this section we will compare the architectures we found in the previous section with other state-of-the-art methods. In order to do this, we will use the whole training dataset, instead of just the model selection subsets. This should boost our scores, as more information is available for training. Furthermore, we will use a very large feature set, more precisely we'll have $w = 1024$. It is our experience that performance increases depdendent on the number of features, until it reaches a performance plateau. For example, in informal experiments, there was no accuracy difference between a classifier built with $w = 1024$ and one built with $w = 2048$. We prefer the former, of course, for parsimony and computational efficiency reasons. Another change was the adoption of One-vs-All classification instead of the One-vs-One used in model selection. In our experiments, this has improved performance. On the other hand, training one binary subclassifier is harder, as the full trianing set must be used. A final change was the elimination of the cross-validation search for selecting the optimal $C$ for the Linear SVM classifiers. In most experiments, the optimal value was somewhere between $0.01$ and $0.02$. We settle on a value of $0.014$ for this and use it to train the One-vs-All Linear SVM classifier directly, without need for the expensive search step.
+
+There are several ``tricks'' which can be applied to a problem in order to increase performance, independent of the actual classifier used. The first, a variant of boosting called comitte classification, is useful when there is large randomness in the system, as is the case with our setup. It consists of training a small number ($3-7$) of classifiers on the same dataset and using the mode of their prediction as the final estimated class. The second method artificially extends the training dataset through small modifications of the original images. Simple approaches include random translations or rotations around the image axis, while more complex methods perform so called ``elastic distorsions'' \cite{best-practices-cnn}, which, for the MNIST dataset, mimick hand vibrations while writing. Both methods decrease the variance of the class estimate, albeit through different means. These are, however, not always applicable. Comittes require extra resources, linear in the number of classifiers, while random distorsions might not always be meaningful. We will not extend the datasets we work with in any way, but will report comitte results, as these are easy to compute with our experimental setup. 
+
+\textbf{Table \ref{table:FinalPerformanceEvaluationMNISTNormal}} shows our results for the MNIST dataset against the best known. The results are gathered from \cite{mnist-website}. We beat the current best by $0.07$, which may seem as a very small performance increase. However, in the kinds of applications handwritten digit recognition is used, such as mail delivery, even such improvements are useful, as it translates to possibly tens of thousands of packages routed correctly. \textbf{Table \ref{table:FinalPerformanceEvaluationNORBSmallNormal}} shows our results for the SmallNORB dataset against the best known. We are very close to the best results, coming withing $1.28$ percents of beating it with one classifer and withing $1.20$ with a comitte of three classifiers. Our results are obtained on a scaled down to $\hctimes{48}{48}$ version of the dataset and using a single channel. We consider it a decent tradeoff between computing speed and performance. Tests with the full dataset were not carried out due to computational concerns.
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Comparision of our best results for MNIST.}
+  \label{table:FinalPerformanceEvaluationMNISTNormal}
+  \begin{tabularx}{\textwidth}{|X|cc|}
+    \hline
+    \centering{Method} & Score & Citation \\
+    \hline\hline
+    \textbf{Corr and Global Order w. Random Features} & $\textbf{99.48}$ & NA \\
+    \textbf{Corr and Global Order w. Random Features (Comitte)} & $\textbf{99.54}$ & NA \\
+    Large CNN w. Pretraining & $99.47$ & \cite{best-architecture-object-recognition} \\
+    Large CNN w. Pretraining & $99.40$ & \cite{efficient-learning-sparse-energy-model} \\
+    Large CNN w. Pretraining & $99.38$ & \cite{unsupervised-learning-invariant-feature-hierarchies} \\
+    Large CNN w. Random Features & $99.12$ & \cite{unsupervised-learning-invariant-feature-hierarchies} \\
+    Sparse Feature Extraction w. Kernel SVM & $99.41$ & \cite{simple-method-sparse-coding} \\
+    Deep Convex Net w. Pretraining & $99.17$ & \cite{mnist-website} \\
+    NN $784$-$500$-$500$-$2000$-$30$ kNN w. Pretraining via RBM & $99.00$ & \cite{mnist-website} \\
+    SVM w. Gaussian Kernel & $98.60$ & \cite{mnist-website} \\
+    kNN w. $\mathcal{L}_3$ Distance [for reference] & $97.17$ & \cite{mnist-website} \\
+    One-vs-One Perceptron [for reference] & $92.40$ & \cite{gradient-based-learning} \\
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{table}
+  \caption{Comparision of our best results for SmallNORB.}
+  \label{table:FinalPerformanceEvaluationNORBSmallNormal}
+  \begin{tabularx}{\textwidth}{|X|cc|}
+    \hline
+    \centering{Method} & Score & Citation \\
+    \hline\hline
+    \textbf{Corr and Global Order w. Random Features} & $\textbf{95.72}$ & NA \\
+    \textbf{Corr and Global Order w. Random Features (Comitte)} & $\textbf{95.80}$ & NA \\
+    One Module CNN w. Pretraining via KMeans (Triangle) & $97.00$ & \cite{analysis-single-layer-networks} \\
+    One Module CNN w. Pretraining via KMeans (Hard) & $96.90$ & \cite{analysis-single-layer-networks} \\
+    Sparse Autoencoder & $96.90$ & \cite{analysis-single-layer-networks} \\
+    Sparse RMF & $96.20$ & \cite{analysis-single-layer-networks} \\
+    CNN & $94.40$ & \cite{best-architecture-object-recognition} \\
+    Deep Belief Networks & $99.50$ & \cite{3d-object-deep-belief-nets} \\
+    CNN & $93.40$ & \cite{learning-methods-invariance-pose-lighting} \\
+    CNN & $93.20$ & \cite{learning-methods-invariance-pose-lighting} \\
+    CNN & $92.14$ & \cite{high-performance-nn-object-classification} \\
+    SVM w. Gaussian Kernel and Resize to $\hctimes{32}{32}$ [for reference] & $87.40$ & \cite{learning-methods-invariance-pose-lighting} \\
+    \hline
+  \end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 \chapter{Text Detection Application}
 \label{chap:TextDetectionApplication}
 
+This chapter describes an application of the ideas presented in this work to the problem of image text detection, that is, recognizing the areas in an image where text is present. The application is crudely built, but manages to detect the main text areas. Furthermore, it does so without any specialized knowlege besides the ability to separate small image patches into text and non-text ones. Advances in using Deep Learning and Usupervied Learning have been made in this area \cite{text-detection-character-recognition-unsupervised-feature-learning} , but it remains an open research subject, far from other state-of-the-art methods. However, the advantages are undeniable. Other methods use handcrafted features and are therefore slow to build and adapt, while systems built on such systems as described in this work are easier to adapt and even learn new features by themselves.
+
+Formally, we are given an input image $\textbf{I}$ of size $\hctimes{M}{N}$, and wish to obtain a list of $T$ bounding boxes $\{ (r_i,c_i,h_i,w_i) \}_{i=1}^T$ which describe the regions in the image where text information is present. \textbf{Figure \ref{fig:TextDetectBoxes}\subref{fig:TextDetectBoxesOriginal}} shows an example of what a typical input might look like for such a system while \textbf{Figure \ref{fig:TextDetectBoxes}\subref{fig:TextDetectBoxesOverlay}} shows the resulting bounding boxes overlayed on the original image. Detection differs from typical supervised learning by the fact that usually more than one region of text is present in any given image and that robust systems must be able to handle each one of them. This rules out ``simple'' approaches such as multiple regression with $r_1$, $c_1$, $h_1$ and $w_1$ as outputs, for example. Any approach must therefore combine several techniques in order to produce usable output.
+
+\begin{figure}
+\centering
+\subfigure[The input image.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/boxes_original.png}
+  \label{fig:TextDetectBoxesOriginal}
+}
+\subfigure[The same image with bounding box overlays.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/boxes_overlay.png}
+  \label{fig:TextDetectBoxesOverlay}
+}
+\caption{Typical input and output of a text detection system. The two text regions are separated, because of differences in font size. This is not a hard constraint though.}
+\label{fig:TextDetectBoxes}
+\end{figure}
+
+The strategy we employ consists of two steps. The first one computes a text confidence map $\textbf{I}^t$, which is a grayscale image of the same size as $\textbf{I}$ and which states for each $\textbf{I}^t(\alpha,\beta)$ our certainty that the patch centered around $(\alpha,\beta)$ from $\textbf{I}$ is a text region. \textbf{Figure \ref{fig:TextDetectExtra}\subref{fig:TextDetectExtraConfidence1}} and \textbf{Figure \ref{fig:TextDetectExtra}\subref{fig:TextDetectExtraConfidence2}} show how such a map might look like. The central task is deciding whether a patch of size $\hctimes{m}{n}$ contains text or non-text. This can be modelled as a classical binary classification problem and can be attacked with the methods we have developed so far in this work. An extra requirement is that the classifier be able to return ``confidence'' scores $\rho^{+1}$ and $\rho^{-1}$ for each of the two classes, with $\rho^{+1} + \rho^{-1} = 1$ and $\rho^{+1} \geq 0$ and $\rho^{-1} \geq 0$. This can be easily met with our current setup. The second step isolates regions from $\textbf{I}^t$ where text is most probable and produces the final bounding boxes. In a more sophisticated application, this step would output the orientation of the boxes as well, in order to handle text that is not properly aligned with the camera. As it is, the application han handle just a little bit of rotation for each of the three axes. The approach taken is based on more standard image processing techniques.
+
+\begin{figure}
+\centering
+\subfigure[Example image $1$.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/extra_original1.png}
+  \label{fig:TextDetectExtraOriginal1}
+}
+\subfigure[A confidence map for \subref{fig:TextDetectExtraOriginal1}.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/extra_confidence1.png}
+  \label{fig:TextDetectExtraConfidence1}
+}
+\subfigure[Example image $2$.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/extra_original2.png}
+  \label{fig:TextDetectExtraOriginal2}
+}
+\subfigure[A confidence map for \subref{fig:TextDetectExtraOriginal2}.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/extra_confidence2.png}
+  \label{fig:TextDetectExtraConfidence2}
+}
+\caption{Two images and associated confidence maps.}
+\label{fig:TextDetectExtra}
+\end{figure}
+
+Regarding the first step, an important observation is that we need to employ more than one decider procedure. In fact, we use $12$ of them, one for each of the patch row size from the list $16$, $20$, $24$, $28$, $32$, $36$, $40$, $44$, $48$, $52$, $56$ and $60$. Thus, for a certain row size $l$ we have the associated decider $\mathcal{D}_l$. In order to obtain a confidence map $\textbf{I}_l^t$ we position a sliding window of size $\hctimes{l}{c_l}$ over each pixel in $\textbf{I}$ and invoke $\mathcal{D}_l$. More precisely, we have $\textbf{I}_l^t$ initially set to equal the zero matrix $\mathbb{O}_{M,N}$. When processing each patch at $(\alpha,\beta)$, if $\mathcal{D}_l$ returns positive, then all the pixels in $\textbf{I}_l^t$ associated with the current pixel have their values increased by the confidence level $\rho^{+1}$. This way, values which consistently fall withing text-regions will increase their associated confidence, while ``noise'' values will tend to remain small. We do not apply this processing to patches of small variance, because those are, most-probably, non-text. \textbf{Algorithm \ref{algo:ConfidenceMapConstruction}} illustrates the process better. The final confidence map $\textbf{I}^t$ is the sum of all the row size confidence maps. For convenience, we divide by the maximum value for easier handling and visualization. We have:
+
+\begin{align*}
+\textbf{I}^t & \gets \sum_{l} \textbf{I}_l^t \\
+\textbf{I}^t & \gets \textbf{I}^t / \max{\textbf{I}^t}
+\end{align*}
+
+\begin{algorithm}
+\caption{Constructing a confidence map.}
+\label{algo:ConfidenceMapConstruction}
+\begin{algorithmic}
+\Require $\textbf{I},\mathcal{D}_l,\delta_{\sigma^2}$
+\Ensure $\textbf{I}_l^t$
+\State $\textbf{I}_l^t \gets \mathbb{O}_{M,N}$
+\For {$\alpha = \hcrange{1}{M-l+1}$}
+\For {$\beta = \hcrange{1}{N-c_l+1}$}
+\State $\textbf{I}^c \gets \textbf{I}^c(\hcrange{\alpha}{\alpha+l},\hcrange{\beta}{\beta+c_l})$
+\If {$\mathbb{V}[\textbf{I}^c] \geq \delta_{\sigma^2}$}
+\State $\left[c,\rho^{+1},\rho^{-1} \right] \gets \mathcal{D}_l(\textbf{I}(\hcrange{\alpha}{\alpha+l},\hcrange{\beta}{\beta+c_l}))$
+\If {$c = +1$}
+\State $\textbf{I}^t(\hcrange{\alpha}{\alpha+l},\hcrange{\beta}{\beta+c_l}) \gets \textbf{I}^c + \rho^{+1}$
+\EndIf
+\EndIf
+\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The text/non-text decision problem requires the existance of a proper training dataset, which we obtained from several sources \cite{icdar-website,character-recognition-nautral-images,end-to-end-scene-text-recognition}. The images from these datasets are of various quality and come in all different sizes and shapes, a fact which made our task harder. We found the mode of the distribution of aspect rations to be $0.59$ and set $c_l = 0.59l$ for any $l$ we might work with. We then generated a version of the dataset for each $l$ in the above mentioned list. A symmetric non-text dataset was also generated, containing the same number of images as the text one. Patches were extracted from the supplied full images in the dataset, taking care not to use images of variance lower than the $10^{th}$ percentile of the distribution of image coefficient variances. A classifier $\mathcal{D}_l$ was then trained on the binary classification problemn for each $l$. The actual decision system was a feature extractor with a single recoder followed by a Linear SVM, similar to the setup in \textbf{Chapter \ref{chap:Experiments}}. We employed $p = 7$, $\textbf{C} = Random$, $w=196$, $\hat{\rho} = 0.10$, $\mathcal{C}_{\textbf{C},k} = \textbf{Corr}$, $\mathcal{P} = NoSign$, $\mathcal{R} = SumSqr$ and $r=5$. The classifier performance, as evaluated with a $5$-fold cross-validation setup was roughly $95\%$ regardless of $l$. For reference, using only a Linear SVM, we obtain only $6\%$ accuracy. As expected, using the feature extractor improves performance for this complex dataset.
+
+After the confidence map has been built, simple image processing techniques are used to select the text regions. First, edge detection is applied and a morphological dilation with two $3$ pixel line kernels, one vertical and one horitzontal is performed. After this, a ``hole'' filling and image edge object removal is done. A final repeated erosion with a diamond kernel with $1$ pixel radius is performed. \textbf{Figure \ref{fig:TextDetectStage2}} shows the output of this stage for \textbf{Figure \ref{fig:TextDetectBoxes}\subref{fig:TextDetectBoxesOriginal}}.
+
+\begin{figure}
+\centering
+\subfigure[The stage output image mask.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/stage2_A.png}
+  \label{fig:TextDetectStage2A}
+}
+\subfigure[The detected borders, in a rough form.]{
+  \includegraphics[width=0.45\textwidth]{thesis_data/text_detection/stage2_B.png}
+  \label{fig:TextDetectStage2B}
+}
+\caption{Output of second stage of text detection system.}
+\label{fig:TextDetectStage2}
+\end{figure}
+
+\clearpage
+\newpage
+\thispagestyle{empty}
+\mbox{}
+
 \chapter{Conclusions}
 \label{chap:Conclusions}
 
-Built a good classifier on two extensively studied datasets.
-Built an application with it.
-Surprising fact - random weights and a novel order provide a very good performance. The more features the better.
-Actually mostly eliminates the need for cross-validation on training the classifier - using a $C = 0.014$ is good enough for most applications. Faster architecture selection. Also provided a way to select a good architecture as well as rules of thumb for intuitive selection when there isn't any time or resources for architecture selection.
+This work has provided an overview of how to build image classification and regression systems using Deep Learning principles, with an emphasis on Convolutional Neural Network like architectures and Sparse Coding and Sparse Feature Learning. We have studied the classification problem in detail and set up a model for classification starting from the classical feature extraction and class decision separation of a machine learning system. We have emphasized that the latter should be simple, prefferably linear, while the former should be more complex and should be tasked with transforming inputs in such a manner that the simple classifier works well.
+
+We have proposed a model for a feature extractor, as a Deep Neural Network, built from several tunable recoder modules. Each module has a certain structure, which defines the strengths and weaknesses of the system. Our emphasis was on one recoder architecture. We have presented in some detail different coding methods as well as different feature learning algorithms, providing a theoretical justification for their existance. We have also proposed a novel architecture, which combines a simple coding method with a complex nonlinearity stage, in order to obtain very good results, surprisingly, with random features.
+
+We have also made extensive studies of the empirical properties of the coding methods and feature learning methods as well as how they relate to the classification powers of systems built with them. We have also provided two examples of architecture selection for two benchmark datasets and compared our results with best current results.
+
+Finally, we have provided one example application in the realm of text detection which used our method to construct regions of high and low text-confidence. This is a first step to a fully featured text detection and recognition system.
+
+It remains to be seen, in future work, if the performance benefits of this architecture carry over to other datasets and other types of problems. One thing is clear though, Deep Learning systems are here to stay, are rapidly increasing in accuracy and are currently one of the few tools which seem to allow extension to AI levels of power.
+
+\clearpage
+\newpage
+\thispagestyle{empty}
+\mbox{}
 
 \bibliographystyle{unsrt}
 \bibliography{Bibliography}

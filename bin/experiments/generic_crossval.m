@@ -169,7 +169,7 @@ for coder_idx = 1:length(param_list_coder)
         fprintf('          Dictionary:\n');
         fprintf('            Type: %s\n',param_list_coder(coder_idx).dictionary_type);
         if check.same(param_list_coder(coder_idx).dictionary_type,'Dict')
-            fprintf('            Word count: %d\n',size(1,param_list_coder(coder_idx).dictionary_params{1}));
+            fprintf('            Word count: %d\n',size(param_list_coder(coder_idx).dictionary_params{1},1));
         else
             fprintf('            Word count: %d\n',param_list_coder(coder_idx).dictionary_params{1});
         end
@@ -180,7 +180,7 @@ for coder_idx = 1:length(param_list_coder)
         fprintf('          Reduce type: %s\n',param_list_coder(coder_idx).reduce_type);
         fprintf('          Reduce spread: %d\n',param_list_coder(coder_idx).reduce_spread);
         
-        fprintf('        Building  coder.\n');
+        fprintf('        Building coder.\n');
 
         coder_build_times_obj = tic();
 
@@ -236,7 +236,7 @@ for coder_idx = 1:length(param_list_coder)
                 
                 fprintf('              Training SVM on current training sample and evaluating on current validation sample.\n');
 
-                cl = classifiers.linear.svm(s_training_coded,ci_training,'Primal','L2','L2',param_list_classifier(classifier_idx).reg,'1v1',[TRAINING_WORKER_COUNT CLASSIFY_WORKER_COUNT]);
+                cl = classifiers.linear.svm(s_training_coded,ci_training,'Primal','L2','L2',param_list_classifier(classifier_idx).reg,'1va',[TRAINING_WORKER_COUNT CLASSIFY_WORKER_COUNT]);
                 [~,~,classifier_scores(classifier_rep_idx,classifier_idx,coder_rep_idx,coder_idx),~,~] = cl.classify(d_validation_coded,ci_validation);
                 
                 classifier_times(classifier_rep_idx,classifier_idx,coder_rep_idx,coder_idx) = toc(classifier_times_obj);
@@ -278,7 +278,7 @@ for coder_idx = 1:length(param_list_coder)
         
         fprintf('        Training with best classifier configuration on model selection sample and evaluating on test sample.\n');
         
-        final_classifier{coder_rep_idx,coder_idx} = classifiers.linear.svm(s_coder_useful_coded,ci_coder_useful,'Primal','L2','L2',param_list_classifier(best_classifier_idx(coder_rep_idx,coder_idx)).reg,'1v1',[TRAINING_WORKER_COUNT CLASSIFY_WORKER_COUNT]);
+        final_classifier{coder_rep_idx,coder_idx} = classifiers.linear.svm(s_coder_useful_coded,ci_coder_useful,'Primal','L2','L2',param_list_classifier(best_classifier_idx(coder_rep_idx,coder_idx)).reg,'1va',[TRAINING_WORKER_COUNT CLASSIFY_WORKER_COUNT]);
         [final_labels{coder_rep_idx,coder_idx},~,coder_scores(coder_rep_idx,coder_idx),~,~] = final_classifier{coder_rep_idx,coder_idx}.classify(s_ts_coded,ci_ts);
         
         coder_classifyfinal_times(coder_rep_idx,coder_idx) = toc(coder_classifyfinal_times_obj);

@@ -482,7 +482,7 @@
            Copyright \copyright\ \@year ~ \@author\\
            ALL RIGHTS RESERVED\\
            \\ \\ \\
-           The author hereby grants to UPB permission to reproduce and to distribute publicly paper and electronic copies of this thesis document in whole or in part.}
+           The author hereby grants to The University POLITEHNICA of Bucharest permission to reproduce and to distribute publicly paper and electronic copies of this thesis document in whole or in part.}
          \vfil\newpage}
 
 
